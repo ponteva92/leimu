@@ -1,0 +1,18 @@
+# ──────────────────────────────────────────────────────────────────────
+# LEIMU — Netlify build configuration
+#
+# The Next.js app lives at the REPOSITORY ROOT: package.json,
+# next.config.mjs and the App Router (src/app/) are all here — there is
+# NO subfolder. We therefore deliberately do NOT set a `base`; adding one
+# would make Netlify cd into a directory that doesn't exist and fail.
+#
+# `next build` outputs to .next, and the official Next.js runtime plugin
+# turns that into Netlify Functions/Edge for SSR, ISR and routing.
+# ──────────────────────────────────────────────────────────────────────
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
