@@ -808,7 +808,22 @@ export function TuotteetClient() {
     setIsSubmitting(true);
     setSubmitError(false);
 
-    // Build a human-readable order summary for the Netlify Forms submission
+    // Per-scent and per-jar-colour breakdown across the whole cart
+    const scentQty: Record<string, number> = {};
+    const jarQty: Record<JarColor, number> = { white: 0, green: 0, red: 0 };
+    let totalCandles = 0;
+    for (const item of cart) {
+      for (const s of SCENTS) {
+        const q = item.quantities[s.id] ?? 0;
+        if (q > 0) {
+          scentQty[s.id] = (scentQty[s.id] ?? 0) + q;
+          jarQty[item.jarColor] += q;
+          totalCandles += q;
+        }
+      }
+    }
+
+    // Human-readable per-jar breakdown (e.g. "Valkoinen: Havu x2 | Vihreä: Mustikka x1")
     const items = cart
       .map((item) => {
         const scents = SCENTS.filter((s) => (item.quantities[s.id] ?? 0) > 0)
@@ -829,7 +844,16 @@ export function TuotteetClient() {
         delivery: formData.wantsDelivery ? "Kyllä (+8€)" : "Ei",
         personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
         items,
-        total: `${price}€`,
+        totalCandles: String(totalCandles),
+        qtyHavu: String(scentQty["havu"] ?? 0),
+        qtyHavuVanilja: String(scentQty["havu-vanilja"] ?? 0),
+        qtyVanilja: String(scentQty["vanilja"] ?? 0),
+        qtyMustikka: String(scentQty["mustikka"] ?? 0),
+        qtyMustikkaVanilja: String(scentQty["mustikka-vanilja"] ?? 0),
+        jarWhite: String(jarQty.white),
+        jarGreen: String(jarQty.green),
+        jarRed: String(jarQty.red),
+        total: String(price),
       });
 
       // success — run the existing reset/advance logic
