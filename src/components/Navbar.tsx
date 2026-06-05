@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -19,9 +20,19 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
     { href: "/tarina",   label: { fi: "Tarina",   en: "Story"    } },
   ];
 
+  /* Mobile hamburger menu (md:hidden). Labels per spec: Etusivu / Tuotteet / Tarinamme. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const mobileLinks = [
+    { href: "/",         label: { fi: "Etusivu",   en: "Home"      } },
+    { href: "/tuotteet", label: { fi: "Tuotteet",  en: "Products"  } },
+    { href: "/tarina",   label: { fi: "Tarinamme", en: "Our story" } },
+  ];
+  // Close the menu whenever the route changes.
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
   return (
     <div
-      className={["relative", scrolled ? "border-b border-[rgba(26,24,20,0.07)]" : ""].join(" ")}
+      className={["relative z-30", scrolled ? "border-b border-[rgba(26,24,20,0.07)]" : ""].join(" ")}
       style={{
         backdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
         WebkitBackdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
@@ -151,8 +162,57 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
               </span>
             </motion.a>
           </Link>
+
+          {/* Hamburger — mobile only */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="relative -mr-1 flex h-9 w-9 items-center justify-center text-[var(--ink)] md:hidden"
+            aria-label={menuOpen ? "Sulje valikko" : "Avaa valikko"}
+            aria-expanded={menuOpen}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <motion.path animate={menuOpen ? { d: "M5 5 L17 17" } : { d: "M3 6 L19 6" }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
+              <motion.path d="M3 11 L19 11" animate={{ opacity: menuOpen ? 0 : 1 }} transition={{ duration: 0.2 }} />
+              <motion.path animate={menuOpen ? { d: "M5 17 L17 5" } : { d: "M3 16 L19 16" }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile dropdown menu — md:hidden */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            key="mobile-menu"
+            role="navigation"
+            className="absolute inset-x-0 top-full z-40 border-b border-[var(--line)] bg-[var(--bg)] shadow-[0_24px_44px_-22px_rgba(26,24,20,0.3)] md:hidden"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="flex flex-col px-6 py-1">
+              {mobileLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={[
+                      "border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors last:border-0",
+                      isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)] hover:text-[var(--ink)]",
+                    ].join(" ")}
+                  >
+                    {link.label[lang]}
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

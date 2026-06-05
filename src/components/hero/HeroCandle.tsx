@@ -90,8 +90,8 @@ export function HeroCandle() {
 
   return (
     <section
-      className="sticky top-0 z-0 flex items-center overflow-hidden"
-      style={{ backgroundColor: HERO.bg, height: "100dvh" }}
+      className="relative top-0 z-0 flex min-h-[100svh] items-center overflow-hidden md:sticky md:min-h-0 md:h-[100dvh]"
+      style={{ backgroundColor: HERO.bg }}
       aria-label="Hero"
     >
       {/* faint top vignette so the navbar/marquee read cleanly */}
