@@ -8,6 +8,7 @@ import {
 import Image from "next/image";
 import { useStore } from "@/context/store";
 import { SCENTS, PRICE_TABLE, calcPrice } from "@/lib/scents";
+import { submitNetlifyForm } from "@/lib/netlifyForms";
 import { CandleSVG } from "@/components/CandleSVG";
 import { ScentModal } from "@/components/ScentModal";
 import { PrivacyLink } from "@/components/PrivacyModal";
@@ -807,15 +808,29 @@ export function TuotteetClient() {
     setIsSubmitting(true);
     setSubmitError(false);
 
-    const WEBHOOK_URL = "https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl";
+    // Build a human-readable order summary for the Netlify Forms submission
+    const items = cart
+      .map((item) => {
+        const scents = SCENTS.filter((s) => (item.quantities[s.id] ?? 0) > 0)
+          .map((s) => `${s.name} x${item.quantities[s.id]}`)
+          .join(", ");
+        return `${JAR_LABELS[item.jarColor].fi}: ${scents}`;
+      })
+      .join(" | ");
 
     try {
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formType: "order", ...formData, cart, finalPrice: price }),
+      await submitNetlifyForm("leimu-order", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        address: formData.address,
+        zip: formData.zip,
+        city: formData.city,
+        delivery: formData.wantsDelivery ? "Kyllä (+8€)" : "Ei",
+        personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
+        items,
+        total: `${price}€`,
       });
-      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
 
       // success — run the existing reset/advance logic
       setConfirmedPrice(price);

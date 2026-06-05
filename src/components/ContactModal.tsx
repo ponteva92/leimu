@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { submitNetlifyForm } from "@/lib/netlifyForms";
 
 export function ContactModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
@@ -20,25 +21,9 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
     setIsSubmitting(true);
     setError(false);
 
-    const WEBHOOK_URL = "https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl";
-
     try {
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          formType: "contact",
-          name: name,
-          email: email,
-          subject: subject,
-          message: message
-        }),
-      });
-      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
-
-      // Näytetään kiitos-animaatio vasta kun webhook on vastannut 200 OK
+      await submitNetlifyForm("leimu-contact", { name, email, subject, message });
+      // Näytetään kiitos-animaatio vasta kun Netlify on vastannut 200 OK
       setSubmitted(true);
     } catch (err) {
       console.error("Virhe lähetettäessä lomaketta:", err);

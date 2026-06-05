@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
+import { submitNetlifyForm } from "@/lib/netlifyForms";
 import {
   headingReveal, fadeUpItem, staggerContainer,
   sectionReveal, slideFromLeft, slideFromRight,
@@ -1090,12 +1091,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
     setIsSubmitting(true);
     setError(false);
     try {
-      const res = await fetch("https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formType: "contact", name, email, subject, message }),
-      });
-      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
+      await submitNetlifyForm("leimu-contact", { name, email, subject, message });
       setSubmitted(true);
     } catch (err) {
       console.error("Virhe lähetettäessä lomaketta:", err);

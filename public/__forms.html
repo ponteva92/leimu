@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>LEIMU — Netlify Forms detection</title>
+  </head>
+  <body>
+    <!--
+      Hidden static forms so Netlify registers them at deploy time.
+      The real submissions are sent by the React app via fetch() with a
+      matching `form-name` (see src/lib/netlifyForms.ts). Submissions land in
+      the Netlify dashboard (Site → Forms) and can trigger email notifications.
+      Do NOT delete — without this file Netlify won't detect the forms.
+    -->
+    <form name="leimu-contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="leimu-contact" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="text" name="subject" />
+      <textarea name="message"></textarea>
+    </form>
+
+    <form name="leimu-order" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="leimu-order" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="firstName" />
+      <input type="text" name="lastName" />
+      <input type="email" name="email" />
+      <input type="text" name="address" />
+      <input type="text" name="zip" />
+      <input type="text" name="city" />
+      <input type="text" name="delivery" />
+      <textarea name="personalMessage"></textarea>
+      <input type="text" name="items" />
+      <input type="text" name="total" />
+    </form>
+  </body>
+</html>
