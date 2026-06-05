@@ -167,7 +167,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="relative -mr-1 flex h-9 w-9 items-center justify-center text-[var(--ink)] md:hidden"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg)]/70 text-[var(--ink)] shadow-sm backdrop-blur-sm transition-colors md:hidden"
             aria-label={menuOpen ? "Sulje valikko" : "Avaa valikko"}
             aria-expanded={menuOpen}
           >
