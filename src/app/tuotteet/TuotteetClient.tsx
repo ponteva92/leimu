@@ -8,7 +8,7 @@ import {
 import Image from "next/image";
 import { useStore } from "@/context/store";
 import { SCENTS, PRICE_TABLE, calcPrice } from "@/lib/scents";
-import { submitNetlifyForm } from "@/lib/netlifyForms";
+import { submitForm } from "@/lib/formSubmit";
 import { CandleSVG } from "@/components/CandleSVG";
 import { ScentModal } from "@/components/ScentModal";
 import { PrivacyLink } from "@/components/PrivacyModal";
@@ -834,26 +834,26 @@ export function TuotteetClient() {
       .join(" | ");
 
     try {
-      await submitNetlifyForm("leimu-order", {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      await submitForm({
+        formType: "leimu-order",
+        tilaaja: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         address: formData.address,
         zip: formData.zip,
         city: formData.city,
-        delivery: formData.wantsDelivery ? "Kyllä (+8€)" : "Ei",
-        personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
+        delivery: formData.wantsDelivery ? "Posti (+8 €)" : "Nouto",
+        totalCandles,
+        price,
+        havu: scentQty["havu"] ?? 0,
+        havuVanilja: scentQty["havu-vanilja"] ?? 0,
+        vanilja: scentQty["vanilja"] ?? 0,
+        mustikka: scentQty["mustikka"] ?? 0,
+        mustikkaVanilja: scentQty["mustikka-vanilja"] ?? 0,
+        white: jarQty.white,
+        green: jarQty.green,
+        red: jarQty.red,
         items,
-        totalCandles: String(totalCandles),
-        qtyHavu: String(scentQty["havu"] ?? 0),
-        qtyHavuVanilja: String(scentQty["havu-vanilja"] ?? 0),
-        qtyVanilja: String(scentQty["vanilja"] ?? 0),
-        qtyMustikka: String(scentQty["mustikka"] ?? 0),
-        qtyMustikkaVanilja: String(scentQty["mustikka-vanilja"] ?? 0),
-        jarWhite: String(jarQty.white),
-        jarGreen: String(jarQty.green),
-        jarRed: String(jarQty.red),
-        total: String(price),
+        personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
       });
 
       // success — run the existing reset/advance logic

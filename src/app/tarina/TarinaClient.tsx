@@ -10,7 +10,7 @@ import {
 } from "framer-motion";
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
-import { submitNetlifyForm } from "@/lib/netlifyForms";
+import { submitForm } from "@/lib/formSubmit";
 import {
   headingReveal, fadeUpItem, staggerContainer,
   sectionReveal, slideFromLeft, slideFromRight,
@@ -1091,7 +1091,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
     setIsSubmitting(true);
     setError(false);
     try {
-      await submitNetlifyForm("leimu-contact", { name, email, subject, message });
+      await submitForm({ formType: "leimu-contact", name, email, subject, message });
       setSubmitted(true);
     } catch (err) {
       console.error("Virhe lähetettäessä lomaketta:", err);
@@ -1164,18 +1164,12 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               ) : (
                 <motion.form
                   key="form"
-                  name="leimu-contact"
-                  method="POST"
                   onSubmit={handleSubmit}
                   className="space-y-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.25 }}
-                  {...({ "data-netlify": "true", "netlify-honeypot": "bot-field" } as Record<string, string>)}
                 >
-                  {/* Netlify Forms identity — detection is backed by public/__forms.html;
-                      the actual submit runs through handleSubmit → fetch (see netlifyForms.ts). */}
-                  <input type="hidden" name="form-name" value="leimu-contact" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Nimi</label>
