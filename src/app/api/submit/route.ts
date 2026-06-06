@@ -25,14 +25,11 @@ function num(v: unknown): number {
 const str = (v: unknown) => String(v ?? "").trim();
 
 export async function POST(req: NextRequest) {
-  const WEBHOOK = process.env.MAKE_WEBHOOK_URL;
-  if (!WEBHOOK) {
-    console.error("[submit] MAKE_WEBHOOK_URL is not configured");
-    return NextResponse.json(
-      { ok: false, error: "Server not configured (MAKE_WEBHOOK_URL missing)." },
-      { status: 503 },
-    );
-  }
+  // Make.com webhook — read server-side only (never shipped to the browser).
+  // Overridable via the MAKE_WEBHOOK_URL env var; falls back to the LEIMU hook.
+  const WEBHOOK =
+    process.env.MAKE_WEBHOOK_URL ||
+    "https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl";
 
   let body: Record<string, unknown>;
   try {
