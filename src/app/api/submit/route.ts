@@ -89,9 +89,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    // The Make webhook has API-key auth ("x-make-apikey"). Provide the key via the
+    // MAKE_API_KEY env var (kept out of the public repo). If unset, no key is sent.
+    if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
     const res = await fetch(WEBHOOK, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
