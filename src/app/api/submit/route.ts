@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Overridable via the MAKE_WEBHOOK_URL env var; falls back to the LEIMU hook.
   const WEBHOOK =
     process.env.MAKE_WEBHOOK_URL ||
-    "https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl";
+    "https://hook.eu2.make.com/ay2gqshwwtz4rxs7lkm5qhtbnrtmcflt";
 
   let body: Record<string, unknown>;
   try {
