@@ -433,7 +433,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   });
 
   return (
-    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }}>
+    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-lg mx-auto">
       <ProgressBar step="checkout" />
       <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -443,7 +443,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
         {lang === "fi" ? <><span>Toimitus ja </span><em>tiedot</em></> : <><span>Delivery and </span><em>details</em></>}
       </h2>
-      <form onSubmit={(e) => { e.preventDefault(); onNext(); }} className="max-w-lg space-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); onNext(); }} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField label="Etunimi" required {...field("firstName")} />
           <InputField label="Sukunimi" required {...field("lastName")} />
@@ -549,7 +549,7 @@ function SummaryStep({
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }}>
+    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-4xl mx-auto">
       <ProgressBar step="summary" />
       <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -558,7 +558,7 @@ function SummaryStep({
       <p className="tag-mono mb-2">{lang === "fi" ? "Tarkista tilauksesi ennen vahvistusta" : "Review before confirming"}</p>
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">Yhteenveto</h2>
 
-      <div className="grid md:grid-cols-2 gap-10 max-w-4xl">
+      <div className="grid md:grid-cols-2 gap-10">
         {/* Left: Order details */}
         <div className="space-y-8">
           <div>
