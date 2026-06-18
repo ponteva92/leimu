@@ -17,14 +17,14 @@ import {
   VIEWPORT_ONCE, VIEWPORT_NEAR,
 } from "@/lib/motionVariants";
 
-/* WebGL canvases — never SSR'd, lazy-loaded */
+/* WebGL canvases, never SSR'd, lazy-loaded */
 const LivingPortrait = dynamic(() => import("@/components/tarina/LivingPortrait"), { ssr: false });
 const LiquidDark = dynamic(() => import("@/components/tarina/LiquidDark"), { ssr: false });
 
 /* ─── Animation helpers ─────────────────────────── */
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/* ─── SVG Drop Cap — draws the letter on scroll ─── */
+/* ─── SVG Drop Cap, draws the letter on scroll ─── */
 function DropCap({ letter, delay = 0 }: { letter: string; delay?: number }) {
   const ref = useRef<SVGSVGElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-60px" });
@@ -49,7 +49,7 @@ function DropCap({ letter, delay = 0 }: { letter: string; delay?: number }) {
         animate={isInView ? { pathLength: 1 } : { pathLength: 0 }}
         transition={{ duration: 1.2, delay, ease: [0.22, 1, 0.36, 1] }}
       />
-      {/* The letter itself — drawn as text with stroke animation */}
+      {/* The letter itself, drawn as text with stroke animation */}
       <motion.text
         x="30" y="66"
         textAnchor="middle"
@@ -263,7 +263,7 @@ function FounderStory() {
               <div className="flex items-center gap-3 mb-2">
                 <AnimatedLogo size={44} delay={0} />
                 <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--ink-mute)]">
-                  {lang === "fi" ? "— Tarinamme · Est. 2024" : "— Our story · Est. 2024"}
+                  {lang === "fi" ? "Tarinamme · Est. 2024" : "Our story · Est. 2024"}
                 </span>
               </div>
             </FadeUp>
@@ -287,15 +287,14 @@ function FounderStory() {
                 <p className="text-lg text-[var(--ink-soft)] leading-[1.85]">
                   <DropCap letter="S" delay={0.1} />
                   uomalaiset rakastavat kynttilöitä. Ne tuovat valoa ja lämpöä
-                  silloin, kun aurinko piiloutuu kuukausiksi pohjoisen taakse —
-                  ja juuri se ajatus sytytti kipinän.
+                  silloin, kun aurinko piiloutuu kuukausiksi pohjoisen taakse, ja juuri se ajatus sytytti kipinän.
                 </p>
               </FadeUp>
               <FadeUp delay={0.2}>
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   Filippiineiltä Suomeen muuttanut sairaanhoitaja Shane huomasi,
                   että kynttilän liekissä on jotain syvästi inhimillistä. Se ei
-                  ole vain valoa — se on hetki, jonka ympärille kerääntyä. Ja jos
+                  ole vain valoa, se on hetki, jonka ympärille kerääntyä. Ja jos
                   liekki on niin tärkeä, eikö myös se, mitä siitä jää huoneeseen,
                   ansaitse erityistä huomiota?
                 </p>
@@ -305,11 +304,10 @@ function FounderStory() {
               <FadeIn delay={0.25}>
                 <blockquote className="my-10 pl-6 border-l-[3px] border-[var(--accent-2)]">
                   <p className="font-serif text-2xl md:text-3xl italic leading-[1.35] text-[var(--ink)]">
-                    "Halusin luoda kynttilän, joka olisi enemmän kuin liekki —
-                    se olisi tarina."
+                    "Halusin luoda kynttilän, joka olisi enemmän kuin liekki, se olisi tarina."
                   </p>
                   <cite className="block mt-4 font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] not-italic">
-                    — Shane, LEIMU
+                    Shane, LEIMU
                   </cite>
                 </blockquote>
               </FadeIn>
@@ -318,7 +316,7 @@ function FounderStory() {
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   LEIMU syntyi siitä halusta. Se yhdistää kaksi maailmaa:
                   skandinaavisen pelkistetyn estetiikan ja Kaakkois-Aasiassa
-                  rakastetut luonnolliset raaka-aineet — kuten{" "}
+                  rakastetut luonnolliset raaka-aineet, kuten{" "}
                   <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>sheabutterin</em>,
                   joka tunnetaan kotiseudulla ihon hellijänä ja josta tulee
                   LEIMUn salainen ainesosa kynttilänvalmistuksessa.
@@ -330,15 +328,14 @@ function FounderStory() {
                   Oulussa. Vahaa ei kaadeta erissä isoihin altaisiin, vaan
                   jokainen purkki täytetään huolella, oikeassa lämpötilassa,
                   oikealla rytmillä. Sen jälkeen kynttilät saavat rauhassa{" "}
-                  <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>cure</em>-vaiheensa
-                  — viikon, jonka aikana tuoksu kypsyy ja koostumus löytää
+                  <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>cure</em>-vaiheensa, viikon, jonka aikana tuoksu kypsyy ja koostumus löytää
                   lopullisen muotonsa.
                 </p>
               </FadeUp>
               <FadeUp delay={0.4}>
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   Tämä on hidas tapa tehdä asioita. Mutta se on ainoa tapa, jolla
-                  LEIMU haluaa ne tehdä. Pieni luksus, jonka sinä ansaitset — ja
+                  LEIMU haluaa ne tehdä. Pieni luksus, jonka sinä ansaitset, ja
                   jonka takana on ihminen, joka tietää tarkalleen, miten se on
                   tehty.
                 </p>
@@ -350,7 +347,7 @@ function FounderStory() {
                 <p className="text-lg text-[var(--ink-soft)] leading-[1.85]">
                   <DropCap letter="F" delay={0.1} />
                   inns love candles. They bring light and warmth when the sun
-                  hides for months behind the north — and that very thought
+                  hides for months behind the north, and that very thought
                   sparked the flame.
                 </p>
               </FadeUp>
@@ -358,7 +355,7 @@ function FounderStory() {
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   Shane, a nurse who moved from the Philippines to Finland,
                   noticed there is something deeply human about a candle's flame.
-                  It is not just light — it is a moment to gather around. And if
+                  It is not just light, it is a moment to gather around. And if
                   the flame matters that much, should not what it leaves in the
                   room deserve special attention?
                 </p>
@@ -368,11 +365,10 @@ function FounderStory() {
               <FadeIn delay={0.25}>
                 <blockquote className="my-10 pl-6 border-l-[3px] border-[var(--accent-2)]">
                   <p className="font-serif text-2xl md:text-3xl italic leading-[1.35] text-[var(--ink)]">
-                    "I wanted to create a candle that was more than a flame —
-                    it would be a story."
+                    "I wanted to create a candle that was more than a flame, it would be a story."
                   </p>
                   <cite className="block mt-4 font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] not-italic">
-                    — Shane, LEIMU
+                    Shane, LEIMU
                   </cite>
                 </blockquote>
               </FadeIn>
@@ -381,7 +377,7 @@ function FounderStory() {
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   LEIMU was born from that desire. It bridges two worlds:
                   Scandinavian minimalist aesthetics and the natural ingredients
-                  beloved in Southeast Asia — like{" "}
+                  beloved in Southeast Asia, like{" "}
                   <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>shea butter</em>,
                   known at home as a skin-nurturing treasure and now LEIMU's
                   secret ingredient in candle making.
@@ -390,18 +386,17 @@ function FounderStory() {
               <FadeUp delay={0.35}>
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   Every LEIMU candle is made one at a time, by hand, in Oulu.
-                  Wax is not poured in batches into large vats — each jar is
+                  Wax is not poured in batches into large vats, each jar is
                   filled carefully, at the right temperature, with the right
                   rhythm. Then the candles quietly undergo their{" "}
-                  <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>cure</em> phase
-                  — a week during which the scent matures and the texture finds
+                  <em className="not-italic font-medium" style={{ color: "var(--accent-2)" }}>cure</em> phase, a week during which the scent matures and the texture finds
                   its final form.
                 </p>
               </FadeUp>
               <FadeUp delay={0.4}>
                 <p className="text-base text-[var(--ink-soft)] leading-[1.85]">
                   This is a slow way of doing things. But it is the only way
-                  LEIMU wants to do them. A small luxury you deserve — made by
+                  LEIMU wants to do them. A small luxury you deserve, made by
                   someone who knows exactly how it was crafted.
                 </p>
               </FadeUp>
@@ -414,7 +409,7 @@ function FounderStory() {
 }
 
 
-/* ─── StepItem — viewport audio trigger ─────────── */
+/* ─── StepItem, viewport audio trigger ─────────── */
 type StepDatum = {
   num: string;
   title: { fi: string; en: string };
@@ -448,7 +443,7 @@ function StepItem({
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const, delay: i * 0.06 }}
     >
-      {/* Per-step vertical line — right of number column */}
+      {/* Per-step vertical line, right of number column */}
       <div className="absolute left-[78px] inset-y-0 w-[1px] bg-[var(--line)] hidden md:block opacity-15" />
       <motion.div
         className="absolute left-[78px] inset-y-0 w-[1px] origin-top hidden md:block"
@@ -526,8 +521,8 @@ function ProcessTimeline() {
       num: "01",
       title: { fi: "Raaka-aineiden valinta", en: "Raw material sourcing" },
       desc: {
-        fi: "Soijavaha valitaan luotetulta toimittajalta — 100% luonnollinen, ei lisäaineita. Sheabutter ja aromiöljyt seulotaan tarkasti.",
-        en: "Soy wax sourced from trusted suppliers — 100% natural, no additives. Shea butter and fragrance oils carefully vetted.",
+        fi: "Soijavaha valitaan luotetulta toimittajalta, 100% luonnollinen, ei lisäaineita. Sheabutter ja aromiöljyt seulotaan tarkasti.",
+        en: "Soy wax sourced from trusted suppliers, 100% natural, no additives. Shea butter and fragrance oils carefully vetted.",
       },
       data: "Soy wax 100% · Shea butter 10% · Cotton wick",
       img: "/images/proc-materials.avif",
@@ -536,10 +531,10 @@ function ProcessTimeline() {
       num: "02",
       title: { fi: "Vahan sulatus", en: "Wax melting" },
       desc: {
-        fi: "Vaha sulatetaan tarkalleen 75–80°C:ssa. Liian kuuma polttaa tuoksun, liian kylmä ei sido sitä — keskellä on totuus.",
-        en: "Wax melted to exactly 75–80°C. Too hot burns the scent, too cold won't bind it — the truth lives in between.",
+        fi: "Vaha sulatetaan tarkalleen 75-80°C:ssa. Liian kuuma polttaa tuoksun, liian kylmä ei sido sitä, keskellä on totuus.",
+        en: "Wax melted to exactly 75-80°C. Too hot burns the scent, too cold won't bind it, the truth lives in between.",
       },
-      data: "Temp: 75–80°C · Duration: 30–40 min",
+      data: "Temp: 75-80°C · Duration: 30-40 min",
       img: "/images/pour-process.jpg",
     },
     {
@@ -549,15 +544,15 @@ function ProcessTimeline() {
         fi: "Sheabutterin ja aromien suhde mitoitetaan jokaiselle erälle erikseen. Tämä antaa LEIMUlle samettisen, kermaisen rakenteen.",
         en: "Fragrance and shea butter ratio calibrated per batch. This gives LEIMU its signature velvety, creamy texture.",
       },
-      data: "Fragrance load: 8–10% · Mix time: 15 min · by hand",
+      data: "Fragrance load: 8-10% · Mix time: 15 min · by hand",
       img: "/images/proc-scent.png",
     },
     {
       num: "04",
       title: { fi: "Kaataminen", en: "Pouring" },
       desc: {
-        fi: "Yksi kynttilä kerrallaan. Puuvillasydän asetetaan keskelle, vaha kaadetaan tasaisella liikkeellä — ei kuplia, ei pintaviivoja.",
-        en: "One candle at a time. Wick centered, wax poured in one smooth motion — no bubbles, no surface lines.",
+        fi: "Yksi kynttilä kerrallaan. Puuvillasydän asetetaan keskelle, vaha kaadetaan tasaisella liikkeellä, ei kuplia, ei pintaviivoja.",
+        en: "One candle at a time. Wick centered, wax poured in one smooth motion, no bubbles, no surface lines.",
       },
       data: "Pour temp: 55°C · ~5 min per candle",
       img: "/images/proc-pour.jpg",
@@ -576,8 +571,8 @@ function ProcessTimeline() {
       num: "06",
       title: { fi: "Viimeistely ja pakkaus", en: "Finishing & packaging" },
       desc: {
-        fi: "Käsinkirjoitettu kiitoskortti, kultasinetti, sinetöity kuori. Bambukansi asetetaan, tarra kiinnitetään käsin — juuri sinulle.",
-        en: "Handwritten thank-you card, gold wax seal, sealed envelope. Bamboo lid placed, label applied by hand — made just for you.",
+        fi: "Käsinkirjoitettu kiitoskortti, kultasinetti, sinetöity kuori. Bambukansi asetetaan, tarra kiinnitetään käsin, juuri sinulle.",
+        en: "Handwritten thank-you card, gold wax seal, sealed envelope. Bamboo lid placed, label applied by hand, made just for you.",
       },
       data: "Bamboo lid · Hand-applied label · Gold wax seal · QC check",
       img: "/images/Setti.jpg",
@@ -588,9 +583,6 @@ function ProcessTimeline() {
     <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
       <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-end mb-20">
         <FadeUp>
-          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--ink-mute)] mb-4">
-            {lang === "fi" ? "— Valmistusprosessi" : "— Process"}
-          </p>
           <h2 className="font-serif text-4xl md:text-5xl italic leading-[1.1] text-[var(--ink)]">
             {lang === "fi" ? (
               <>
@@ -617,7 +609,7 @@ function ProcessTimeline() {
       </div>
 
       <div ref={timelineRef} className="relative space-y-0">
-        {/* Golden thread — a glowing "wick" that draws downward as you scroll */}
+        {/* Golden thread, a glowing "wick" that draws downward as you scroll */}
         <svg
           className="pointer-events-none absolute left-[78px] top-0 bottom-0 hidden w-6 -translate-x-1/2 overflow-visible md:block"
           viewBox="0 0 24 1000"
@@ -643,7 +635,7 @@ function ProcessTimeline() {
 }
 
 
-/* ─── MaterialItem — tilt + glare + blur-neighbours ─ */
+/* ─── MaterialItem, tilt + glare + blur-neighbours ─ */
 type MatDatum = {
   nameFi: React.ReactNode;
   nameEn: React.ReactNode;
@@ -741,8 +733,8 @@ function MaterialsSection() {
         </>
       ),
       desc: {
-        fi: "100% luonnollinen, uusiutuva soijavaha. Palaa pehmeästi, kauemmin ja puhtaammin kuin parafiini — ei mustaa nokea, ei kemikaalipäästöjä.",
-        en: "100% natural, renewable soy wax. Burns softly, longer and cleaner than paraffin — no black soot, no chemical emissions.",
+        fi: "100% luonnollinen, uusiutuva soijavaha. Palaa pehmeästi, kauemmin ja puhtaammin kuin parafiini, ei mustaa nokea, ei kemikaalipäästöjä.",
+        en: "100% natural, renewable soy wax. Burns softly, longer and cleaner than paraffin, no black soot, no chemical emissions.",
       },
       stat: "100",
       unit: "%",
@@ -779,8 +771,8 @@ function MaterialsSection() {
         </>
       ),
       desc: {
-        fi: "100% puuvilla, ei lyijyä, ei sinkkiä. Tasainen, hiljainen liekki joka palaa loppuun asti — vain valoa, ei kemikaaleja.",
-        en: "100% cotton, no lead, no zinc. Steady, quiet flame that burns to the end — only light, no chemicals.",
+        fi: "100% puuvilla, ei lyijyä, ei sinkkiä. Tasainen, hiljainen liekki joka palaa loppuun asti, vain valoa, ei kemikaaleja.",
+        en: "100% cotton, no lead, no zinc. Steady, quiet flame that burns to the end, only light, no chemicals.",
       },
       stat: "0",
       unit: " kem.",
@@ -798,8 +790,8 @@ function MaterialsSection() {
         </>
       ),
       desc: {
-        fi: "Jokainen aromi valittu huolella — eko-ystävällinen, myrkytön, ja tarpeeksi hieno kestämään koko cure-vaiheen laadun menetystä.",
-        en: "Every fragrance carefully selected — eco-friendly, non-toxic, refined enough to endure the full cure phase without quality loss.",
+        fi: "Jokainen aromi valittu huolella, eko-ystävällinen, myrkytön, ja tarpeeksi hieno kestämään koko cure-vaiheen laadun menetystä.",
+        en: "Every fragrance carefully selected, eco-friendly, non-toxic, refined enough to endure the full cure phase without quality loss.",
       },
       stat: "5+",
       unit: "",
@@ -812,20 +804,17 @@ function MaterialsSection() {
       <LiquidDark />
       <div className="relative z-10 max-w-7xl mx-auto">
         <FadeUp>
-          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--bg)] opacity-40 mb-4">
-            {lang === "fi" ? "— Raaka-aineet" : "— Materials"}
-          </p>
           <h2 className="font-serif text-4xl md:text-5xl italic text-[var(--bg)] mb-16">
             {lang === "fi" ? (
               <>
                 Vain{" "}
-                <em style={{ color: "var(--accent-2)" }}>parasta</em> — ei
+                <em style={{ color: "var(--accent-2)" }}>parasta</em>, ei
                 kompromisseja.
               </>
             ) : (
               <>
                 Only the{" "}
-                <em style={{ color: "var(--accent-2)" }}>best</em> — no
+                <em style={{ color: "var(--accent-2)" }}>best</em>, no
                 compromises.
               </>
             )}
@@ -851,7 +840,7 @@ function MaterialsSection() {
 }
 
 
-/* ─── ValueItem — 3D tilt + glare + blur-neighbours ─ */
+/* ─── ValueItem, 3D tilt + glare + blur-neighbours ─ */
 type ValueDatum = {
   num: string;
   tag:   { fi: string; en: string };
@@ -968,24 +957,24 @@ function ValueItem({
 
 /* ─── Values Grid ───────────────────────────────── */
 const VALUE_ICONS = [
-  /* 01 EKO — leaf */
+  /* 01 EKO, leaf */
   <svg key="eco" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
     <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
     <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
   </svg>,
-  /* 02 EETTINEN — shield check */
+  /* 02 EETTINEN, shield check */
   <svg key="eth" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     <path d="m9 12 2 2 4-4"/>
   </svg>,
-  /* 03 KÄSITYÖ — hand */
+  /* 03 KÄSITYÖ, hand */
   <svg key="craft" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
     <path d="M18 11V6a2 2 0 0 0-4 0v0"/>
     <path d="M14 10V4a2 2 0 0 0-4 0v2"/>
     <path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>
     <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
   </svg>,
-  /* 04 LUKSUS — gem */
+  /* 04 LUKSUS, gem */
   <svg key="lux" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
     <path d="M6 3h12l4 6-10 13L2 9Z"/>
     <path d="M11 3 8 9l4 13 4-13-3-6"/>
@@ -1003,8 +992,8 @@ function ValuesGrid() {
       tag: { fi: "EKO", en: "ECO" },
       title: { fi: "Ekologisuus", en: "Ecological" },
       desc: {
-        fi: "Soijavaha, sheabutter, puuvillasydän — ainoastaan luonnollisia, uusiutuvia raaka-aineita. Ympäristö kiittää.",
-        en: "Soy wax, shea butter, cotton wick — only natural, renewable materials. The environment thanks you.",
+        fi: "Soijavaha, sheabutter, puuvillasydän, ainoastaan luonnollisia, uusiutuvia raaka-aineita. Ympäristö kiittää.",
+        en: "Soy wax, shea butter, cotton wick, only natural, renewable materials. The environment thanks you.",
       },
     },
     {
@@ -1021,8 +1010,8 @@ function ValuesGrid() {
       tag: { fi: "KÄSITYÖ", en: "CRAFT" },
       title: { fi: "Käsityö", en: "Handcraft" },
       desc: {
-        fi: "Yksi kynttilä kerrallaan. Ei massatuotantoa — vain käsi, vaha ja huolellisuus.",
-        en: "One candle at a time. No mass production — just hand, wax, and care.",
+        fi: "Yksi kynttilä kerrallaan. Ei massatuotantoa, vain käsi, vaha ja huolellisuus.",
+        en: "One candle at a time. No mass production, just hand, wax, and care.",
       },
     },
     {
@@ -1030,8 +1019,8 @@ function ValuesGrid() {
       tag: { fi: "LUKSUS", en: "LUXURY" },
       title: { fi: "Saavutettava luksus", en: "Accessible luxury" },
       desc: {
-        fi: "Kohtuuhintainen, mutta tinkimätön laatu. 9 € — ja jokainen euro on perusteltu.",
-        en: "Affordable but uncompromising quality. 9 € — and every euro is justified.",
+        fi: "Kohtuuhintainen, mutta tinkimätön laatu. 9 €, ja jokainen euro on perusteltu.",
+        en: "Affordable but uncompromising quality. 9 €, and every euro is justified.",
       },
     },
   ];
@@ -1039,9 +1028,6 @@ function ValuesGrid() {
   return (
     <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
       <FadeUp>
-        <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--ink-mute)] mb-3">
-          {lang === "fi" ? "— Arvomme" : "— Our values"}
-        </p>
         <h2 className="font-serif text-4xl md:text-5xl italic text-[var(--ink)] mb-16">
           {lang === "fi" ? (
             <>
@@ -1197,7 +1183,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   <div className="pt-2 space-y-3">
                     {error && (
                       <p className="text-sm text-red-500 text-center leading-snug" role="alert">
-                        Viestin lähetys epäonnistui — tarkista yhteys ja yritä uudelleen.
+                        Viestin lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
                       </p>
                     )}
                     <button type="submit" disabled={isSubmitting}
@@ -1320,7 +1306,7 @@ function StoryCTA() {
       <div className="max-w-2xl mx-auto pt-10">
         <FadeUp>
           <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--ink-mute)] mb-6">
-            {lang === "fi" ? "— Liity tarinaan" : "— Join the story"}
+            {lang === "fi" ? "Liity tarinaan" : "Join the story"}
           </p>
         </FadeUp>
         <FadeUp delay={0.1}>
@@ -1366,13 +1352,13 @@ function StoryCTA() {
 /* ─── Page ──────────────────────────────────────── */
 export function TarinaClient() {
   return (
-    <>
+    <div className="calm-headings">
       <FounderStory />
       <div className="px-6 md:px-10"><div className="divider" /></div>
       <ProcessTimeline />
       <MaterialsSection />
       <ValuesGrid />
       <StoryCTA />
-    </>
+    </div>
   );
 }

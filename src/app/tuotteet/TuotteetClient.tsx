@@ -197,7 +197,6 @@ function ProductGrid({ scents, onSelect, onHover, onLeave }: {
   const { lang } = useStore();
   return (
     <section className="mb-16">
-      <p className="tag-mono mb-2">{lang === "fi" ? "Kaikki tuoksut" : "All scents"}</p>
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
         {lang === "fi" ? <><span>Tutustu </span><em>tuoksuihin</em></> : <><span>Explore the </span><em>scents</em></>}
       </h2>
@@ -319,8 +318,13 @@ function ConfigureStep({
 
           {/* Jar selector */}
           <div className="mb-8">
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-3">
-              01 — {lang === "fi" ? "Valitse purkin väri" : "Choose jar colour"}
+            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-1">
+              {lang === "fi" ? "Valitse purkin väri" : "Choose jar colour"}
+            </p>
+            <p className="text-[11px] leading-snug text-[var(--ink-soft)] mb-3">
+              {lang === "fi"
+                ? "Kaikki purkit ovat läpikuultavaa maitolasia (mattalasi)."
+                : "All jars are translucent frosted milk glass."}
             </p>
             <div className="flex gap-3">
               {jars.map((jar) => (
@@ -338,7 +342,7 @@ function ConfigureStep({
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <p className="tag-mono text-[8px] text-[var(--ink-mute)]">
-                02 — {lang === "fi" ? "Valitse tuoksut" : "Choose scents"}
+                {lang === "fi" ? "Valitse tuoksut" : "Choose scents"}
               </p>
               <span className={`tag-mono text-[9px] ${currentQty >= 6 ? "text-[var(--accent-2)]" : "text-[var(--ink-mute)]"}`}>
                 {currentQty}/6
@@ -402,7 +406,7 @@ function ConfigureStep({
                     <motion.p key={cartPrice} className="font-serif text-3xl italic text-[var(--ink)]"
                       initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.2 }}>
-                      {cartQty > 0 ? `${cartPrice}€` : "—"}
+                      {cartQty > 0 ? `${cartPrice}€` : "0€"}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -488,7 +492,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
               className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed"
             />
             <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-1.5">
-              💡 Erottele viestit numeroilla — esim: 1. Hyvää syntymäpäivää! 2. Rakastan sinua...
+              Erottele viestit numeroilla, esim: 1. Hyvää syntymäpäivää! 2. Rakastan sinua...
             </p>
           </motion.div>
         )}
@@ -671,7 +675,7 @@ function SummaryStep({
 
           {submitError && (
             <p className="text-sm text-red-500 text-center leading-snug" role="alert">
-              Tilauksen lähetys epäonnistui — tarkista yhteys ja yritä uudelleen.
+              Tilauksen lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
             </p>
           )}
 
@@ -725,7 +729,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${JAR_DOT[color]}`} />
                   <p className="font-serif italic text-sm text-[var(--ink)]">
-                    {JAR_LABELS[color].fi} — {colorCounts[color]} kpl
+                    {JAR_LABELS[color].fi}, {colorCounts[color]} kpl
                   </p>
                 </div>
                 {SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0).map((s) => (
@@ -761,7 +765,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
           <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-5 space-y-2">
             <p className="text-sm text-[var(--ink-soft)]">
               📦 <strong className="text-[var(--ink)]">Toimitusaika:</strong>{" "}
-              Toimitus Oulun alueella henkilökohtaisesti tai postitse 5–7 arkipäivän kuluessa.
+              Toimitus Oulun alueella henkilökohtaisesti tai postitse 5-7 arkipäivän kuluessa.
             </p>
             <p className="text-sm text-[var(--ink-soft)]">
               💬 <strong className="text-[var(--ink)]">Kysyttävää?</strong>{" "}
@@ -797,7 +801,7 @@ export function TuotteetClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
-  /* Fluid background state — driven by scent map hover */
+  /* Fluid background state, driven by scent map hover */
   const [hoveredWaxColor, setHoveredWaxColor] = useState<string | null>(null);
 
   // suppress unused warning
@@ -856,7 +860,7 @@ export function TuotteetClient() {
         personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
       });
 
-      // success — run the existing reset/advance logic
+      // success, run the existing reset/advance logic
       setConfirmedPrice(price);
       setOrderSnapshot([...cart]);
       clearCart();
@@ -878,7 +882,7 @@ export function TuotteetClient() {
   };
 
   return (
-    <>
+    <div className="calm-headings">
       {/* ── Fluid ambient background (behind everything) ── */}
       <FluidBackground waxColor={hoveredWaxColor} />
 
@@ -887,7 +891,7 @@ export function TuotteetClient() {
       {/* ── Sticky "Living Still Life" hero (z-0) ── */}
       <ProductsHero />
 
-      {/* ── Content shell — glides up and over the sticky hero (opaque, higher z) ── */}
+      {/* ── Content shell, glides up and over the sticky hero (opaque, higher z) ── */}
       <div className="relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]">
         {/* warm hairline seam where the content rises over the hero */}
         <div
@@ -967,16 +971,13 @@ export function TuotteetClient() {
             whileInView="visible"
             viewport={VIEWPORT_NEAR}
           >
-            <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--ink-mute)]">
-              — Valmistusprosessi
-            </p>
             <h2 className="font-serif text-4xl md:text-5xl italic leading-[1.1] text-[var(--ink)]">
               Käsityötä,<br />
               <em style={{ color: "var(--accent-2)" }}>hetki kerrallaan.</em>
             </h2>
             <div className="space-y-4 text-[var(--ink-soft)] leading-relaxed">
               <p>
-                Jokainen LEIMU syntyy käsin — ei linjastolla, ei erissä,
+                Jokainen LEIMU syntyy käsin, ei linjastolla, ei erissä,
                 vaan yksi purkki kerrallaan. Vaha sulatetaan oikeassa
                 lämpötilassa, tuoksuöljyt sekoitetaan huolella ja sydän
                 asetetaan tarkalleen keskelle.
@@ -984,7 +985,7 @@ export function TuotteetClient() {
               <p>
                 Sen jälkeen alkaa hiljaisin vaihe:{" "}
                 <span className="text-[var(--ink)] font-medium">cure</span>.
-                Viikko pimeässä, rauhassa — jonka aikana tuoksu kypsyy
+                Viikko pimeässä, rauhassa, jonka aikana tuoksu kypsyy
                 ja vaha löytää lopullisen muotonsa.
               </p>
               <p>
@@ -1055,13 +1056,13 @@ export function TuotteetClient() {
             </motion.h2>
             <div className="space-y-5 text-[var(--ink-soft)] leading-relaxed">
               <p className="text-lg">
-                LEIMU on pala luksusta arjen keskelle — hetki, joka kuuluu vain sinulle.
+                LEIMU on pala luksusta arjen keskelle, hetki, joka kuuluu vain sinulle.
                 Jokainen kynttilä saapuu <span className="text-[var(--ink)] font-medium">tyylikkäässä lahjapussissa</span>,
                 joka on viimeistelty viimeistä yksityiskohtaa myöten.
               </p>
               <p>
                 Kiitoskortti on kuoressa, jonka sulkee
-                {" "}<span className="text-[var(--ink)] font-medium">käsinleimattu vahasinetti</span> — LEIMU-logolla koristeltu,
+                {" "}<span className="text-[var(--ink)] font-medium">käsinleimattu vahasinetti</span>, LEIMU-logolla koristeltu,
                 aito leima, joka tekee jokaisesta tilauksesta pienen seremonian.
               </p>
               <p>
@@ -1105,6 +1106,6 @@ export function TuotteetClient() {
         </div>
       </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -26,18 +26,18 @@ function StatsStrip() {
 
   return (
     <section className="border-y border-[var(--line)] bg-[var(--bg-2)]">
-      <div className="max-w-7xl mx-auto px-6 md:px-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-[var(--line)]">
+      <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-6 text-center md:text-left">
           {stats.map((s, i) => (
             <motion.div
               key={i}
-              className="py-10 px-5 sm:px-8 flex flex-col gap-1"
+              className="flex flex-col gap-2"
               initial={{ opacity: 0, y: 28, filter: "blur(8px)", scale: 0.97 }}
               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
               viewport={VIEWPORT_NEAR}
               transition={{ delay: i * 0.12, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="font-serif text-3xl md:text-4xl italic text-[var(--ink)] leading-none">
+              <p className="font-serif italic text-4xl md:text-5xl text-[var(--ink)] leading-[1.1] pb-1">
                 {s.value}
               </p>
               <p className="tag-mono text-[9px] text-[var(--ink-mute)]">{s.label[lang]}</p>
@@ -109,9 +109,6 @@ function StoryTeaser() {
           whileInView="visible"
           viewport={VIEWPORT_NEAR}
         >
-          <motion.p variants={fadeUpCinematic} className="tag-mono">
-            {lang === "fi" ? "Tarina taustalla" : "The story behind"}
-          </motion.p>
           <motion.h2
             variants={headingCinematic}
             className="heading-display text-4xl md:text-5xl text-[var(--ink)]"
@@ -128,8 +125,8 @@ function StoryTeaser() {
           </motion.h2>
           <motion.p variants={fadeUpItem} className="text-[var(--ink-soft)] leading-relaxed">
             {lang === "fi"
-              ? "LEIMU sai alkunsa kodista ja rakkaudesta käsityöhön. Jokainen purkki täytetään käsin, yksi kerrallaan — soijavahasta ja sheabutterista, suomalaiseen luontoon inspiroituneilla tuoksuilla."
-              : "LEIMU began at home, from a love of craft. Each jar is filled by hand, one at a time — with soy wax and shea butter, inspired by Finnish nature."}
+              ? "LEIMU sai alkunsa kodista ja rakkaudesta käsityöhön. Jokainen purkki täytetään käsin, yksi kerrallaan: soijavahasta ja sheabutterista, suomalaiseen luontoon inspiroituneilla tuoksuilla. Kaikki purkit ovat läpikuultavaa maitolasia (mattalasi)."
+              : "LEIMU began at home, from a love of craft. Each jar is filled by hand, one at a time: soy wax and shea butter, inspired by Finnish nature. All jars are translucent frosted milk glass."}
           </motion.p>
           <motion.div variants={fadeUpItem}>
             <Link
@@ -207,7 +204,7 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
         sizes="(max-width: 768px) 50vw, 33vw"
       />
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
       {/* Samsung shimmer — light radial following mouse */}
       <motion.div
         className="absolute inset-0 pointer-events-none rounded-2xl"
@@ -227,7 +224,7 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
         <p className={`font-serif italic text-white drop-shadow-md ${isLarge ? "text-2xl" : "text-base"}`}>
           {lang === "fi" ? scent.name : scent.nameEn}
         </p>
-        <p className="tag-mono text-[8px] text-white/60 mt-0.5">
+        <p className="tag-mono text-[8px] !text-white/90 mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
           {lang === "fi" ? scent.profile : scent.profileEn}
         </p>
       </div>
@@ -341,9 +338,6 @@ function CustomerReviews() {
         whileInView="visible"
         viewport={VIEWPORT_NEAR}
       >
-        <motion.p variants={fadeUpCinematic} className="tag-mono mb-2">
-          {lang === "fi" ? "Asiakaspalautteet" : "Customer reviews"}
-        </motion.p>
         <motion.h2 variants={headingReveal} className="heading-display text-4xl md:text-5xl text-[var(--ink)]">
           {lang === "fi" ? (
             <><span>Mitä asiakkaat </span><em>sanovat.</em></>
@@ -384,13 +378,12 @@ function CustomerReviews() {
                 >
                   &ldquo;
                 </span>
-                <p className="font-serif italic text-base text-[var(--ink)] leading-relaxed">
+                <p className="font-serif italic text-base text-[var(--ink)] leading-relaxed line-clamp-3">
                   {review.quote}
                 </p>
               </div>
               {/* Source */}
-              <div className="flex items-center gap-2 mt-5 pt-4 border-t border-[var(--line)]">
-                <span className="text-base" aria-hidden="true">{review.icon}</span>
+              <div className="mt-5 pt-4 border-t border-[var(--line)]">
                 <span className="tag-mono text-[8px] text-[var(--ink-mute)]">{review.source}</span>
               </div>
             </div>
@@ -430,9 +423,6 @@ function InstagramFeed() {
         viewport={VIEWPORT_NEAR}
         transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
       >
-        <p className="tag-mono mb-2">
-          {lang === "fi" ? "Seuraa meitä" : "Follow us"}
-        </p>
         <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
           <h2 className="heading-display text-4xl md:text-5xl text-[var(--ink)]">
             {lang === "fi" ? (
@@ -473,8 +463,8 @@ function Benefits() {
       ),
       title: { fi: "Soijavaha", en: "Soy wax" },
       desc: {
-        fi: "100% luonnollinen soijavaha palaa puhtaasti ja pidemään kuin parafiini — ei nokea, ei kemikaaleja.",
-        en: "100% natural soy wax burns cleanly and longer than paraffin — no soot, no chemicals.",
+        fi: "100% luonnollinen soijavaha palaa puhtaasti ja pidempään kuin parafiini. Ei nokea, ei kemikaaleja.",
+        en: "100% natural soy wax burns cleanly and longer than paraffin. No soot, no chemicals.",
       },
     },
     {
@@ -498,8 +488,8 @@ function Benefits() {
       ),
       title: { fi: "Puuvillasydän", en: "Cotton wick" },
       desc: {
-        fi: "100% puuvillasydän — ei metallia, ei sinkkiä. Puhdas, hiljainen liekki loppuun asti.",
-        en: "100% cotton wick — no metal, no zinc. Clean, quiet flame all the way through.",
+        fi: "100% puuvillasydän, ei metallia eikä sinkkiä. Puhdas, hiljainen liekki loppuun asti.",
+        en: "100% cotton wick, no metal or zinc. Clean, quiet flame all the way through.",
       },
     },
     {
@@ -512,8 +502,8 @@ function Benefits() {
       ),
       title: { fi: "Bambukansi", en: "Bamboo lid" },
       desc: {
-        fi: "Uusiutuvan bambun kansi — nopeimmin kasvava materiaali maapallolla, täysin biohajoava.",
-        en: "Renewable bamboo lid — the fastest-growing material on earth, fully biodegradable.",
+        fi: "Uusiutuvan bambun kansi: nopeimmin kasvava materiaali maapallolla, täysin biohajoava.",
+        en: "Renewable bamboo lid: the fastest-growing material on earth, fully biodegradable.",
       },
     },
   ];
@@ -594,13 +584,13 @@ function Benefits() {
           >
             {lang === "fi" ? (
               <>
-                &ldquo;Kynttilä ei ole vain valo —{" "}
+                &ldquo;Kynttilä ei ole vain valo,{" "}
                 <span style={{ color: "var(--accent-2)" }}>se on hetki.</span>&rdquo;
               </>
             ) : (
               <>
-                &ldquo;A candle is not just light —{" "}
-                <span style={{ color: "var(--accent-2)" }}>it&apos;s a moment.</span>&rdquo;
+                &ldquo;A candle is not just light.{" "}
+                <span style={{ color: "var(--accent-2)" }}>It&apos;s a moment.</span>&rdquo;
               </>
             )}
           </motion.p>
@@ -612,7 +602,7 @@ function Benefits() {
             }}
             className="tag-mono mt-8 text-[var(--bg)]"
           >
-            {lang === "fi" ? "— LEIMU Candles" : "— LEIMU Candles"}
+            LEIMU Candles
           </motion.p>
         </motion.div>
       </section>
@@ -630,7 +620,7 @@ export function HomeClient() {
     <>
       <ScentModal />
       <HeroCandle />
-      <div className="relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]">
+      <div className="home-calm relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]">
         {/* Premium seam — a warm hairline where the content rises over the hero */}
         <div
           aria-hidden="true"

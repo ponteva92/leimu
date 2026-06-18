@@ -27,14 +27,14 @@ const COPY = {
     eyebrow: "LEIMU — Tuotteet",
     l1: "Kynttilä, joka on",
     l2: "täysin sinun",
-    body: "Valitse purkin väri ja tuoksut, lisää koriin ja tilaa helposti. Jokainen LEIMU valetaan käsin pienissä erissä — 100 % soijavahasta ja sheabutterista, puhtaalla puuvillasydämellä ja Suomen luontoon inspiroituneilla tuoksuilla. Viimeistelynä käsinleimattu vahasinetti ja tyylikäs lahjapussi — pala luonnollista rauhaa, joka on täysin sinun.",
+    body: "Valitse purkin väri ja tuoksut, lisää koriin ja tilaa helposti. Jokainen LEIMU valetaan käsin pienissä erissä — 100 % soijavahasta ja sheabutterista, puhtaalla puuvillasydämellä ja Suomen luontoon inspiroituneilla tuoksuilla, läpikuultavaan maitolasipurkkiin. Viimeistelynä käsinleimattu vahasinetti ja tyylikäs lahjapussi — pala luonnollista rauhaa, joka on täysin sinun.",
     scroll: "Vieritä",
   },
   en: {
     eyebrow: "LEIMU — Products",
     l1: "A candle that is",
     l2: "entirely yours",
-    body: "Choose your jar colour and scents, add to cart and order with ease. Every LEIMU is hand-poured in small batches — 100% soy wax and shea butter, a pure cotton wick, and scents inspired by Finnish nature. Finished with a hand-stamped wax seal and an elegant gift bag — a piece of natural calm that is entirely yours.",
+    body: "Choose your jar colour and scents, add to cart and order with ease. Every LEIMU is hand-poured in small batches — 100% soy wax and shea butter, a pure cotton wick, and scents inspired by Finnish nature, in a translucent frosted milk-glass jar. Finished with a hand-stamped wax seal and an elegant gift bag — a piece of natural calm that is entirely yours.",
     scroll: "Scroll",
   },
 } as const;

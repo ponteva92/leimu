@@ -174,7 +174,7 @@ export default function RootLayout({
                 <p className="font-serif text-2xl italic mb-3 text-[var(--ink)]">LEIMU</p>
                 <p className="tag-mono mb-6">Käsintehtyjä kynttilöitä</p>
                 <p className="text-sm text-[var(--ink-soft)] leading-relaxed max-w-xs">
-                  Jokainen LEIMU-kynttilä on pieneräinen käsityö — valmistettu
+                  Jokainen LEIMU-kynttilä on pieneräinen käsityö, valmistettu
                   100% soijavahasta ja sheabutterista Suomessa.
                 </p>
               </div>

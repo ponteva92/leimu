@@ -468,6 +468,14 @@ header nav a:hover::after { width: 100%; }
   animation: heading-breathe 8s ease-in-out infinite;
 }
 
+/* Recompose: headings hold still. Perpetual letter-spacing breathe on every
+   heading is unmotivated motion; pages read calmer without it. Opt-in per page
+   via .home-calm / .calm-headings so nothing else changes globally. */
+.home-calm .heading-display,
+.calm-headings .heading-display {
+  animation: none;
+}
+
 /* ── Image zoom container ────────────────────────────── */
 .img-zoom-wrap {
   overflow: hidden;
