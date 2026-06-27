@@ -51,7 +51,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
         />
 
         <motion.div
-          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-2xl overflow-hidden"
+          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-modal overflow-hidden"
           initial={{ opacity: 0, y: 28, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -66,7 +66,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--ink-mute)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
+              className="w-11 h-11 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--ink-mute)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
               aria-label="Sulje"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -112,32 +112,32 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
                 >
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Nimi</label>
+                      <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Nimi</label>
                       <input required value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting}
-                        className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
+                        className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
                     </div>
                     <div>
-                      <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Sähköposti</label>
+                      <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Sähköposti</label>
                       <input type="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={isSubmitting}
-                        className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
+                        className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
                     </div>
                   </div>
                   <div>
-                    <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Mitä asia koskee?</label>
+                    <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Mitä asia koskee?</label>
                     <input required value={subject} onChange={e => setSubject(e.target.value)} disabled={isSubmitting}
                       placeholder="Esim. tilaus, yhteistyö, kysymys..."
-                      className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors placeholder:text-[var(--ink-mute)] disabled:opacity-50"/>
+                      className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors placeholder:text-[var(--ink-mute)] disabled:opacity-50"/>
                   </div>
                   <div>
-                    <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Kerro tarkemmin</label>
+                    <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Kerro tarkemmin</label>
                     <textarea required value={message} onChange={e => setMessage(e.target.value)} disabled={isSubmitting}
                       rows={4}
-                      className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed disabled:opacity-50"/>
+                      className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed disabled:opacity-50"/>
                   </div>
                   <div className="pt-2 space-y-3">
                     {error && (
-                      <p className="text-sm text-red-500 text-center leading-snug" role="alert">
-                        Viestin lähetys epäonnistui — tarkista yhteys ja yritä uudelleen.
+                      <p className="text-sm text-[var(--destructive)] text-center leading-snug" role="alert">
+                        Viestin lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
                       </p>
                     )}
                     <button type="submit" disabled={isSubmitting}

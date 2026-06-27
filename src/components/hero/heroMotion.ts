@@ -17,7 +17,7 @@ const EASE_OUT = [0.16, 1, 0.3, 1] as const;
    Container staggers the two lines + supporting copy / CTA in sequence.    */
 export const heroStagger: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.16, delayChildren: 0.15 } },
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } },
 };
 
 export const heroLine: Variants = {
@@ -26,7 +26,7 @@ export const heroLine: Variants = {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.05, ease: EASE_OUT },
+    transition: { duration: 0.6, ease: EASE_OUT },
   },
 };
 
@@ -36,7 +36,7 @@ export const heroFade: Variants = {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.9, ease: EASE_OUT },
+    transition: { duration: 0.5, ease: EASE_OUT },
   },
 };
 
@@ -44,18 +44,21 @@ export const heroFade: Variants = {
    Applied as an infinite `animate` on the inline amber word. A breathing
    text-shadow signals warmth; no vertical float, since floating a single
    inline word out of its line reads as a glitch.                           */
+/* One-shot warm glow on entrance, then it holds a gentle resting state.
+   No infinite loop — the brief bans perpetual motion on primary UI. */
 export const amberBreatheAnimate = {
   textShadow: [
-    "0 0 0px rgba(198,142,88,0.0), 0 0 18px rgba(198,142,88,0.18)",
-    "0 0 26px rgba(198,142,88,0.6), 0 0 64px rgba(198,142,88,0.32)",
-    "0 0 0px rgba(198,142,88,0.0), 0 0 18px rgba(198,142,88,0.18)",
+    "0 0 0px rgba(198,142,88,0.0), 0 0 12px rgba(198,142,88,0.10)",
+    "0 0 28px rgba(198,142,88,0.55), 0 0 64px rgba(198,142,88,0.30)",
+    "0 0 14px rgba(198,142,88,0.22), 0 0 34px rgba(198,142,88,0.14)",
   ],
 };
 
 export const amberBreatheTransition = {
-  duration: 6.5,
-  repeat: Infinity,
-  ease: "easeInOut",
+  duration: 1.6,
+  delay: 0.9,
+  ease: "easeOut",
+  times: [0, 0.55, 1],
 } as const;
 
 /* ── Smoke plume ────────────────────────────────────────────────────────

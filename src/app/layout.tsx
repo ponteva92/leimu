@@ -162,12 +162,18 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[var(--ink)] focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:tracking-[0.15em] focus:text-[var(--bg)]"
+        >
+          Siirry sisältöön
+        </a>
         <StoreProvider>
           <SmoothScroll />
           <Preloader />
           <CustomCursor />
           <SiteHeader />
-          <main>{children}</main>
+          <main id="main">{children}</main>
           <footer className="border-t border-[var(--line)] bg-[var(--bg-2)] py-16 px-8 mt-24">
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
               <div>

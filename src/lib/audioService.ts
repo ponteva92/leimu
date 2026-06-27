@@ -56,7 +56,7 @@ export function playClickSound(muted: boolean): void {
 
 /**
  * Ultra-low ambient plop: 55Hz → 35Hz sine (~75ms), very subtle.
- * Scent map dot hover.
+ * Subtle UI tick for hover / selection feedback.
  */
 export function playPlopSound(muted: boolean): void {
   if (muted) return;

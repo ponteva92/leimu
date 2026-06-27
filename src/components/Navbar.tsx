@@ -48,8 +48,11 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
         {/* Logo */}
         <Link href="/" className="flex items-center group" aria-label="LEIMU etusivu">
           <motion.div
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
+            className="relative overflow-hidden rounded-md"
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            variants={{ rest: { scale: 1 }, hover: { scale: 1.04 }, tap: { scale: 0.97 } }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             <Image
@@ -59,6 +62,22 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
               height={36}
               className="h-[54px] w-auto object-contain transition-opacity duration-300 group-hover:opacity-85"
               priority
+            />
+            {/* subtle golden shimmer sweep on hover */}
+            <motion.span
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(105deg, transparent 42%, rgba(212,169,106,0.38) 50%, transparent 58%)",
+                backgroundSize: "220% 100%",
+                mixBlendMode: "screen",
+              }}
+              variants={{
+                rest: { backgroundPosition: "-120% 0", opacity: 0 },
+                hover: { backgroundPosition: "220% 0", opacity: 1 },
+              }}
+              transition={{ duration: 0.7, ease: "easeInOut" }}
             />
           </motion.div>
         </Link>

@@ -39,11 +39,11 @@ export function ContactCTA({
         rest: {
           scale: 1,
           boxShadow: isHero
-            ? "0 0 0 1px rgba(196,122,58,0.45), 0 8px 26px rgba(0,0,0,0.18)"
+            ? "0 0 0 1px rgba(196,122,58,0.45), 0 8px 26px -6px rgba(26,24,20,0.22)"
             : "0 2px 16px rgba(26,24,20,0.14)",
         },
         hover: {
-          scale: 1.05,
+          scale: 1.03,
           boxShadow:
             "0 12px 40px rgba(196,122,58,0.32), 0 0 0 1px rgba(196,122,58,0.85), 0 0 24px rgba(196,122,58,0.45)",
         },

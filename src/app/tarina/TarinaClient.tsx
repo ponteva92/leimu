@@ -11,15 +11,16 @@ import {
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
 import { submitForm } from "@/lib/formSubmit";
-import {
-  headingReveal, fadeUpItem, staggerContainer,
-  sectionReveal, slideFromLeft, slideFromRight,
-  VIEWPORT_ONCE, VIEWPORT_NEAR,
-} from "@/lib/motionVariants";
 
 /* WebGL canvases, never SSR'd, lazy-loaded */
-const LivingPortrait = dynamic(() => import("@/components/tarina/LivingPortrait"), { ssr: false });
-const LiquidDark = dynamic(() => import("@/components/tarina/LiquidDark"), { ssr: false });
+const LivingPortrait = dynamic(() => import("@/components/tarina/LivingPortrait"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-[var(--bg-3)] animate-pulse" />,
+});
+const LiquidDark = dynamic(() => import("@/components/tarina/LiquidDark"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-[var(--ink)]" />,
+});
 
 /* ─── Animation helpers ─────────────────────────── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -119,7 +120,7 @@ function TiltCard({
       onMouseLeave={() => { mx.set(0.5); my.set(0.5); }}
       whileHover={{
         scale: 1.03,
-        boxShadow: `0 24px 60px rgba(0,0,0,0.14), 0 0 0 1px rgba(212,169,106,0.25)`,
+        boxShadow: `0 24px 60px -18px rgba(26,24,20,0.18), 0 0 0 1px rgba(212,169,106,0.25)`,
       }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
     >
@@ -220,7 +221,7 @@ function FounderStory() {
         {/* Left: Sticky photo + meta */}
         <div className="md:sticky md:top-24 flex flex-col gap-6">
           <FadeUp>
-            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-e4">
               <motion.div className="absolute inset-0" style={{ y: springY }}>
                 <LivingPortrait />
               </motion.div>
@@ -885,7 +886,7 @@ function ValueItem({
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: i * 0.12, duration: 0.65, ease: [0.22, 1, 0.36, 1] as const }}
-        whileHover={{ y: -5, boxShadow: "0 24px 56px rgba(0,0,0,0.09)", transition: { type: "spring", stiffness: 300, damping: 24 } }}
+        whileHover={{ y: -5, boxShadow: "0 24px 56px -18px rgba(26,24,20,0.14)", transition: { type: "spring", stiffness: 300, damping: 24 } }}
         onMouseMove={(e) => {
           const r = cardRef.current?.getBoundingClientRect();
           if (!r) return;
@@ -1099,7 +1100,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       >
         <div className="absolute inset-0 bg-[rgba(26,24,20,0.65)] backdrop-blur-sm" />
         <motion.div
-          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-2xl overflow-hidden"
+          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-modal overflow-hidden"
           initial={{ opacity: 0, y: 28, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -1113,7 +1114,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <h2 className="font-serif text-xl italic text-[var(--ink)]">Yhteydenottopyyntö</h2>
             </div>
             <button onClick={onClose}
-              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--ink-mute)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
+              className="w-11 h-11 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--ink-mute)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
               aria-label="Sulje">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M1 1l10 10M11 1L1 11"/>

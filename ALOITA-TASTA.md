@@ -10,8 +10,8 @@ leimu-candles/
 │   │   ├── layout.tsx      ← Root layout: fontit, Navbar, Marquee, Footer
 │   │   ├── globals.css     ← Kaikki design-tokenut (CSS muuttujat)
 │   │   ├── page.tsx        ← Etusivu (/)
-│   │   ├── HomeClient.tsx  ← Hero, Stats, Story, Featured, Benefits, Newsletter
-│   │   ├── tuotteet/       ← /tuotteet — Scent Map, Grid, Modal, Konfiguraattori, Hinnoittelu
+│   │   ├── HomeClient.tsx  ← Hero, Stats, Story, Featured, Kiitoskortti, Arvostelut, Benefits
+│   │   ├── tuotteet/       ← /tuotteet — Tuoksuruudukko, Modal, Konfiguraattori, Kiitoskortti, Hinnoittelu
 │   │   └── tarina/         ← /tarina — Perustajan tarina, Timeline, Materiaalit, Arvot
 │   ├── components/
 │   │   ├── CandleSVG.tsx   ← Interaktiivinen kynttilä-SVG (white | green | red)
@@ -19,7 +19,7 @@ leimu-candles/
 │   │   ├── Marquee.tsx     ← Päättymätön marquee-teksti
 │   │   └── ScentModal.tsx  ← Glassmorphism-modaali (Framer Motion)
 │   ├── context/store.ts    ← Zustand store (konfiguraattori + modaali + kieli)
-│   ├── lib/scents.ts       ← Kaikki 5 tuoksua + tuoksukartaston koordinaatit
+│   ├── lib/scents.ts       ← Kaikki 5 tuoksua + hinnoittelu
 │   └── types/index.ts      ← TypeScript-tyypit
 ├── tailwind.config.ts      ← Tailwind + design token -värit
 ├── package.json
@@ -53,15 +53,15 @@ npx vercel
 ## Mitä sivustossa on
 
 ### Kaikki sivut
-- **`/`** — Etusivu: Hero, Stats, Tarina, Featured bento-grid, Hyödyt, Newsletter
-- **`/tuotteet`** — Interaktiivinen tuoksukartasto, Tuoteruudukko, Glassmorphism-modaali, Konfiguraattori, Hinnoittelu
+- **`/`** — Etusivu: Hero, Stats, Tarina, Featured bento-grid, Kiitoskortti, Arvostelut, Hyödyt
+- **`/tuotteet`** — Tuoteruudukko, Glassmorphism-modaali, Konfiguraattori, Kiitoskortti (vahasinetti), Hinnoittelu
 - **`/tarina`** — Perustajan tarina Drop Cap -efektillä, 6-vaiheen prosessijana, Materiaalit hover-animaatiolla, Arvot
 
 ### Komponentit
 - **CandleSVG** — Täysin SVG-pohjainen animoitu kynttilä, 3 purkkiväriä
 - **ScentModal** — Framer Motion spring-animaatio, glassmorphism
 - **Konfiguraattori** — Live-esikatselu + purkin/tuoksun/viestin valinta
-- **Tuoksukartasto** — 2D interaktiivinen (X: Raikas→Makea, Y: Kevyt→Syvä)
+- **GiftCeremony** — "Sinetöity viesti": musta kiitoskortti + kultainen vahasinetti (kortti.png), parallax + kulta-shimmer
 
 ### Teknologiat
 - **Next.js 14** App Router + TypeScript

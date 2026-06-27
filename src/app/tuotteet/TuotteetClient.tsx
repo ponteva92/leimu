@@ -14,6 +14,10 @@ import { ScentModal } from "@/components/ScentModal";
 import { PrivacyLink } from "@/components/PrivacyModal";
 import type { Scent, JarColor, CartItem, CheckoutData } from "@/types";
 import { ProductsHero } from "@/components/tuotteet/ProductsHero";
+import { GiftCeremony } from "@/components/GiftCeremony";
+import { Spinner } from "@/components/ui/Spinner";
+import { SuccessCheck } from "@/components/ui/SuccessCheck";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   headingReveal, fadeUpItem, staggerContainer,
   VIEWPORT_ONCE, VIEWPORT_NEAR,
@@ -83,15 +87,30 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InputField({ label, type = "text", required = false, value, onChange }: {
+function InputField({ label, type = "text", required = false, value, onChange, error }: {
   label: string; type?: string; required?: boolean;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 }) {
+  const id = label.replace(/\s+/g, "-").toLowerCase();
   return (
     <div>
-      <label className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1.5">{label}</label>
-      <input type={type} required={required} value={value} onChange={onChange}
-        className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors" />
+      <label htmlFor={id} className="tag-mono block mb-2">{label}</label>
+      <input
+        id={id} type={type} required={required} value={value} onChange={onChange}
+        aria-invalid={error ? true : undefined}
+        className={[
+          "w-full px-4 py-3 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-sm transition-colors duration-base focus:outline-none",
+          error
+            ? "border-[var(--destructive)] focus:border-[var(--destructive)]"
+            : "border-[var(--field-border)] focus:border-[var(--accent-2)]",
+        ].join(" ")}
+      />
+      {error && (
+        <p role="alert" className="font-mono text-[11px] tracking-[0.08em] text-[var(--destructive)] mt-1.5 leading-snug">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -149,7 +168,7 @@ function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
       onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave?.(); }}
       onClick={() => onSelect(scent)}
       onMouseEnter={() => onHover?.(scent.waxColor)}
-      whileHover={{ y: -6, scale: 1.03, borderColor: "rgba(212,169,106,0.6)", boxShadow: "0 20px 56px rgba(0,0,0,0.14)" }}
+      whileHover={{ y: -6, scale: 1.02, borderColor: "rgba(212,169,106,0.6)", boxShadow: "0 20px 56px -16px rgba(26,24,20,0.18)" }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 380, damping: 26 }}
       custom={index}
@@ -167,15 +186,15 @@ function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
           style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(255,255,255,0.15) 0%, transparent 60%)` }}
         />
         <div className="absolute inset-0 bg-[var(--ink)]/0 group-hover:bg-[var(--ink)]/15 transition-all duration-300 flex items-center justify-center">
-          <span className="tag-mono text-[8px] px-2.5 py-1 rounded-full bg-[var(--bg)] text-[var(--ink)] opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+          <span className="tag-mono text-[8px] px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-md !text-white border border-white/25 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
             {lang === "fi" ? "Lue lisää" : "Learn more"}
           </span>
         </div>
       </div>
-      <div className="p-3 pb-4" style={{ transform: "translateZ(10px)" }}>
-        <p className="font-serif text-lg italic text-[var(--ink)] leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
-        <p className="tag-mono text-[8px] mt-1 text-[var(--ink-mute)]">{lang === "fi" ? scent.profile : scent.profileEn}</p>
-        <p className="mt-2 font-serif text-xl text-[var(--accent-2)]">{scent.price}</p>
+      <div className="p-3 pb-4 bg-[var(--ink)]" style={{ transform: "translateZ(10px)" }}>
+        <p className="font-serif text-lg italic text-white leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
+        <p className="tag-mono text-[8px] mt-1 !text-white/75">{lang === "fi" ? scent.profile : scent.profileEn}</p>
+        <p className="mt-2 font-serif text-xl text-white">{scent.price}</p>
       </div>
       <motion.div
         className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)]"
@@ -232,7 +251,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         <button onClick={() => setQuantity(scent.id, qty - 1)} disabled={qty === 0}
-          className="w-11 h-11 rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center hover:bg-[var(--bg-2)] active:scale-95 transition-all disabled:opacity-25 disabled:cursor-not-allowed">
+          className="w-11 h-11 rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center hover:bg-[var(--bg-2)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="2" viewBox="0 0 12 2" fill="none"><path d="M1 1h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
         <div className="w-7 text-center">
@@ -243,7 +262,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
           </AnimatePresence>
         </div>
         <button onClick={() => setQuantity(scent.id, qty + 1)} disabled={total >= 6}
-          className="w-11 h-11 rounded-full border border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--ink)] hover:border-[var(--ink)] active:scale-95 transition-all disabled:opacity-25 disabled:cursor-not-allowed">
+          className="w-11 h-11 rounded-full border border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--ink)] hover:border-[var(--ink)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
@@ -344,7 +363,7 @@ function ConfigureStep({
               <p className="tag-mono text-[8px] text-[var(--ink-mute)]">
                 {lang === "fi" ? "Valitse tuoksut" : "Choose scents"}
               </p>
-              <span className={`tag-mono text-[9px] ${currentQty >= 6 ? "text-[var(--accent-2)]" : "text-[var(--ink-mute)]"}`}>
+              <span className={`tag-mono text-[10px] ${currentQty >= 6 ? "text-[var(--accent-2-strong)]" : "text-[var(--ink-mute)]"}`}>
                 {currentQty}/6
               </span>
             </div>
@@ -354,7 +373,7 @@ function ConfigureStep({
           </div>
 
           <button onClick={handleAddToCart} disabled={currentQty === 0}
-            className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed">
+            className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
             {lang === "fi" ? "+ Lisää koriin" : "+ Add to cart"}
           </button>
         </div>
@@ -371,9 +390,7 @@ function ConfigureStep({
 
             <div className="px-6 min-h-[100px]">
               {cart.length === 0 ? (
-                <p className="py-8 text-center text-xs text-[var(--ink-mute)] italic font-serif">
-                  {lang === "fi" ? "Kori on tyhjä" : "Cart is empty"}
-                </p>
+                <EmptyState message={lang === "fi" ? "Kori on tyhjä" : "Cart is empty"} />
               ) : (
                 cart.map((item) => (
                   <CartItemCard key={item.id} item={item} onRemove={() => removeFromCart(item.id)} />
@@ -387,7 +404,7 @@ function ConfigureStep({
                   <table className="w-full">
                     <thead>
                       <tr>{Object.keys(PRICE_TABLE).map((n) => (
-                        <th key={n} className="tag-mono text-[7px] text-[var(--ink-mute)] font-normal pb-1 pr-3 text-left">{n} kpl</th>
+                        <th key={n} className="tag-mono text-[10px] text-[var(--ink-mute)] font-normal pb-1 pr-3 text-left">{n} kpl</th>
                       ))}</tr>
                     </thead>
                     <tbody>
@@ -413,7 +430,7 @@ function ConfigureStep({
               </div>
 
               <button onClick={onProceed} disabled={cart.length === 0}
-                className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
                 {lang === "fi" ? "Jatka tilaukseen →" : "Proceed to checkout →"}
               </button>
             </div>
@@ -430,11 +447,22 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   onBack: () => void; onNext: () => void;
 }) {
   const { lang } = useStore();
+  const [emailError, setEmailError] = useState("");
+  const isEmail = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
   const field = (key: keyof CheckoutData) => ({
     value: formData[key] as string,
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
       setFormData({ ...formData, [key]: e.target.value }),
   });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isEmail(formData.email.trim())) {
+      setEmailError(lang === "fi" ? "Tarkista sähköpostiosoite." : "Check your email address.");
+      return;
+    }
+    setEmailError("");
+    onNext();
+  };
 
   return (
     <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-lg mx-auto">
@@ -447,12 +475,17 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
         {lang === "fi" ? <><span>Toimitus ja </span><em>tiedot</em></> : <><span>Delivery and </span><em>details</em></>}
       </h2>
-      <form onSubmit={(e) => { e.preventDefault(); onNext(); }} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField label="Etunimi" required {...field("firstName")} />
           <InputField label="Sukunimi" required {...field("lastName")} />
         </div>
-        <InputField label="Sähköposti" type="email" required {...field("email")} />
+        <InputField
+          label="Sähköposti" type="email" required
+          value={formData.email}
+          onChange={(e) => { setFormData({ ...formData, email: e.target.value }); if (emailError) setEmailError(""); }}
+          error={emailError}
+        />
         <InputField label="Osoite" required {...field("address")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField label="Postinumero" required {...field("zip")} />
@@ -489,7 +522,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
               value={formData.personalMessage}
               onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
               rows={5}
-              className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed"
+              className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors duration-base resize-none leading-relaxed"
             />
             <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-1.5">
               Erottele viestit numeroilla, esim: 1. Hyvää syntymäpäivää! 2. Rakastan sinua...
@@ -631,8 +664,8 @@ function SummaryStep({
               <div className="flex gap-2">
                 <input type="text" value={discountCode}
                   onChange={(e) => { setDiscountCode(e.target.value); setDiscountError(false); }}
-                  className={["flex-1 px-4 py-2.5 rounded-xl border bg-[var(--bg)] text-[var(--ink)] text-sm font-mono focus:outline-none transition-colors",
-                    discountError ? "border-red-400 focus:border-red-400" : "border-[var(--line)] focus:border-[var(--accent-2)]"].join(" ")} />
+                  className={["flex-1 px-4 py-2.5 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-sm font-mono focus:outline-none transition-colors duration-base",
+                    discountError ? "border-[var(--destructive)] focus:border-[var(--destructive)]" : "border-[var(--field-border)] focus:border-[var(--accent-2)]"].join(" ")} />
                 <button onClick={handleApply}
                   className="px-4 py-2.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.1em] uppercase rounded-xl hover:bg-[var(--accent)] transition-colors">
                   OK
@@ -640,7 +673,7 @@ function SummaryStep({
               </div>
             )}
             {discountError && (
-              <p className="tag-mono text-[8px] text-red-400 mt-1.5">Virheellinen koodi</p>
+              <p className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--destructive)] mt-1.5">Virheellinen koodi</p>
             )}
           </div>
 
@@ -674,14 +707,14 @@ function SummaryStep({
           </div>
 
           {submitError && (
-            <p className="text-sm text-red-500 text-center leading-snug" role="alert">
+            <p className="text-sm text-[var(--destructive)] text-center leading-snug" role="alert">
               Tilauksen lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
             </p>
           )}
 
           <button onClick={() => onConfirm(finalPrice)} disabled={!privacyAccepted || isSubmitting}
-            className="w-full py-4 bg-[var(--accent)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            {isSubmitting ? "Käsitellään…" : "Vahvista tilaus →"}
+            className="w-full py-4 bg-[var(--accent)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            {isSubmitting ? (<><Spinner size={14} /> Käsitellään…</>) : "Vahvista tilaus →"}
           </button>
         </div>
       </div>
@@ -706,9 +739,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
     <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
       <div className="max-w-2xl mx-auto text-center mb-12">
         <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-6">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <path d="M5 14l6 6 12-12" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <SuccessCheck size={30} />
         </div>
         <h1 className="heading-display text-4xl md:text-5xl text-[var(--ink)] mb-3">
           Kiitos tilauksestasi{" "}<em>{formData.firstName}</em>!
@@ -786,7 +817,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
 
 /* ─── Page ──────────────────────────────────────── */
 export function TuotteetClient() {
-  const { openModal, cart, cartTotalQty, cartTotalPrice, clearCart } = useStore();
+  const { cart, clearCart } = useStore();
   const [step, setStep] = useState<"configure" | "checkout" | "summary" | "thankyou">("configure");
   const [formData, setFormData] = useState<CheckoutData>({
     firstName: "", lastName: "", email: "",
@@ -801,11 +832,8 @@ export function TuotteetClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
-  /* Fluid background state, driven by scent map hover */
+  /* Fluid ambient background, driven by product-card hover */
   const [hoveredWaxColor, setHoveredWaxColor] = useState<string | null>(null);
-
-  // suppress unused warning
-  void openModal; void cartTotalQty; void cartTotalPrice;
 
   const handleConfirm = async (price: number) => {
     if (isSubmitting) return;
@@ -947,7 +975,7 @@ export function TuotteetClient() {
       <div className="border-t border-[var(--line)] py-24 px-6 md:px-10 max-w-7xl mx-auto">
         <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
           <motion.div
-            className="relative rounded-2xl overflow-hidden border border-[var(--line)] shadow-2xl mx-auto md:mx-0"
+            className="relative rounded-2xl overflow-hidden border border-[var(--line)] shadow-e4 mx-auto md:mx-0"
             style={{ aspectRatio: "9 / 16", maxWidth: 340 }}
             initial={{ opacity: 0, scale: 1.05, filter: "blur(6px)" }}
             whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
@@ -1011,6 +1039,11 @@ export function TuotteetClient() {
         </div>
       </div>
 
+      {/* ── Sealed message (kortti) ──────────────────── */}
+      <div className="border-t border-[var(--line)]">
+        <GiftCeremony ctaHref="#configurator" />
+      </div>
+
       {/* ── Luxury gift section ──────────────────────── */}
       <div className="px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-[var(--line)]">
         <motion.div
@@ -1028,7 +1061,7 @@ export function TuotteetClient() {
             <motion.div key={src}
               className={`relative rounded-2xl overflow-hidden border border-[var(--line)] ${offset}`}
               style={{ aspectRatio: "3/4" }}
-              whileHover={{ scale: 1.02, boxShadow: "0 28px 72px rgba(0,0,0,0.14)" }}
+              whileHover={{ scale: 1.02, boxShadow: "0 28px 72px -20px rgba(26,24,20,0.18)" }}
               initial={{ opacity: 0, y: 28, filter: "blur(5px)" }}
               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               viewport={VIEWPORT_NEAR}
@@ -1091,7 +1124,7 @@ export function TuotteetClient() {
             whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             viewport={VIEWPORT_NEAR}
             transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ scale: 1.02, boxShadow: "0 32px 80px rgba(0,0,0,0.12)" }}
+            whileHover={{ scale: 1.02, boxShadow: "0 32px 80px -22px rgba(26,24,20,0.16)" }}
           >
             <Image src="/images/Lahjasetti mainos.png" alt="LEIMU lahjasetti" fill
               className="object-cover"

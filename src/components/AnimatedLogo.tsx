@@ -17,7 +17,6 @@
  *   <AnimatedLogo size={180} delay={0.3} />
  */
 
-import { useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
@@ -50,12 +49,8 @@ export function AnimatedLogo({
           background:
             "radial-gradient(circle, rgba(212,169,106,0.38) 0%, rgba(212,169,106,0.10) 45%, transparent 68%)",
           filter: "blur(10px)",
+          opacity: 0.6,
         }}
-        animate={{
-          scale:   [1, 1.14, 0.97, 1],
-          opacity: [0.55, 0.85, 0.65, 0.55],
-        }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* ── Logo image ─────────────────────────────────────────────── */}
@@ -92,10 +87,8 @@ export function AnimatedLogo({
       </motion.div>
 
       {/* ── Rotating sparkle ring ──────────────────────────────────── */}
-      <motion.div
+      <div
         className="absolute inset-0 rounded-full border border-[rgba(212,169,106,0.18)] pointer-events-none z-[5]"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
       />
     </motion.div>
   );

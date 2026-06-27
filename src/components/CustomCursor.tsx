@@ -73,6 +73,13 @@ export function CustomCursor() {
   const pidRef     = useRef(0);
   const lastPRef   = useRef(0);
 
+  /* Enable the global cursor:none rule only while this component is mounted,
+     so a JS failure leaves the normal system cursor. */
+  useEffect(() => {
+    document.documentElement.classList.add("cursor-ready");
+    return () => document.documentElement.classList.remove("cursor-ready");
+  }, []);
+
   /* ── Triple-harmonic RAF flicker ── */
   useEffect(() => {
     let rafId: number;

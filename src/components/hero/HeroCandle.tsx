@@ -18,6 +18,7 @@ import { motion, useTransform, useScroll } from "framer-motion";
 import { useStore } from "@/context/store";
 import { SPRING_PREMIUM } from "@/lib/motionVariants";
 import { ContactCTA } from "@/components/ContactCTA";
+import { HeroBackground } from "./HeroBackground";
 import {
   HERO,
   heroStagger,
@@ -94,6 +95,16 @@ export function HeroCandle() {
       style={{ backgroundColor: HERO.bg }}
       aria-label="Hero"
     >
+      {/* Animated WebGL backdrop — warm fluid mesh + soft orbs (CSS-gradient fallback) */}
+      <HeroBackground />
+
+      {/* Left scrim — lifts the cream text to AA over the warm backdrop, fades out before the candle */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{ background: "linear-gradient(105deg, rgba(26,24,20,0.60) 0%, rgba(26,24,20,0.50) 45%, rgba(26,24,20,0.16) 68%, transparent 84%)" }}
+      />
+
       {/* faint top vignette so the navbar/marquee read cleanly */}
       <div
         aria-hidden="true"
@@ -116,12 +127,12 @@ export function HeroCandle() {
           <motion.p
             variants={heroFade}
             className="font-mono text-[0.7rem] uppercase tracking-[0.28em]"
-            style={{ color: "rgba(245,245,240,0.6)" }}
+            style={{ color: "rgba(245,245,240,0.9)" }}
           >
             {t.eyebrow}
           </motion.p>
 
-          <h1 className="font-serif text-5xl leading-[1.06] tracking-[-0.02em] md:text-6xl lg:text-7xl">
+          <h1 className="font-serif text-5xl leading-[1.06] tracking-[-0.025em] md:text-6xl lg:text-7xl">
             <motion.span variants={heroLine} className="block" style={{ color: HERO.cream }}>
               {t.line1Lead}
               <motion.span
@@ -141,7 +152,7 @@ export function HeroCandle() {
           <motion.p
             variants={heroFade}
             className="max-w-md text-base leading-relaxed md:text-[1.05rem]"
-            style={{ color: "rgba(245,245,240,0.82)" }}
+            style={{ color: "rgba(245,245,240,0.96)" }}
           >
             {t.body}
           </motion.p>
@@ -152,7 +163,7 @@ export function HeroCandle() {
               <motion.a
                 className="relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 font-mono text-[11px] uppercase tracking-[0.2em]"
                 style={{ backgroundColor: HERO.cream, color: "#1A1814" }}
-                whileHover={{ scale: 1.04 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={SPRING_PREMIUM}
               >

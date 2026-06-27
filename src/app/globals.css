@@ -12,20 +12,80 @@
   --bg-3: #E3DBCB;
   --ink: #1A1814;
   --ink-soft: #4A463D;
-  --ink-mute: #8C8577;
+  --ink-mute: #655F4F; /* WCAG AA: 5.7:1 on --bg, 5.2:1 on --bg-2, 4.6:1 on --bg-3 (was #8C8577 ≈ 3.0:1, failed) */
   --line: #D8D0BF;
   --accent: #2E3D2A;
   --accent-2: #C47A3A;
   --accent-3: #8B6F47;
   --accent-warm: #C47A3A;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
+  /* ── Radius scale: none / sm / md / lg / xl (no random values) ── */
+  --radius-none: 0px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
 
-  --shadow-soft: 0 2px 16px rgba(26, 24, 20, 0.06);
-  --shadow-card: 0 4px 32px rgba(26, 24, 20, 0.10);
+  /* ── State & semantic tokens ── */
+  --accent-2-strong: #9E5C22;          /* AA text variant of --accent-2 (4.70:1 on --bg) */
+  --accent-2-hover:  #B86E2F;
+  --accent-2-press:  #A35F26;
+  --accent-2-tint:   rgba(196, 122, 58, 0.08);
+  --accent-2-ring:   rgba(196, 122, 58, 0.30);
+  --accent-hover:    #283521;
+  --field-border:    #B3A47F;          /* ≥3:1 input boundary (was --line, 1.38:1) */
+  --destructive:     #B23A2E;          /* warm brick red — 5.3:1 on --bg, white-on-fill 5.9:1 */
+  --destructive-tint: rgba(178, 58, 46, 0.10);
+
+  /* ── Soft layered elevation — ink-tinted, single light source, no hard drops ── */
+  --shadow-soft:  0 2px 16px rgba(26, 24, 20, 0.06);
+  --shadow-card:  0 4px 32px rgba(26, 24, 20, 0.10);
   --shadow-modal: 0 24px 80px rgba(26, 24, 20, 0.18);
+  --shadow-e1: 0 1px 2px rgba(26, 24, 20, 0.04), 0 2px 8px rgba(26, 24, 20, 0.05);
+  --shadow-e2: 0 2px 6px rgba(26, 24, 20, 0.05), 0 8px 20px rgba(26, 24, 20, 0.07);
+  --shadow-e3: 0 6px 16px -4px rgba(26, 24, 20, 0.10), 0 12px 36px -8px rgba(26, 24, 20, 0.10);
+  --shadow-e4: 0 24px 64px -20px rgba(26, 24, 20, 0.22);
+  --shadow-glow: 0 8px 28px -6px rgba(196, 122, 58, 0.28);
+
+  /* ── Motion tokens (ease-out default) ── */
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 400ms;
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ── Layout rhythm ── */
+  --section-lg: 120px;
+  --section-md: 80px;
+  --section-base: 60px;
+  --maxw-content: 1200px;
+}
+
+/* ── Dark tokens — defined and ready, but OPT-IN ──────────────────────────
+   The brand ships a single warm theme; components are not dark-audited, so
+   dark mode is NOT auto-activated on prefers-color-scheme. Set
+   <html data-theme="dark"> to switch once the components are reviewed. A
+   sensible warm-dark starting point (off-black, never pure #000):           */
+[data-theme="dark"] {
+  --bg: #16140F;
+  --bg-2: #1E1B15;
+  --bg-3: #27231B;
+  --ink: #F2ECDF;
+  --ink-soft: #C9C1AE;
+  --ink-mute: #9A917D;
+  --line: #38332A;
+  --accent: #8AA678;
+  --accent-2: #D89456;
+  --accent-3: #B49A72;
+  --accent-2-strong: #D89456;
+  --field-border: #4A4536;
+  --destructive: #E06A5E;
+  --shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.34);
+  --shadow-e2: 0 2px 6px rgba(0, 0, 0, 0.34), 0 8px 20px rgba(0, 0, 0, 0.40);
+  --shadow-e3: 0 6px 16px -4px rgba(0, 0, 0, 0.46), 0 12px 36px -8px rgba(0, 0, 0, 0.46);
+  --shadow-e4: 0 24px 64px -20px rgba(0, 0, 0, 0.60);
 }
 
 /* ─── Base ──────────────────────────────────────── */
@@ -36,6 +96,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  scroll-padding-top: 100px; /* anchor jumps (#configurator) clear the fixed header */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -63,7 +124,7 @@ body {
   font-family: var(--font-sans);
   font-weight: 400;
   font-size: 15px;
-  line-height: 1.75;
+  line-height: 1.6;
   letter-spacing: 0.01em;
   overflow-x: hidden;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
@@ -98,14 +159,41 @@ body {
 
 .heading-display {
   font-family: var(--font-serif);
-  font-weight: 300;
-  line-height: 1.05;
+  font-weight: 400; /* Cinzel ships 400–900; 300 silently fell back to 400 */
+  line-height: 1.1; /* italic descender clearance for Cormorant accent words */
   letter-spacing: -0.02em;
 }
 
 .heading-display em {
   font-style: italic;
   color: var(--accent-2);
+}
+
+/* ─── Global type hierarchy & layout rhythm ─────────────────────────────── */
+.heading-display,
+h1, h2 { text-wrap: balance; }                                /* no orphan words on headlines */
+p { text-wrap: pretty; }                                       /* nicer ragging, fewer orphans */
+.tag-mono, .font-mono { font-variant-numeric: tabular-nums; }  /* figures line up */
+
+/* Page container — 1200px, centered, 24px gutter (40px ≥ md) */
+.container-page {
+  width: 100%;
+  max-width: var(--maxw-content);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+@media (min-width: 768px) { .container-page { padding-inline: 40px; } }
+
+/* Section rhythm — 60 / 80 / 120, bottom optically heavier (×1.1) */
+.section {
+  padding-top: var(--section-base);
+  padding-bottom: calc(var(--section-base) * 1.1);
+}
+@media (min-width: 768px) {
+  .section { padding-top: var(--section-md); padding-bottom: calc(var(--section-md) * 1.1); }
+}
+@media (min-width: 1024px) {
+  .section { padding-top: var(--section-lg); padding-bottom: calc(var(--section-lg) * 1.1); }
 }
 
 /* ─── Divider ───────────────────────────────────── */
@@ -159,9 +247,13 @@ body {
   color: var(--bg);
 }
 
-/* ─── Custom Cursor (desktop only) ─────────────── */
+/* ─── Custom Cursor (desktop only) ─────────────────────────────────────────
+   Scoped behind .cursor-ready (added by CustomCursor on mount) so a JS failure
+   leaves the normal system cursor rather than no cursor at all. */
 @media (min-width: 768px) {
-  *, *::before, *::after {
+  html.cursor-ready *,
+  html.cursor-ready *::before,
+  html.cursor-ready *::after {
     cursor: none !important;
   }
 }
@@ -183,30 +275,6 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none; }
-}
-
-/* ─── Scent Map ─────────────────────────────────── */
-.scent-dot {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  transform: translate(-50%, -50%);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.25s ease;
-}
-.scent-dot:hover,
-.scent-dot.active {
-  transform: translate(-50%, -50%) scale(1.6);
-  box-shadow: 0 0 0 4px rgba(46, 61, 42, 0.15);
-}
-.scent-dot::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
 }
 
 /* ─── Drop Cap ──────────────────────────────────── */
@@ -508,8 +576,6 @@ header nav a:hover::after { width: 100%; }
     var(--line) 80%,
     transparent 100%
   );
-  background-size: 200% 100%;
-  animation: shimmer-line 4s ease-in-out infinite;
 }
 
 @keyframes shimmer-line {

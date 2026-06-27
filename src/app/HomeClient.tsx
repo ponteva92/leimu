@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useMotionValue, useTransform as useTf, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useTransform as useTf, useSpring, useReducedMotion } from "framer-motion";
 import { useStore } from "@/context/store";
 import { SCENTS } from "@/lib/scents";
 import { ScentModal } from "@/components/ScentModal";
@@ -12,6 +12,7 @@ import {
   staggerCinematic, VIEWPORT_NEAR,
 } from "@/lib/motionVariants";
 import { HeroCandle } from "@/components/hero/HeroCandle";
+import { GiftCeremony } from "@/components/GiftCeremony";
 
 /* ─── Stats Strip ───────────────────────────────── */
 function StatsStrip() {
@@ -134,13 +135,12 @@ function StoryTeaser() {
               className="inline-flex items-center gap-2 tag-mono text-[10px] text-[var(--accent)] hover:text-[var(--ink)] transition-colors mt-2 w-fit group"
             >
               {lang === "fi" ? "Lue koko tarina" : "Read full story"}
-              <motion.svg
+              <svg
                 width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-                animate={{ x: [0, 3, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                className="transition-transform duration-base group-hover:translate-x-1"
               >
                 <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-              </motion.svg>
+              </svg>
             </Link>
           </motion.div>
         </motion.div>
@@ -183,7 +183,7 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
       }}
       onMouseLeave={() => { mx.set(0.5); my.set(0.5); }}
       onClick={onOpen}
-      whileHover={{ scale: 1.03, boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}
+      whileHover={{ scale: 1.02, boxShadow: "0 24px 64px -16px rgba(26,24,20,0.22)" }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 280, damping: 30 }}
       custom={index}
@@ -193,7 +193,7 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
       }}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: false, margin: "-80px 0px" }}
+      viewport={{ once: true, margin: "-80px 0px" }}
     >
       {/* Background image */}
       <Image
@@ -298,6 +298,7 @@ function FeaturedScents() {
 /* ─── Customer Reviews Marquee ───────────────────── */
 function CustomerReviews() {
   const { lang } = useStore();
+  const reduce = useReducedMotion();
 
   const reviews = [
     {
@@ -360,8 +361,8 @@ function CustomerReviews() {
 
         <motion.div
           className="flex gap-5 items-stretch"
-          animate={{ x: ["0%", "-33.333%"] }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          animate={reduce ? undefined : { x: ["0%", "-33.333%"] }}
+          transition={reduce ? undefined : { duration: 40, repeat: Infinity, ease: "linear" }}
           style={{ width: "max-content" }}
         >
           {tripled.map((review, i) => (
@@ -630,6 +631,7 @@ export function HomeClient() {
         <StatsStrip />
         <StoryTeaser />
         <FeaturedScents />
+        <GiftCeremony />
         <CustomerReviews />
         <InstagramFeed />
         <Benefits />

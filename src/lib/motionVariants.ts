@@ -27,12 +27,12 @@ export const EASE_SPRING_MAGNETIC: Transition = {
 };
 
 /* ── Viewport presets ──────────────────────────── */
-/* VIEWPORT_ONCE: page-load entrance only (once:true)  */
-/* All others: once:false = fire on BOTH scroll down AND scroll up */
-export const VIEWPORT_ONCE  = { once: true,  margin: "-80px 0px" } as const;
-export const VIEWPORT_NEAR  = { once: false, margin: "-80px 0px" } as const;
-export const VIEWPORT_EARLY = { once: false, margin: "-40px 0px" } as const;
-export const VIEWPORT_BOTH  = { once: false, margin: "-60px 0px" } as const;
+/* Animate once on entrance. Re-firing on every scroll up/down is motion the
+   user sees too often (Emil's frequency principle), so all presets use once:true. */
+export const VIEWPORT_ONCE  = { once: true, margin: "-80px 0px" } as const;
+export const VIEWPORT_NEAR  = { once: true, margin: "-80px 0px" } as const;
+export const VIEWPORT_EARLY = { once: true, margin: "-40px 0px" } as const;
+export const VIEWPORT_BOTH  = { once: true, margin: "-60px 0px" } as const;
 
 /* ── Page transition ───────────────────────────── */
 export const pageCinematic: Variants = {
