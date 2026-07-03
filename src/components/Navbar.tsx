@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
 import { ContactCTA } from "@/components/ContactCTA";
 
@@ -63,22 +64,6 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
               className="h-[54px] w-auto object-contain transition-opacity duration-300 group-hover:opacity-85"
               priority
             />
-            {/* subtle golden shimmer sweep on hover */}
-            <motion.span
-              aria-hidden="true"
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(105deg, transparent 42%, rgba(212,169,106,0.38) 50%, transparent 58%)",
-                backgroundSize: "220% 100%",
-                mixBlendMode: "screen",
-              }}
-              variants={{
-                rest: { backgroundPosition: "-120% 0", opacity: 0 },
-                hover: { backgroundPosition: "220% 0", opacity: 1 },
-              }}
-              transition={{ duration: 0.7, ease: "easeInOut" }}
-            />
           </motion.div>
         </Link>
 
@@ -90,7 +75,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative font-mono text-[13px] tracking-[0.12em] uppercase group outline-none"
+                className="relative font-sans font-medium text-[13px] tracking-[0.08em] uppercase group outline-none"
               >
                 <motion.span
                   className={[
@@ -136,7 +121,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           {/* Language toggle */}
           <motion.button
             onClick={toggleLang}
-            className="font-mono text-[13px] tracking-[0.1em] text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="font-sans font-medium text-[13px] tracking-[0.06em] text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors cursor-pointer"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -155,29 +140,15 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           {/* Order CTA — filled */}
           <Link href="/tuotteet" passHref legacyBehavior>
             <motion.a
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-[12px] font-mono tracking-[0.14em] uppercase rounded-full bg-[var(--ink)] text-[var(--bg)] overflow-hidden relative"
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-[13px] font-sans font-medium tracking-[0.08em] uppercase rounded-full bg-[var(--ink)] text-[var(--bg)] overflow-hidden relative"
               style={{ boxShadow: "0 2px 16px rgba(26,24,20,0.14)" }}
               whileHover={{ scale: 1.04, boxShadow: "0 6px 28px rgba(26,24,20,0.22)" }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 380, damping: 22 }}
             >
-              {/* Shimmer on hover */}
-              <motion.span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(105deg, transparent 40%, rgba(212,169,106,0.22) 50%, transparent 60%)",
-                  backgroundSize: "200% 100%",
-                }}
-                initial={{ backgroundPosition: "-100% 0" }}
-                whileHover={{ backgroundPosition: "200% 0" }}
-                transition={{ duration: 0.55, ease: "easeInOut" }}
-              />
               <span className="relative z-10 flex items-center gap-1.5">
                 {lang === "fi" ? "Tilaa" : "Order"}
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                  <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-                </svg>
+                <ArrowRight size={12} weight="light" aria-hidden="true" />
               </span>
             </motion.a>
           </Link>
@@ -220,7 +191,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
                     className={[
-                      "border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors last:border-0",
+                      "border-b border-[var(--line)] py-4 font-sans font-medium text-[14px] uppercase tracking-[0.08em] transition-colors last:border-0",
                       isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)] hover:text-[var(--ink)]",
                     ].join(" ")}
                   >

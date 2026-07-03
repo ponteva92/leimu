@@ -3,17 +3,16 @@
 /* ════════════════════════════════════════════════════════════════════════
    LEIMU — Smart-reveal site header
    ------------------------------------------------------------------------
-   Unifies the Navbar + Marquee in one fixed motion.header. Tracks scroll
-   direction via useScroll + useMotionValueEvent: shown at the top and while
-   scrolling up; slides fully out (translateY -100%) while scrolling down —
-   reclaiming vertical space. Luxurious EASE_PREMIUM curve.
+   One fixed motion.header around the Navbar. Tracks scroll direction via
+   useScroll + useMotionValueEvent: shown at the top and while scrolling up;
+   slides fully out (translateY -100%) while scrolling down — reclaiming
+   vertical space. Luxurious EASE_PREMIUM curve.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useRef, useState } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { EASE_PREMIUM } from "@/lib/motionVariants";
 import { Navbar } from "@/components/Navbar";
-import { Marquee } from "@/components/Marquee";
 
 export function SiteHeader() {
   const { scrollY } = useScroll();
@@ -32,12 +31,11 @@ export function SiteHeader() {
 
   return (
     <motion.header
-      className="fixed inset-x-0 top-0 z-50"
+      className="fixed inset-x-0 top-0 z-[var(--z-header)]"
       animate={{ y: hidden ? "-100%" : "0%" }}
       transition={{ duration: 0.5, ease: EASE_PREMIUM }}
     >
       <Navbar scrolled={scrolled} />
-      <Marquee />
     </motion.header>
   );
 }

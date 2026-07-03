@@ -76,17 +76,12 @@ const config: Config = {
         slow: "400ms",
       },
       animation: {
-        marquee: "marquee 28s linear infinite",
         "spin-slow": "spin 20s linear infinite",
         "float-up": "floatUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards",
         "fade-in": "fadeIn 0.4s ease forwards",
         "scale-up": "scaleUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
       },
       keyframes: {
-        marquee: {
-          "0%": { transform: "translateX(0%)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
         floatUp: {
           "0%": { transform: "translateY(12px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
@@ -101,8 +96,9 @@ const config: Config = {
         },
       },
       transitionTimingFunction: {
+        /* Both aliases resolve to the single house curve (EASE_PREMIUM). */
         spring: "cubic-bezier(0.22, 1, 0.36, 1)",
-        premium: "cubic-bezier(0.23, 1, 0.32, 1)", /* strong ease-out (Emil) */
+        premium: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
     },
   },

@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  motion, useMotionValue, useSpring, useTransform, AnimatePresence,
-} from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useStore } from "@/context/store";
 
 /* ── Flame-path builder (same physics as CandleSVG) ──────────────────── */
@@ -28,9 +26,6 @@ function clamp(v: number, lo: number, hi: number) {
   return Math.min(Math.max(v, lo), hi);
 }
 
-/* ── Particle type ───────────────────────────────────────────────────── */
-type Particle = { id: number; x: number; y: number };
-
 /* ══════════════════════════════════════════════════════════════════════
    LEIMU Physics Flame Cursor
 
@@ -44,12 +39,27 @@ type Particle = { id: number; x: number; y: number };
        → flameSkewX (secondary tilt)
        → glowX      (glow ellipse follows lean)
 
-   Particle trail: last 10 positions emitted at ≤30 fps,
-   each fades opacity→0 and scale→0.2 over 650 ms.
+   Particle trail: a fixed pool of DOM nodes animated imperatively via
+   WAAPI on emission — zero React re-renders in the pointer path.
+
+   prefers-reduced-motion: renders nothing; the system cursor stays.
 ══════════════════════════════════════════════════════════════════════ */
+
+const POOL_SIZE = 10;
+
 export function CustomCursor() {
   const { cursorType } = useStore();
   const isMagnetic = cursorType === "magnetic";
+
+  /* ── Reduced motion — the whole flame collapses to the OS cursor ── */
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   /* ── Raw position (instant) ── */
   const mx = useMotionValue(-400);
@@ -68,20 +78,22 @@ export function CustomCursor() {
   const glowX      = useTransform(totalLean, (v) => v * 5);
   const glowOpacity = useTransform(totalLean, (v) => 0.12 + Math.abs(v) * 0.08);
 
-  /* ── Particle trail state ── */
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const pidRef     = useRef(0);
-  const lastPRef   = useRef(0);
+  /* ── Particle pool — imperative refs, no state in the pointer path ── */
+  const poolRef  = useRef<(HTMLDivElement | null)[]>([]);
+  const poolIdx  = useRef(0);
+  const lastPRef = useRef(0);
 
-  /* Enable the global cursor:none rule only while this component is mounted,
-     so a JS failure leaves the normal system cursor. */
+  /* Enable the global cursor:none rule only while the flame is live,
+     so a JS failure (or reduced motion) leaves the normal system cursor. */
   useEffect(() => {
+    if (reduced) return;
     document.documentElement.classList.add("cursor-ready");
     return () => document.documentElement.classList.remove("cursor-ready");
-  }, []);
+  }, [reduced]);
 
   /* ── Triple-harmonic RAF flicker ── */
   useEffect(() => {
+    if (reduced) return;
     let rafId: number;
     const t0 = performance.now();
     const tick = () => {
@@ -95,10 +107,11 @@ export function CustomCursor() {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [flickerOff]);
+  }, [flickerOff, reduced]);
 
   /* ── Mouse tracking + velocity → rawLean + particle emission ── */
   useEffect(() => {
+    if (reduced) return;
     let prevX = 0;
     let prevT = performance.now();
 
@@ -114,50 +127,55 @@ export function CustomCursor() {
       prevT = now;
       rawLean.set(clamp(-vx * 0.42, -1.2, 1.2));
 
-      /* Particle emission — throttled to ~30 fps */
+      /* Particle emission — throttled to ~30 fps, WAAPI on pooled nodes */
       if (now - lastPRef.current > 30) {
         lastPRef.current = now;
-        setParticles((prev) => [
-          ...prev.slice(-9),
-          { id: ++pidRef.current, x: e.clientX, y: e.clientY },
-        ]);
+        const node = poolRef.current[poolIdx.current];
+        poolIdx.current = (poolIdx.current + 1) % POOL_SIZE;
+        if (node) {
+          node.style.left = `${e.clientX}px`;
+          node.style.top  = `${e.clientY}px`;
+          node.animate(
+            [
+              { opacity: 0.38, transform: "translate(-50%, -50%) scale(1)" },
+              { opacity: 0, transform: "translate(-50%, calc(-50% - 12px)) scale(0.15)" },
+            ],
+            { duration: 650, easing: "ease-out", fill: "forwards" },
+          );
+        }
       }
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
-  }, [mx, my, rawLean]);
+  }, [mx, my, rawLean, reduced]);
+
+  if (reduced) return null;
 
   return (
     /* hidden on mobile (no hover), shown md+ */
     <div
-      className="hidden md:block fixed inset-0 pointer-events-none z-[9999]"
+      className="hidden md:block fixed inset-0 pointer-events-none z-[var(--z-cursor)]"
       aria-hidden="true"
     >
-      {/* ── Smoke / scent-trail particles ─────────────────────────── */}
-      <AnimatePresence>
-        {particles.map((p) => (
-          <motion.div
-            key={p.id}
-            className="fixed pointer-events-none rounded-full"
-            style={{
-              left: p.x,
-              top:  p.y,
-              translateX: "-50%",
-              translateY: "-50%",
-              width:  7,
-              height: 9,
-              background:
-                "radial-gradient(ellipse at 50% 80%, rgba(255,180,40,0.38) 0%, transparent 80%)",
-              filter: "blur(2.5px)",
-            }}
-            initial={{ scale: 1, opacity: 0.38, y: 0 }}
-            animate={{ scale: 0.15, opacity: 0, y: -12 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.65, ease: "easeOut" }}
-          />
-        ))}
-      </AnimatePresence>
+      {/* ── Scent-trail particle pool ──────────────────────────────── */}
+      {Array.from({ length: POOL_SIZE }).map((_, i) => (
+        <div
+          key={i}
+          ref={(el) => { poolRef.current[i] = el; }}
+          className="fixed pointer-events-none rounded-full"
+          style={{
+            left: -400,
+            top: -400,
+            width: 7,
+            height: 9,
+            opacity: 0,
+            background:
+              "radial-gradient(ellipse at 50% 80%, rgba(255,180,40,0.38) 0%, transparent 80%)",
+            filter: "blur(2.5px)",
+          }}
+        />
+      ))}
 
       {/* ── Flame cursor ──────────────────────────────────────────── */}
       <motion.div

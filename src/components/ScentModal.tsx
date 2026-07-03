@@ -2,8 +2,10 @@
 
 import { useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useStore } from "@/context/store";
+import { notesLine } from "@/lib/scents";
 
 const backdrop = {
   hidden:  { opacity: 0 },
@@ -16,13 +18,13 @@ const backdrop = {
  * Damping ratio ~0.55 => card overshoots ~4% and settles in ~380ms.
  */
 const card = {
-  hidden:  { opacity: 0, scale: 0.92, y: 24, filter: "blur(8px)" },
+  hidden:  { opacity: 0, scale: 0.92, y: 24 },
   visible: {
-    opacity: 1, scale: 1, y: 0, filter: "blur(0px)",
+    opacity: 1, scale: 1, y: 0,
     transition: { type: "spring" as const, stiffness: 280, damping: 30 },
   },
   exit: {
-    opacity: 0, scale: 0.96, y: 10, filter: "blur(6px)",
+    opacity: 0, scale: 0.96, y: 10,
     transition: { duration: 0.18, ease: [0.7, 0, 0.84, 0] },
   },
 };
@@ -63,7 +65,7 @@ export function ScentModal() {
     <AnimatePresence>
       {modalScent && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 md:p-8"
           variants={backdrop}
           initial="hidden"
           animate="visible"
@@ -109,15 +111,15 @@ export function ScentModal() {
                   <p className="font-serif text-3xl italic text-white leading-none">
                     {lang === "fi" ? modalScent.name : modalScent.nameEn}
                   </p>
-                  <p className="tag-mono text-[9px] text-white/60 mt-1">
-                    {lang === "fi" ? modalScent.profile : modalScent.profileEn}
+                  <p className="tag-mono text-white/60 mt-1">
+                    {notesLine(lang === "fi" ? modalScent.profile : modalScent.profileEn)}
                   </p>
                 </div>
               </div>
 
               <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="tag-mono text-[9px] mb-2 text-white/55">
+                  <p className="tag-mono mb-2 text-white/55">
                     {lang === "fi" ? "Tuoksu" : "Scent"}
                   </p>
                   <p className="text-sm text-white/80 leading-relaxed">
@@ -126,13 +128,13 @@ export function ScentModal() {
                 </div>
 
                 <div>
-                  <p className="tag-mono text-[9px] mb-2 text-white/55">
+                  <p className="tag-mono mb-2 text-white/55">
                     {lang === "fi" ? "Materiaalit" : "Materials"}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {modalScent.tags.map((tag) => (
                       <span key={tag}
-                        className="tag-mono text-[9px] px-2.5 py-1 rounded-full border border-white/15 text-white/75">
+                        className="tag-mono text-[10px] px-2.5 py-1 rounded-full border border-white/15 text-white/75">
                         {tag}
                       </span>
                     ))}
@@ -145,7 +147,7 @@ export function ScentModal() {
                     { label: lang === "fi" ? "Hinta / kpl" : "Price / ea", value: modalScent.price },
                   ].map(({ label, value }) => (
                     <div key={label}>
-                      <p className="tag-mono text-[8px] mb-0.5 text-white/55">{label}</p>
+                      <p className="tag-mono text-[10px] mb-0.5 text-white/55">{label}</p>
                       <p className="font-serif text-xl italic text-white">{value}</p>
                     </div>
                   ))}
@@ -153,9 +155,10 @@ export function ScentModal() {
 
                 <button
                   onClick={handleAddAndClose}
-                  className="mt-auto w-full py-3.5 bg-[var(--accent-2)] text-[#1A1814] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-white transition-colors duration-300"
+                  className="mt-auto w-full py-3.5 bg-[var(--accent-2)] text-[#1A1814] font-sans font-medium text-[13px] tracking-[0.08em] uppercase rounded-full hover:bg-white transition-colors duration-300 flex items-center justify-center gap-2"
                 >
-                  {lang === "fi" ? "Valitse tuoksu" : "Choose scent"} &rarr;
+                  {lang === "fi" ? "Valitse tuoksu" : "Choose scent"}
+                  <ArrowRight size={14} weight="light" aria-hidden="true" />
                 </button>
               </div>
             </div>

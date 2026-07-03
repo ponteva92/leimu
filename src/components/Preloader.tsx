@@ -10,12 +10,13 @@
  * then lifts on the Premium Ease curve.
  */
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const EASE_PREMIUM = [0.22, 1, 0.36, 1] as const;
 
 export function Preloader() {
   const [done, setDone] = useState(false);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +58,7 @@ export function Preloader() {
     <AnimatePresence>
       {!done && (
         <motion.div
-          className="fixed inset-0 z-[10000] flex items-center justify-center"
+          className="fixed inset-0 z-[var(--z-preloader)] flex items-center justify-center"
           style={{ backgroundColor: "var(--bg)" }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, filter: "blur(8px)" }}
@@ -67,9 +68,13 @@ export function Preloader() {
           <div className="flex flex-col items-center gap-7">
             <motion.span
               className="font-serif text-3xl md:text-4xl tracking-[0.34em] text-[var(--ink)]"
-              initial={{ opacity: 0.35 }}
-              animate={{ opacity: [0.35, 1, 0.35] }}
-              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+              initial={{ opacity: reduce ? 1 : 0.35 }}
+              animate={reduce ? { opacity: 1 } : { opacity: [0.35, 1, 0.35] }}
+              transition={
+                reduce
+                  ? { duration: 0.3 }
+                  : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
+              }
             >
               LEIMU
             </motion.span>

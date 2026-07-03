@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 /* ─── Design Tokens ─────────────────────────────────────────────────
-   Fonts (--font-serif Cinzel · --font-sans Raleway · --font-mono Space
-   Mono) are injected on <html> by next/font in layout.tsx — single
-   source of truth, self-hosted, zero FOUT/CLS. Do not redefine here.     */
+   Fonts (--font-serif Cormorant Garamond · --font-sans Instrument Sans
+   · --font-mono Space Mono) are injected on <html> by next/font in
+   layout.tsx — single source of truth, self-hosted, zero FOUT/CLS.
+   Do not redefine here.                                                  */
 :root {
   --bg: #F7F2EA;
   --bg-2: #EDE7DB;
@@ -14,7 +15,7 @@
   --ink-soft: #4A463D;
   --ink-mute: #655F4F; /* WCAG AA: 5.7:1 on --bg, 5.2:1 on --bg-2, 4.6:1 on --bg-3 (was #8C8577 ≈ 3.0:1, failed) */
   --line: #D8D0BF;
-  --accent: #2E3D2A;
+  --accent: #2E3D2A;   /* reserved: semantic success + deep foliage surfaces only — amber is THE brand accent */
   --accent-2: #C47A3A;
   --accent-3: #8B6F47;
   --accent-warm: #C47A3A;
@@ -47,11 +48,12 @@
   --shadow-e4: 0 24px 64px -20px rgba(26, 24, 20, 0.22);
   --shadow-glow: 0 8px 28px -6px rgba(196, 122, 58, 0.28);
 
-  /* ── Motion tokens (ease-out default) ── */
+  /* ── Motion tokens — ONE grammar. --ease-out mirrors EASE_PREMIUM in
+     lib/motionVariants.ts; CSS and framer share the same curve. ── */
   --dur-fast: 150ms;
   --dur-base: 250ms;
   --dur-slow: 400ms;
-  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in:     cubic-bezier(0.4, 0, 1, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -61,6 +63,13 @@
   --section-md: 80px;
   --section-base: 60px;
   --maxw-content: 1200px;
+
+  /* ── Z-scale — systemic layers only; components never invent values ── */
+  --z-header: 50;
+  --z-modal: 100;
+  --z-grain: 110;
+  --z-cursor: 120;
+  --z-preloader: 130;
 }
 
 /* ── Dark tokens — defined and ready, but OPT-IN ──────────────────────────
@@ -96,7 +105,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  scroll-padding-top: 100px; /* anchor jumps (#configurator) clear the fixed header */
+  scroll-padding-top: 88px; /* anchor jumps (#configurator) clear the fixed header */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -123,9 +132,8 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   font-weight: 400;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
-  letter-spacing: 0.01em;
   overflow-x: hidden;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
@@ -135,37 +143,27 @@ body {
 .font-serif { font-family: var(--font-serif); }
 .font-mono  { font-family: var(--font-mono); }
 
-/* Editorial italic accent ────────────────────────────────────────────
-   Cinzel (the display serif) has no true italic, so any italicised serif
-   text is routed to Cormorant Garamond's elegant italics. One DRY rule
-   covers className utilities (`font-serif italic`), nested accent words
-   inside serif headings, heading <em>, and the drop-cap — no per-call-site
-   edits. Compound specificity (0,2,0) beats `.font-serif`.                */
-.font-serif.italic,
-.font-serif .italic,
-.heading-display em,
-.drop-cap::first-letter {
-  font-family: var(--font-serif-accent);
-  font-style: italic;
-}
-
 .tag-mono {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.6875rem; /* 11px floor — labels stay legible */
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-mute);
 }
 
+/* Display serif — Cormorant Garamond carries both roman and true italic.
+   Medium weight: Cormorant's strokes are finer than a Trajan-style face,
+   so 500 holds presence at display sizes without going heavy. */
 .heading-display {
   font-family: var(--font-serif);
-  font-weight: 400; /* Cinzel ships 400–900; 300 silently fell back to 400 */
-  line-height: 1.1; /* italic descender clearance for Cormorant accent words */
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  line-height: 1.1; /* italic descender clearance */
+  letter-spacing: -0.01em;
 }
 
 .heading-display em {
   font-style: italic;
+  font-weight: 500;
   color: var(--accent-2);
 }
 
@@ -196,19 +194,24 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
   .section { padding-top: var(--section-lg); padding-bottom: calc(var(--section-lg) * 1.1); }
 }
 
-/* ─── Divider ───────────────────────────────────── */
+/* ─── Divider — hairline that warms to amber at its centre ───────── */
 .divider {
   width: 100%;
   height: 1px;
-  background-color: var(--line);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line) 20%,
+    var(--accent-2) 50%,
+    var(--line) 80%,
+    transparent 100%
+  );
 }
 
 /* ─── Ultra-premium glass ───────────────────────────────────────────
-   One canonical recipe (matches the brief's dark frosted spec). Used on
-   floating panels and modals that sit over imagery or a dark scrim, so
-   white/90 text stays legible. blur-2xl = 40px.                          */
-.glass,
-.glass-dark {
+   One canonical recipe. Used on floating panels and modals that sit over
+   imagery or a dark scrim, so white/90 text stays legible. blur = 40px.  */
+.glass {
   background: rgba(0, 0, 0, 0.10);
   backdrop-filter: blur(40px) saturate(1.4);
   -webkit-backdrop-filter: blur(40px) saturate(1.4);
@@ -224,7 +227,7 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
 .grain-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9990;
+  z-index: var(--z-grain);
   pointer-events: none;
   mix-blend-mode: overlay;
   opacity: 0.05;
@@ -265,152 +268,27 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
   border-radius: 2px;
 }
 
-/* ─── Marquee ───────────────────────────────────── */
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 32s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee { animation: none; }
-}
+/* ═══════════════════════════════════════════════════════════════
+   MOTION LAYER — one grammar (var(--ease-out) = EASE_PREMIUM).
+   Each rule earns its place: feedback, hierarchy, or state change.
+═══════════════════════════════════════════════════════════════ */
 
-/* ─── Drop Cap ──────────────────────────────────── */
-.drop-cap::first-letter {
-  font-family: var(--font-serif-accent);
-  font-size: 5.5rem;
-  font-style: italic;
-  font-weight: 500;
-  color: var(--accent-2);
-  float: left;
-  line-height: 0.82;
-  margin-right: 0.08em;
-  margin-top: 0.04em;
-}
+/* Interactive elements share the house curve by default. */
+a, button { transition-timing-function: var(--ease-out); }
 
-/* ─── Pill button ───────────────────────────────── */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.45rem 1.1rem;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.pill:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(46, 61, 42, 0.05);
-}
-.pill.active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
-}
-
-/* ─── Material row hover ───────────────────────── */
+/* Index rows (ScentIndex, tarina lists): hover slide = "this row is live". */
 .material-row {
-  transition: padding-left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: padding-left 0.35s var(--ease-out);
 }
 .material-row:hover {
   padding-left: 2rem;
 }
 
-/* ─── Nav blur ──────────────────────────────────── */
-.nav-scrolled {
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  background: rgba(247, 242, 234, 0.85) !important;
-  box-shadow: 0 1px 0 var(--line);
-}
-
-/* ─── Rotating badge ────────────────────────────── */
-@keyframes badge-spin {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.badge-spin {
-  animation: badge-spin 18s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .badge-spin { animation: none; }
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   PREMIUM MOTION LAYER — LEIMU
-   Principles: soft, slow, organic — no bounce, no cheap snaps.
-   Easing: cubic-bezier(0.25, 0.46, 0.45, 0.94) throughout.
-═══════════════════════════════════════════════════════════════ */
-
-/* ─── Transitions: global defaults ─────────────────────────── */
-a, button { transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-
-/* ─── Pill / CTA button: soft scale + warm shadow ──────────── */
-.pill {
-  transition: border-color 0.3s ease,
-              color        0.3s ease,
-              background   0.3s ease,
-              transform    0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow   0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.pill:hover {
-  transform: scale(1.032);
-  box-shadow: 0 4px 18px rgba(196, 122, 58, 0.14);
-}
-.pill:active { transform: scale(0.985); }
-
-/* ─── Primary CTA (dark filled pill) ───────────────────────── */
-.cta-primary {
-  transition: transform    0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow   0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background   0.3s ease;
-}
-.cta-primary:hover {
-  transform: scale(1.032);
-  box-shadow: 0 8px 28px rgba(26, 24, 20, 0.22);
-}
-.cta-primary:active { transform: scale(0.988); }
-
-/* ─── Product / scent card hover: lift + shadow ─────────────── */
-.card-lift {
-  transition: transform  0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-.card-lift:hover {
-  transform: translateY(-7px) scale(1.008);
-  box-shadow: 0 20px 52px rgba(26, 24, 20, 0.13);
-}
-
-/* ─── Image zoom on card hover ──────────────────────────────── */
-.img-zoom {
-  overflow: hidden;
-}
-.img-zoom img,
-.img-zoom .next-image-wrapper {
-  transition: transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-.img-zoom:hover img,
-.img-zoom:hover .next-image-wrapper {
-  transform: scale(1.045);
-}
-
-/* ─── Input / textarea focus glow ───────────────────────────── */
+/* Input focus: state change made visible. */
 input,
 textarea {
   transition: border-color 0.3s ease,
-              box-shadow   0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+              box-shadow   0.3s var(--ease-out);
 }
 input:focus-visible,
 textarea:focus-visible {
@@ -419,19 +297,7 @@ textarea:focus-visible {
   box-shadow: 0 0 0 3.5px rgba(196, 122, 58, 0.18);
 }
 
-/* ─── Newsletter CTA gradient shift ─────────────────────────── */
-.btn-gradient {
-  background-size: 200% 100%;
-  background-position: 0% 0%;
-  transition: background-position 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 0.4s ease;
-}
-.btn-gradient:hover {
-  background-position: 100% 0%;
-  box-shadow: 0 6px 22px rgba(196, 122, 58, 0.22);
-}
-
-/* ─── Footer link: underline slide-in ──────────────────────── */
+/* Footer link underline: slide-in feedback. */
 footer a {
   position: relative;
   display: inline-block;
@@ -447,11 +313,11 @@ footer a::after {
   height: 1px;
   background: currentColor;
   opacity: 0.55;
-  transition: width 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: width 0.38s var(--ease-out);
 }
 footer a:hover::after { width: 100%; }
 
-/* ─── Nav link underline ────────────────────────────────────── */
+/* Header nav link underline. */
 header nav a {
   position: relative;
 }
@@ -463,196 +329,14 @@ header nav a::after {
   width: 0%;
   height: 1px;
   background: var(--ink);
-  transition: width 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: width 0.32s var(--ease-out);
 }
 header nav a:hover::after { width: 100%; }
 
-/* ─── Signature quote letter-spacing reveal ─────────────────── */
-@keyframes quote-emerge {
-  from { letter-spacing: -0.01em; opacity: 0; }
-  to   { letter-spacing:  0.02em; opacity: 1; }
-}
-.quote-animate {
-  opacity: 0;
-  animation: quote-emerge 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-/* ─── Scroll-reveal utility (Intersection Observer) ─────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity  0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              transform 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.reveal-delay-1 { transition-delay: 0.10s; }
-.reveal-delay-2 { transition-delay: 0.22s; }
-.reveal-delay-3 { transition-delay: 0.34s; }
-.reveal-delay-4 { transition-delay: 0.46s; }
-
-/* ─── Parallax hint (driven by JS scroll) ───────────────────── */
-.parallax-slow { will-change: transform; }
-
-/* ─── reduced-motion: kill all extras ──────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .card-lift:hover   { transform: none; }
-  .pill:hover        { transform: none; }
-  .cta-primary:hover { transform: none; }
-  .img-zoom:hover img,
-  .img-zoom:hover .next-image-wrapper { transform: none; }
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .quote-animate { animation: none; opacity: 1; }
-}
-
 /* ═══════════════════════════════════════════════════════
-   PREMIUM ANIMATION SYSTEM v2
-   High-end motion layer — consistent across all pages
+   TARINA HERO ROTATE-REVEAL — .t1 / .t2 heading lines
+   (used by app/tarina/TarinaClient.tsx; house curve, not linear)
 ═══════════════════════════════════════════════════════ */
-
-/* ── Scroll-reveal utility ──────────────────────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(32px);
-  filter: blur(5px);
-  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-              filter 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.reveal.in-view {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
-}
-
-/* ── Heading letter-spacing animation ───────────────── */
-@keyframes heading-breathe {
-  0%, 100% { letter-spacing: -0.01em; }
-  50%       { letter-spacing:  0.01em; }
-}
-.heading-display {
-  animation: heading-breathe 8s ease-in-out infinite;
-}
-
-/* Recompose: headings hold still. Perpetual letter-spacing breathe on every
-   heading is unmotivated motion; pages read calmer without it. Opt-in per page
-   via .home-calm / .calm-headings so nothing else changes globally. */
-.home-calm .heading-display,
-.calm-headings .heading-display {
-  animation: none;
-}
-
-/* ── Image zoom container ────────────────────────────── */
-.img-zoom-wrap {
-  overflow: hidden;
-}
-.img-zoom-wrap img,
-.img-zoom-wrap > div {
-  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-.img-zoom-wrap:hover img,
-.img-zoom-wrap:hover > div {
-  transform: scale(1.045);
-}
-
-/* ── Magnetic button base ────────────────────────────── */
-.magnetic {
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-
-/* ── Section separator shimmer ──────────────────────── */
-.divider {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--line) 20%,
-    var(--accent) 50%,
-    var(--line) 80%,
-    transparent 100%
-  );
-}
-
-@keyframes shimmer-line {
-  0%, 100% { background-position: 100% 0; }
-  50%       { background-position: 0% 0; }
-}
-
-/* ── Tag mono micro-lift on hover ────────────────────── */
-.tag-mono {
-  transition: letter-spacing 0.3s ease, opacity 0.2s ease;
-}
-a:hover > .tag-mono,
-button:hover > .tag-mono {
-  letter-spacing: 0.18em;
-}
-
-/* ── Frosted glass nav (applied via inline style) ────── */
-.nav-blur {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background-color: rgba(247, 242, 234, 0.82);
-}
-
-/* ── Card 3D context ─────────────────────────────────── */
-.card-3d {
-  transform-style: preserve-3d;
-  perspective: 800px;
-}
-
-/* ── Ambient glow pulse (hero logo, animated elements) ─ */
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50%       { opacity: 0.55; transform: scale(1.04); }
-}
-
-/* ── Fade-up stagger CSS fallback ────────────────────── */
-.stagger-item { opacity: 0; }
-.stagger-item.in-view {
-  animation: fade-up-item 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes fade-up-item {
-  from { opacity: 0; transform: translateY(24px); filter: blur(4px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
-}
-
-/* ── Smooth section transitions ─────────────────────── */
-section {
-  will-change: auto;
-}
-
-/* ── Reduced motion — respect OS preference ────────────
-   All blur/translate animations collapse to simple fade  */
-@media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .stagger-item.in-view,
-  .heading-display,
-  .img-zoom-wrap img,
-  .tag-mono,
-  .divider {
-    animation: none !important;
-    transition: opacity 0.3s ease !important;
-    transform: none !important;
-    filter: none !important;
-    letter-spacing: inherit !important;
-    background-position: 0% 0 !important;
-  }
-  .reveal { opacity: 0; }
-  .reveal.in-view { opacity: 1; }
-}
-
-/* ═══════════════════════════════════════════════════════
-   HERO TEXT ROTATE-REVEAL SYSTEM
-   .t1 / .t2 / .t3  — heading lines (rotate + fade)
-   .hero-text        — body copy and CTAs (plain fade)
-   transform-origin: left bottom — pivot at baseline-left
-═══════════════════════════════════════════════════════ */
-
 @keyframes hero-fadein {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -667,8 +351,8 @@ section {
   display: block;
   transform-origin: left bottom;
   animation-name: hero-fadein, hero-rotate;
-  animation-duration: 0.8s, 0.5s;
-  animation-timing-function: linear, linear;
+  animation-duration: 0.8s, 0.6s;
+  animation-timing-function: var(--ease-out), var(--ease-out);
   animation-delay: 0.5s, 0.5s;
   animation-fill-mode: both, both;
 }
@@ -677,39 +361,20 @@ section {
   display: block;
   transform-origin: left bottom;
   animation-name: hero-fadein, hero-rotate;
-  animation-duration: 0.8s, 0.5s;
-  animation-timing-function: linear, linear;
+  animation-duration: 0.8s, 0.6s;
+  animation-timing-function: var(--ease-out), var(--ease-out);
   animation-delay: 0.7s, 0.7s;
   animation-fill-mode: both, both;
 }
 
-.t3 {
-  display: block;
-  transform-origin: left bottom;
-  animation-name: hero-fadein, hero-rotate;
-  animation-duration: 0.8s, 0.5s;
-  animation-timing-function: linear, linear;
-  animation-delay: 0.9s, 0.9s;
-  animation-fill-mode: both, both;
-}
-
-.hero-text {
-  opacity: 0;
-  animation-name: hero-fadein;
-  animation-duration: 1s;
-  animation-timing-function: ease-in;
-  animation-delay: 1.4s;
-  animation-fill-mode: both;
-}
-
+/* ── Reduced motion — movement collapses, comprehension stays ── */
 @media (prefers-reduced-motion: reduce) {
-  .t1, .t2, .t3 {
+  .material-row,
+  .material-row:hover { padding-left: 0; transition: none; }
+  .t1, .t2 {
     animation-name: hero-fadein;
     animation-duration: 0.5s;
     animation-delay: 0.2s;
     transform: none;
-  }
-  .hero-text {
-    animation-delay: 0.5s;
   }
 }

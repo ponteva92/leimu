@@ -44,19 +44,22 @@ export const pageCinematic: Variants = {
   exit: { opacity: 0, transition: { duration: 0.55, ease: EASE_IN_EXPO } },
 };
 
-/* ── Section reveal — deep cinematic ──────────── */
+/* ── Section reveal ────────────────────────────────────────────────
+   Blur budget: entrance blur is reserved for the hero and heading
+   variants below. Sections and items enter on opacity + translate only
+   (cheaper on mobile, and the headings keep their hierarchy). */
 export const sectionCinematic: Variants = {
-  hidden:  { opacity: 0, y: 60, filter: "blur(12px)", scale: 0.98 },
+  hidden:  { opacity: 0, y: 60 },
   visible: {
-    opacity: 1, y: 0, filter: "blur(0px)", scale: 1,
+    opacity: 1, y: 0,
     transition: { duration: 1.05, ease: EASE_FILM },
   },
 };
 
 export const sectionReveal: Variants = {
-  hidden:  { opacity: 0, y: 40, filter: "blur(6px)" },
+  hidden:  { opacity: 0, y: 40 },
   visible: {
-    opacity: 1, y: 0, filter: "blur(0px)",
+    opacity: 1, y: 0,
     transition: { duration: 0.95, ease: EASE_OUT_QUART },
   },
 };
@@ -96,17 +99,17 @@ export const staggerContainerFast: Variants = {
 
 /* ── Child items ───────────────────────────────── */
 export const fadeUpItem: Variants = {
-  hidden:  { opacity: 0, y: 24, filter: "blur(4px)" },
+  hidden:  { opacity: 0, y: 24 },
   visible: {
-    opacity: 1, y: 0, filter: "blur(0px)",
+    opacity: 1, y: 0,
     transition: { duration: 0.75, ease: EASE_OUT_QUART },
   },
 };
 
 export const fadeUpCinematic: Variants = {
-  hidden:  { opacity: 0, y: 40, filter: "blur(8px)", scale: 0.98 },
+  hidden:  { opacity: 0, y: 40 },
   visible: {
-    opacity: 1, y: 0, filter: "blur(0px)", scale: 1,
+    opacity: 1, y: 0,
     transition: { duration: 0.9, ease: EASE_FILM },
   },
 };
@@ -121,9 +124,9 @@ export const fadeUp: Variants = {
 
 /* ── Image slow zoom ───────────────────────────── */
 export const imageSlowZoom: Variants = {
-  hidden:  { opacity: 0, scale: 1.08, filter: "blur(8px)" },
+  hidden:  { opacity: 0, scale: 1.08 },
   visible: {
-    opacity: 1, scale: 1, filter: "blur(0px)",
+    opacity: 1, scale: 1,
     transition: { duration: 1.6, ease: EASE_FILM },
   },
 };
@@ -165,26 +168,26 @@ export const ctaMagneticCinematic = {
 };
 
 export const scaleIn: Variants = {
-  hidden:  { opacity: 0, scale: 0.88, filter: "blur(4px)" },
+  hidden:  { opacity: 0, scale: 0.9 },
   visible: {
-    opacity: 1, scale: 1, filter: "blur(0px)",
+    opacity: 1, scale: 1,
     transition: { duration: 0.65, ease: EASE_OUT_EXPO },
   },
 };
 
 /* ── Slide variants ────────────────────────────── */
 export const slideFromLeft: Variants = {
-  hidden:  { opacity: 0, x: -50, filter: "blur(6px)" },
+  hidden:  { opacity: 0, x: -50 },
   visible: {
-    opacity: 1, x: 0, filter: "blur(0px)",
+    opacity: 1, x: 0,
     transition: { duration: 0.9, ease: EASE_FILM },
   },
 };
 
 export const slideFromRight: Variants = {
-  hidden:  { opacity: 0, x: 50, filter: "blur(6px)" },
+  hidden:  { opacity: 0, x: 50 },
   visible: {
-    opacity: 1, x: 0, filter: "blur(0px)",
+    opacity: 1, x: 0,
     transition: { duration: 0.9, ease: EASE_FILM },
   },
 };

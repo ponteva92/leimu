@@ -1,5 +1,14 @@
 import type { Scent } from "@/types";
 
+/* "Metsä · Pihka · Sammal" → "Metsä, pihka, sammal" — one calm notes line
+   for display surfaces (index rows, modal), no separator-dot strips. */
+export function notesLine(profile: string): string {
+  return profile
+    .split(" · ")
+    .map((w, i) => (i === 0 ? w : w.toLowerCase()))
+    .join(", ");
+}
+
 export const SCENTS: Scent[] = [
   {
     id: "havu",

@@ -30,6 +30,7 @@ import {
   useTransform,
   useReducedMotion,
 } from "framer-motion";
+import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
 import {
   headingReveal,
@@ -54,12 +55,12 @@ const COPY = {
     fi: [
       "Jokaiseen LEIMU Candles -tilaukseen tulee mukaan musta kiitoskortti, joka sisältää sinun omavalintaisen viestin. Viesti on käsinkirjoitettu kultaisella musteella, ja se sinetöidään upealla LEIMUn logolla varustetulla kultaisella vahasinetillä.",
       "Tämän ansiosta LEIMU Candles sopii täydellisesti esim. pikkujoulu- tai yrityslahjaksi. Voit myös hemmotella itseäsi ylellisellä kokemuksella, jolloin voimme kirjoittaa sinulle yllätysviestin!",
-      "LEIMU Candles on ylellinen elämys lahjansaajalle, jollaista muut kynttilät eivät tarjoa – oli saajana sitten läheinen tai sinä itse. Mieleenpainuva lahja, koska sinä olet sen ansainnut.",
+      "LEIMU Candles on ylellinen elämys lahjansaajalle, jollaista muut kynttilät eivät tarjoa, oli saajana sitten läheinen tai sinä itse. Mieleenpainuva lahja, koska sinä olet sen ansainnut.",
     ],
     en: [
       "Every LEIMU Candles order arrives with a black thank-you card carrying a message of your choosing. It is handwritten in gold ink and closed with a golden wax seal pressed with the LEIMU mark.",
-      "That makes LEIMU Candles a flawless gift for a Christmas party or a corporate occasion. Or treat yourself to the indulgence — and let us write you a surprise message.",
-      "LEIMU Candles is a luxurious experience for whoever receives it, the kind ordinary candles never offer — whether that's someone close to you, or you. An unforgettable gift, because you have earned it.",
+      "That makes LEIMU Candles a flawless gift for a Christmas party or a corporate occasion. Or treat yourself to the indulgence, and let us write you a surprise message.",
+      "LEIMU Candles is a luxurious experience for whoever receives it, the kind ordinary candles never offer, whether that's someone close to you, or you. An unforgettable gift, because you have earned it.",
     ],
   },
   details: [
@@ -68,7 +69,6 @@ const COPY = {
     { fi: "Oma viestisi", en: "Your own words" },
   ],
   cta: { fi: "Tee tilaus", en: "Order yours" },
-  caption: { fi: "Käsinkirjoitettu · Kultainen vahasinetti", en: "Handwritten · Gold wax seal" },
   alt: {
     fi: "Musta kirjekuori, jonka sulkee kultainen LEIMU Candles -vahasinetti",
     en: "Black envelope closed with a golden LEIMU Candles wax seal",
@@ -170,12 +170,6 @@ export function GiftCeremony({ ctaHref = "/tuotteet#configurator", className = "
               style={{ boxShadow: "inset 0 0 90px 24px rgba(0,0,0,0.45)" }}
             />
 
-            {/* Glass caption pill */}
-            <div className="absolute bottom-5 left-5 right-5 flex">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-md border border-white/20 tag-mono text-[8px] !text-white/90">
-                ✦ {COPY.caption[lang]}
-              </span>
-            </div>
           </div>
         </motion.div>
 
@@ -186,13 +180,13 @@ export function GiftCeremony({ ctaHref = "/tuotteet#configurator", className = "
           whileInView="visible"
           viewport={VIEWPORT_NEAR}
         >
-          <motion.p variants={fadeUpItem} className="tag-mono text-[var(--accent)] mb-3">
+          <motion.p variants={fadeUpItem} className="tag-mono text-[var(--accent-2-strong)] mb-3">
             {COPY.eyebrow[lang]}
           </motion.p>
 
           <motion.h2
             variants={headingReveal}
-            className="heading-display text-4xl md:text-5xl text-[var(--ink)] mb-8"
+            className="heading-display text-5xl md:text-6xl text-[var(--ink)] mb-8"
           >
             {COPY.headingLead[lang]}
             <br />
@@ -217,15 +211,12 @@ export function GiftCeremony({ ctaHref = "/tuotteet#configurator", className = "
             className="mt-9 flex flex-wrap gap-x-8 gap-y-4 pt-6 border-t border-[var(--line)]"
           >
             {COPY.details.map((d) => (
-              <div key={d.fi} className="flex items-center gap-2.5">
-                <span
-                  aria-hidden="true"
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent-2)]"
-                />
-                <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-[var(--ink-mute)]">
-                  {d[lang]}
-                </span>
-              </div>
+              <span
+                key={d.fi}
+                className="font-mono text-[11px] tracking-[0.14em] uppercase text-[var(--ink-mute)]"
+              >
+                {d[lang]}
+              </span>
             ))}
           </motion.div>
 
@@ -233,18 +224,10 @@ export function GiftCeremony({ ctaHref = "/tuotteet#configurator", className = "
             <motion.div variants={fadeUpItem} className="mt-10">
               <Link
                 href={ctaHref}
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--ink)] text-[var(--bg)] font-sans font-medium text-[13px] tracking-[0.08em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200"
               >
                 {COPY.cta[lang]}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path
-                    d="M2 6h8M6 2l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <ArrowRight size={13} weight="light" aria-hidden="true" />
               </Link>
             </motion.div>
           )}

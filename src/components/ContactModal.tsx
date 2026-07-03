@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "@phosphor-icons/react";
 import { submitForm } from "@/lib/formSubmit";
 
 export function ContactModal({ onClose }: { onClose: () => void }) {
@@ -36,7 +37,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
+        className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 md:p-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -61,7 +62,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--line)]">
             <div>
-              <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">LEIMU by Shane</p>
+              <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">LEIMU by Shane</p>
               <h2 className="font-serif text-xl italic text-[var(--ink)]">Yhteydenottopyyntö</h2>
             </div>
             <button
@@ -112,24 +113,24 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
                 >
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Nimi</label>
+                      <label className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Nimi</label>
                       <input required value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting}
                         className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
                     </div>
                     <div>
-                      <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Sähköposti</label>
+                      <label className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Sähköposti</label>
                       <input type="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={isSubmitting}
                         className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors disabled:opacity-50"/>
                     </div>
                   </div>
                   <div>
-                    <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Mitä asia koskee?</label>
+                    <label className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Mitä asia koskee?</label>
                     <input required value={subject} onChange={e => setSubject(e.target.value)} disabled={isSubmitting}
                       placeholder="Esim. tilaus, yhteistyö, kysymys..."
                       className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors placeholder:text-[var(--ink-mute)] disabled:opacity-50"/>
                   </div>
                   <div>
-                    <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Kerro tarkemmin</label>
+                    <label className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-2">Kerro tarkemmin</label>
                     <textarea required value={message} onChange={e => setMessage(e.target.value)} disabled={isSubmitting}
                       rows={4}
                       className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed disabled:opacity-50"/>
@@ -141,7 +142,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
                       </p>
                     )}
                     <button type="submit" disabled={isSubmitting}
-                      className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-50 flex justify-center items-center gap-2">
+                      className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-sans font-medium text-[13px] tracking-[0.08em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-50 flex justify-center items-center gap-2">
                       {isSubmitting ? (
                         <>
                           <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -150,7 +151,12 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
                           </svg>
                           Lähetetään…
                         </>
-                      ) : "LÄHETÄ →"}
+                      ) : (
+                        <>
+                          Lähetä
+                          <ArrowRight size={13} weight="light" aria-hidden="true" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </motion.form>

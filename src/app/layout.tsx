@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Cormorant_Garamond, Raleway, Space_Mono } from "next/font/google";
+import { Cormorant_Garamond, Instrument_Sans, Space_Mono } from "next/font/google";
+import { FacebookLogo, InstagramLogo } from "@phosphor-icons/react/dist/ssr";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StoreProvider } from "@/context/StoreProvider";
@@ -10,29 +11,20 @@ import { GrainOverlay } from "@/components/GrainOverlay";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ContactModalHost } from "@/components/ContactModalHost";
 
-/* Headings — Cinzel (classical inscriptional serif, Aesop/Trajan register).
-   Body — Raleway. Both self-hosted by next/font: zero FOUT, near-zero CLS. */
-const cinzel = Cinzel({
+/* Display — Cormorant Garamond (high-contrast garamond with true italics;
+   one serif family carries roman, italic, and accent words alike).
+   Body — Instrument Sans. Both self-hosted by next/font: zero FOUT/CLS. */
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   variable: "--font-serif",
   display: "swap",
 });
 
-/* Editorial accent — Cormorant Garamond's high-contrast italics carry every
-   italicised serif word (Cinzel has no true italic). Paired by CSS, see
-   globals.css. */
-const cormorant = Cormorant_Garamond({
+const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-serif-accent",
-  display: "swap",
-});
-
-const raleway = Raleway({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-sans",
   display: "swap",
@@ -153,7 +145,7 @@ export default function RootLayout({
   return (
     <html
       lang="fi"
-      className={`${cinzel.variable} ${cormorant.variable} ${raleway.variable} ${spaceMono.variable}`}
+      className={`${cormorant.variable} ${instrumentSans.variable} ${spaceMono.variable}`}
     >
       <head>
         <script
@@ -222,11 +214,7 @@ export default function RootLayout({
                     aria-label="LEIMU Instagramissa"
                     className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                    </svg>
+                    <InstagramLogo size={20} weight="light" aria-hidden="true" />
                   </a>
                   <a
                     href="https://www.facebook.com/LEIMUcandles/"
@@ -235,9 +223,7 @@ export default function RootLayout({
                     aria-label="LEIMU Facebookissa"
                     className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                    </svg>
+                    <FacebookLogo size={20} weight="light" aria-hidden="true" />
                   </a>
                 </div>
                 <p className="text-sm text-[var(--ink-mute)] mt-8">

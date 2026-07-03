@@ -8,7 +8,7 @@ function PrivacyContent() {
   return (
     <div className="space-y-6 text-sm text-[var(--ink-soft)] leading-relaxed">
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Rekisterinpitäjä</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Rekisterinpitäjä</p>
         <p className="font-serif text-lg italic text-[var(--ink)] mb-1">LEIMU By Shane</p>
         <p>Y-tunnus: 3565713-3</p>
         <div className="flex flex-col gap-0.5 mt-2">
@@ -20,7 +20,7 @@ function PrivacyContent() {
       </div>
 
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Yleistä</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Yleistä</p>
         <p>
           LEIMU By Shane käsittelee henkilötietoja EU:n tietosuoja-asetuksen (GDPR) ja Suomen
           tietosuojalain mukaisesti. Tietoja kerätään vain yhteydenottojen, uutiskirjeiden ja
@@ -29,7 +29,7 @@ function PrivacyContent() {
       </div>
 
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Kerättävät tiedot</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Kerättävät tiedot</p>
         <ul className="space-y-1 pl-4">
           <li className="list-disc">Nimi ja sähköposti yhteydenottoihin ja uutiskirjeisiin</li>
           <li className="list-disc">Nimi, sähköposti ja toimitusosoite tilauksia varten</li>
@@ -40,7 +40,7 @@ function PrivacyContent() {
       </div>
 
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Käsittely ja säilytys</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Käsittely ja säilytys</p>
         <p>
           Tietoja käsitellään Framer-, Tally- ja Google Sheets -palveluissa. Kaikki palvelut noudattavat
           EU:n tietosuojavaatimuksia. Säilytämme tiedot vain lain ja käyttötarkoituksen edellyttämän ajan.
@@ -48,14 +48,14 @@ function PrivacyContent() {
       </div>
 
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Evästeet</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Evästeet</p>
         <p>
           Sivustomme käyttää vain toiminnallisia evästeitä, jotka mahdollistavat sivun teknisen toiminnan.
         </p>
       </div>
 
       <div>
-        <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Oikeutesi</p>
+        <p className="font-mono text-[11px] tracking-[0.15em] uppercase text-[var(--ink-mute)] mb-2">Oikeutesi</p>
         <p>
           Sinulla on oikeus tarkistaa, oikaista ja poistaa tietosi sekä peruuttaa suostumuksesi
           uutiskirjeeseen. Pyynnöt:{" "}
@@ -65,7 +65,7 @@ function PrivacyContent() {
         </p>
       </div>
 
-      <p className="font-mono text-[8px] tracking-[0.12em] text-[var(--ink-mute)] pt-4 border-t border-[var(--line)]">
+      <p className="font-mono text-[10px] tracking-[0.12em] text-[var(--ink-mute)] pt-4 border-t border-[var(--line)]">
         Pidätämme oikeuden päivittää tätä selostetta tarvittaessa.
         Viimeksi päivitetty: 14.10.2025
       </p>
@@ -78,7 +78,7 @@ function PrivacyModal({ onClose }: { onClose: () => void }) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
+        className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 md:p-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -100,7 +100,7 @@ function PrivacyModal({ onClose }: { onClose: () => void }) {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--line)]">
             <div>
-              <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">
+              <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">
                 Asiakirja
               </p>
               <h2 className="font-serif text-xl italic text-[var(--ink)]">Tietosuojaseloste</h2>

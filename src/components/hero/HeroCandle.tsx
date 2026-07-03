@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion, useTransform, useScroll } from "framer-motion";
+import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
 import { SPRING_PREMIUM } from "@/lib/motionVariants";
 import { ContactCTA } from "@/components/ContactCTA";
@@ -132,7 +133,7 @@ export function HeroCandle() {
             {t.eyebrow}
           </motion.p>
 
-          <h1 className="font-serif text-5xl leading-[1.06] tracking-[-0.025em] md:text-6xl lg:text-7xl">
+          <h1 className="font-serif font-medium text-5xl leading-[1.06] tracking-[-0.015em] md:text-6xl lg:text-7xl">
             <motion.span variants={heroLine} className="block" style={{ color: HERO.cream }}>
               {t.line1Lead}
               <motion.span
@@ -161,7 +162,7 @@ export function HeroCandle() {
           <motion.div variants={heroFade} className="mt-1 flex flex-wrap items-center gap-4">
             <Link href="/tuotteet" passHref legacyBehavior>
               <motion.a
-                className="relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 font-mono text-[11px] uppercase tracking-[0.2em]"
+                className="relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 font-sans font-medium text-[13px] uppercase tracking-[0.08em]"
                 style={{ backgroundColor: HERO.cream, color: "#1A1814" }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
@@ -169,9 +170,7 @@ export function HeroCandle() {
               >
                 <span className="relative z-10 flex items-center gap-2">
                   {t.cta1}
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                    <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ArrowRight size={13} weight="light" aria-hidden="true" />
                 </span>
               </motion.a>
             </Link>
