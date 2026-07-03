@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  animate, motion, useInView, useReducedMotion,
+  useScroll, useTransform, type MotionValue,
+} from "framer-motion";
 import { ArrowRight, Drop, Fire, Leaf, Plant } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
 import { ScentModal } from "@/components/ScentModal";
+import { DrawnRule } from "@/components/DrawnRule";
 import {
-  headingReveal, headingCinematic, fadeUpItem,
+  EASE_PREMIUM, headingReveal, headingCinematic, fadeUpItem,
   staggerCinematic, VIEWPORT_NEAR,
 } from "@/lib/motionVariants";
 import { HeroCandle } from "@/components/hero/HeroCandle";
@@ -19,14 +23,44 @@ import { QuoteWall } from "@/components/home/QuoteWall";
 /* ─── Craft Ledger ──────────────────────────────────
    Three true numerals on one hairline band, tabular mono. The old fourth
    "stat" (one batch at a time) was words posing as a number; that fact
-   lives in the story copy below. */
+   lives in the story copy below. Numerals count up once as the band
+   enters — a ledger being tallied, not a dashboard being scrubbed. */
+function LedgerNumeral({ prefix = "", value, suffix = "" }: {
+  prefix?: string; value: number; suffix?: string;
+}) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px 0px" });
+  const reduce = useReducedMotion();
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reduce) {
+      setDisplay(value);
+      return;
+    }
+    const controls = animate(0, value, {
+      duration: 1.4,
+      ease: EASE_PREMIUM,
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, reduce, value]);
+
+  return (
+    <p ref={ref} className="font-mono text-2xl md:text-3xl tracking-tight tabular-nums text-[var(--ink)]">
+      {prefix}{display}{suffix}
+    </p>
+  );
+}
+
 function CraftLedger() {
   const { lang } = useStore();
 
   const stats = [
-    { value: "100%", label: { fi: "Soijavahaa", en: "Soy wax" } },
-    { value: "~36 h", label: { fi: "Paloaika", en: "Burn time" } },
-    { value: "5", label: { fi: "Tuoksua", en: "Scents" } },
+    { value: 100, suffix: "%", label: { fi: "Soijavahaa", en: "Soy wax" } },
+    { value: 36, prefix: "~", suffix: " h", label: { fi: "Paloaika", en: "Burn time" } },
+    { value: 5, label: { fi: "Tuoksua", en: "Scents" } },
   ];
 
   return (
@@ -39,10 +73,8 @@ function CraftLedger() {
         viewport={VIEWPORT_NEAR}
       >
         {stats.map((s) => (
-          <motion.div key={s.value} variants={fadeUpItem} className="flex flex-col gap-1.5">
-            <p className="font-mono text-2xl md:text-3xl tracking-tight text-[var(--ink)]">
-              {s.value}
-            </p>
+          <motion.div key={s.label.fi} variants={fadeUpItem} className="flex flex-col gap-1.5">
+            <LedgerNumeral prefix={s.prefix} value={s.value} suffix={s.suffix} />
             <p className="tag-mono text-[10px]">{s.label[lang]}</p>
           </motion.div>
         ))}
@@ -54,6 +86,7 @@ function CraftLedger() {
 /* ─── Story Teaser ──────────────────────────────── */
 function StoryTeaser() {
   const { lang } = useStore();
+  const reduce = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -85,19 +118,28 @@ function StoryTeaser() {
                 key={i}
                 className={`absolute rounded-xl overflow-hidden ${positions[i]}`}
                 style={{ y: img.style }}
-                initial={{ opacity: 0, scale: 1.08 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={reduce ? { opacity: 0 } : { clipPath: "inset(100% 0% 0% 0%)" }}
+                whileInView={reduce ? { opacity: 1 } : { clipPath: "inset(0% 0% 0% 0%)" }}
                 viewport={VIEWPORT_NEAR}
-                transition={{ duration: 1.5, delay: i * 0.14, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 1.2, delay: i * 0.14, ease: EASE_PREMIUM }}
                 whileHover={{ scale: 1.03 }}
               >
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, 30vw"
-                />
+                {/* Counter-zoom inside the wipe so the photo settles as the mask opens */}
+                <motion.div
+                  className="absolute inset-0"
+                  initial={reduce ? undefined : { scale: 1.14 }}
+                  whileInView={reduce ? undefined : { scale: 1 }}
+                  viewport={VIEWPORT_NEAR}
+                  transition={{ duration: 1.5, delay: i * 0.14, ease: EASE_PREMIUM }}
+                >
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 30vw"
+                  />
+                </motion.div>
               </motion.div>
             );
           })}
@@ -264,7 +306,7 @@ function Benefits() {
           : "Quality in every detail."}
       </motion.h2>
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-4 gap-8 divide-y md:divide-y-0 md:divide-x divide-[var(--line)]"
+        className="grid grid-cols-1 md:grid-cols-4 gap-8"
         variants={staggerCinematic}
         initial="hidden"
         whileInView="visible"
@@ -274,8 +316,14 @@ function Benefits() {
           <motion.div
             key={i}
             variants={fadeUpItem}
-            className="pt-8 md:pt-0 md:px-8 first:pl-0 last:pr-0 flex flex-col gap-4"
+            className="relative pt-8 md:pt-0 md:px-8 first:pt-0 first:pl-0 last:pr-0 flex flex-col gap-4"
           >
+            {i > 0 && (
+              <>
+                <DrawnRule className="absolute top-0 inset-x-0 md:hidden" />
+                <DrawnRule vertical className="absolute left-0 top-0 hidden h-full md:block" />
+              </>
+            )}
             <motion.div
               className="w-12 h-12 rounded-xl border border-[var(--line)] flex items-center justify-center text-[var(--accent-2-strong)]"
               whileHover={{
