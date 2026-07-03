@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState } from "react";
 import {
-  motion, AnimatePresence, useScroll, useTransform, useSpring,
+  motion, useScroll, useTransform, useSpring,
   useMotionValue, useInView,
 } from "framer-motion";
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
-import { submitForm } from "@/lib/formSubmit";
+import { ContactModal } from "@/components/ContactModal";
+import { EASE_PREMIUM } from "@/lib/motionVariants";
 
 /* WebGL canvases, never SSR'd, lazy-loaded */
 const LivingPortrait = dynamic(() => import("@/components/tarina/LivingPortrait"), {
@@ -23,7 +24,8 @@ const LiquidDark = dynamic(() => import("@/components/tarina/LiquidDark"), {
 });
 
 /* ─── Animation helpers ─────────────────────────── */
-const ease = [0.22, 1, 0.36, 1] as const;
+const ease = EASE_PREMIUM;
+const MotionLink = motion(Link);
 
 /* ─── SVG Drop Cap, draws the letter on scroll ─── */
 function DropCap({ letter, delay = 0 }: { letter: string; delay?: number }) {
@@ -43,106 +45,29 @@ function DropCap({ letter, delay = 0 }: { letter: string; delay?: number }) {
       <motion.rect
         x="2" y="2" width="56" height="76" rx="4"
         fill="none"
-        stroke="var(--accent)"
+        stroke="var(--accent-2)"
         strokeWidth="0.6"
-        strokeOpacity={0.3}
+        strokeOpacity={0.35}
         initial={{ pathLength: 0 }}
         animate={isInView ? { pathLength: 1 } : { pathLength: 0 }}
-        transition={{ duration: 1.2, delay, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.2, delay, ease }}
       />
-      {/* The letter itself, drawn as text with stroke animation */}
+      {/* The letter itself — display serif, same face as every heading */}
       <motion.text
-        x="30" y="66"
+        x="30" y="64"
         textAnchor="middle"
-        fontFamily="'DM Serif Display', serif"
+        fontFamily="var(--font-serif), serif"
         fontStyle="italic"
-        fontSize="62"
-        fontWeight="400"
+        fontSize="64"
+        fontWeight="500"
         fill="var(--ink)"
-        stroke="var(--accent-2)"
-        strokeWidth="0.4"
         initial={{ opacity: 0, y: 8 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-        transition={{ duration: 0.65, delay: delay + 0.3, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.65, delay: delay + 0.3, ease }}
       >
         {letter}
       </motion.text>
-      {/* Golden shimmer overlay sweep */}
-      <motion.rect
-        x="0" y="0" width="60" height="80"
-        fill="url(#dc-shimmer)"
-        initial={{ x: -60 }}
-        animate={isInView ? { x: 60 } : { x: -60 }}
-        transition={{ duration: 0.7, delay: delay + 0.8, ease: "easeInOut" }}
-      />
-      <defs>
-        <linearGradient id="dc-shimmer" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stopColor="rgba(255,222,100,0)" />
-          <stop offset="50%"  stopColor="rgba(255,222,100,0.45)" />
-          <stop offset="100%" stopColor="rgba(255,222,100,0)" />
-        </linearGradient>
-      </defs>
     </svg>
-  );
-}
-
-/* ─── 3D Tilt Card (material / value) ─────────────── */
-function TiltCard({
-  children,
-  className = "",
-  glowColor = "rgba(212,169,106,0.15)",
-}: {
-  children: React.ReactNode;
-  className?: string;
-  glowColor?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const mx  = useMotionValue(0.5);
-  const my  = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX = useTransform(smy, v => `${(v - 0.5) * 14}deg`);
-  const rotY = useTransform(smx, v => `${(0.5 - v) * 14}deg`);
-  const shimX = useTransform(smx, v => `${v * 100}%`);
-  const shimY = useTransform(smy, v => `${v * 100}%`);
-
-  return (
-    <motion.div
-      ref={ref}
-      className={`relative overflow-hidden cursor-default ${className}`}
-      style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
-      onMouseMove={(e) => {
-        const r = ref.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); }}
-      whileHover={{
-        scale: 1.03,
-        boxShadow: `0 24px 60px -18px rgba(26,24,20,0.18), 0 0 0 1px rgba(212,169,106,0.25)`,
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 24 }}
-    >
-      {children}
-      {/* Mouse-following glare */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none rounded-[inherit]"
-        style={{
-          background: `radial-gradient(circle at ${shimX} ${shimY}, ${glowColor} 0%, transparent 55%)`,
-        }}
-      />
-      {/* Bottom accent line */}
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-left"
-        style={{
-          background: "linear-gradient(to right, var(--accent), var(--accent-2), transparent)",
-        }}
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.35 }}
-      />
-    </motion.div>
   );
 }
 
@@ -229,7 +154,7 @@ function FounderStory() {
               <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,24,20,0.55)] via-transparent to-transparent pointer-events-none" />
               {/* Bottom info tag */}
               <div className="absolute bottom-4 left-4 right-4 bg-[var(--bg)] border border-[var(--line)] rounded-xl px-4 py-3">
-                <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">
+                <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">
                   Oulu · Studio
                 </p>
                 <p className="font-serif text-lg italic text-[var(--ink)]">LEIMU by Shane</p>
@@ -247,7 +172,7 @@ function FounderStory() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, ease, delay: 0.1 + i * 0.07 }}
               >
-                <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--ink-mute)]">
+                <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--ink-mute)]">
                   {key[lang]}
                 </span>
                 <span className="text-sm text-[var(--ink-soft)] font-medium">{val}</span>
@@ -410,7 +335,7 @@ function FounderStory() {
 }
 
 
-/* ─── StepItem, viewport audio trigger ─────────── */
+/* ─── StepItem ──────────────────────────────────── */
 type StepDatum = {
   num: string;
   title: { fi: string; en: string };
@@ -420,20 +345,14 @@ type StepDatum = {
 };
 
 function StepItem({
-  step, i, lang, onEnter,
+  step, i, lang,
 }: {
   step: StepDatum;
   i: number;
   lang: "fi" | "en";
-  onEnter: () => void;
 }) {
   const stepRef = useRef<HTMLDivElement>(null);
   const inView  = useInView(stepRef, { once: true, margin: "-15%" });
-  const fired   = useRef(false);
-
-  useEffect(() => {
-    if (inView && !fired.current) { fired.current = true; onEnter(); }
-  }, [inView, onEnter]);
 
   return (
     <motion.div
@@ -442,28 +361,22 @@ function StepItem({
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const, delay: i * 0.06 }}
+      transition={{ duration: 0.6, ease, delay: i * 0.06 }}
     >
       {/* Per-step vertical line, right of number column */}
       <div className="absolute left-[78px] inset-y-0 w-[1px] bg-[var(--line)] hidden md:block opacity-15" />
       <motion.div
-        className="absolute left-[78px] inset-y-0 w-[1px] origin-top hidden md:block"
+        className="absolute left-[78px] inset-y-0 w-[1px] origin-top hidden md:block bg-[var(--accent-2)]"
         animate={{ scaleY: inView ? 1 : 0, opacity: inView ? 1 : 0 }}
-        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] as const, delay: 0.15 }}
-        style={{
-          background: "linear-gradient(to bottom, var(--accent), var(--accent-2))",
-          boxShadow: "0 0 8px rgba(212,169,106,0.5)",
-        }}
+        transition={{ duration: 0.75, ease, delay: 0.15 }}
       />
 
-      <motion.div
+      <div
         className="font-serif text-5xl italic leading-none"
         style={{ color: inView ? "var(--accent-2)" : "var(--line)", transition: "color 0.6s ease" }}
-        whileHover={{ color: "var(--accent-2)" }}
-        transition={{ duration: 0.25 }}
       >
         {step.num}
-      </motion.div>
+      </div>
 
       <div className="flex flex-col gap-3">
         <h3 className="font-serif text-2xl italic text-[var(--ink)] group-hover:text-[var(--accent-2)] transition-colors duration-300">
@@ -476,7 +389,7 @@ function StepItem({
       <motion.div
         className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[var(--bg-2)]"
         whileHover={{ y: -6, scale: 1.02 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+        transition={{ duration: 0.4, ease: EASE_PREMIUM }}
       >
         <Image
           src={step.img}
@@ -492,30 +405,13 @@ function StepItem({
 
 /* ─── Process Timeline ──────────────────────────── */
 function ProcessTimeline() {
-  const { lang, isMuted } = useStore();
+  const { lang } = useStore();
   const timelineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: timelineProg } = useScroll({
     target: timelineRef,
     offset: ["start 75%", "end 25%"],
   });
   const lineScaleY = useTransform(timelineProg, [0, 1], [0, 1]);
-
-  const playStepTone = useCallback(() => {
-    if (isMuted || typeof window === "undefined") return;
-    try {
-      const _ctx = new (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const osc = _ctx.createOscillator();
-      const g   = _ctx.createGain();
-      osc.connect(g); g.connect(_ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(640, _ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(420, _ctx.currentTime + 0.15);
-      g.gain.setValueAtTime(0.03, _ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, _ctx.currentTime + 0.28);
-      osc.start(); osc.stop(_ctx.currentTime + 0.28);
-    } catch { /* AudioContext unavailable */ }
-  }, [isMuted]);
 
   const steps = [
     {
@@ -624,11 +520,11 @@ function ProcessTimeline() {
             strokeWidth="2"
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
-            style={{ pathLength: lineScaleY, filter: "drop-shadow(0 0 5px var(--accent-2))" }}
+            style={{ pathLength: lineScaleY }}
           />
         </svg>
         {steps.map((step, i) => (
-          <StepItem key={step.num} step={step} i={i} lang={lang} onEnter={playStepTone} />
+          <StepItem key={step.num} step={step} i={i} lang={lang} />
         ))}
       </div>
     </section>
@@ -636,7 +532,7 @@ function ProcessTimeline() {
 }
 
 
-/* ─── MaterialItem, tilt + glare + blur-neighbours ─ */
+/* ─── MaterialItem — index row; hover dims siblings and indents the row ─ */
 type MatDatum = {
   nameFi: React.ReactNode;
   nameEn: React.ReactNode;
@@ -656,58 +552,34 @@ function MaterialItem({
   onEnter: () => void;
   onLeave: () => void;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 200, damping: 22 });
-  const smy = useSpring(my, { stiffness: 200, damping: 22 });
-  const rotX  = useTransform(smy, (v) => `${(v - 0.5) * 5}deg`);
-  const rotY  = useTransform(smx, (v) => `${(0.5 - v) * 5}deg`);
-  const shimX = useTransform(smx, (v) => `${v * 100}%`);
-  const shimY = useTransform(smy, (v) => `${v * 100}%`);
-
   return (
     <div
       style={{
         opacity: isBlurred ? 0.45 : 1,
-        filter:  isBlurred ? "blur(1px)" : "none",
-        transition: "opacity 0.35s ease, filter 0.35s ease",
+        transition: "opacity 0.35s ease",
       }}
     >
       <motion.div
-        ref={cardRef}
-        className="group grid md:grid-cols-[minmax(0,200px)_1fr_110px] gap-6 md:gap-12 py-8 border-t border-[rgba(216,208,191,0.12)] items-center cursor-default relative overflow-hidden"
-        style={{ transformStyle: "preserve-3d", perspective: "900px", rotateX: rotX, rotateY: rotY }}
+        className="group grid md:grid-cols-[minmax(0,200px)_1fr_110px] gap-6 md:gap-12 py-8 border-t border-[rgba(216,208,191,0.12)] items-center cursor-default relative"
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
+        transition={{ delay: i * 0.1, duration: 0.55, ease }}
         whileHover={{ paddingLeft: "16px", transition: { duration: 0.3 } }}
-        onMouseMove={(e) => {
-          const r = cardRef.current?.getBoundingClientRect();
-          if (!r) return;
-          mx.set((e.clientX - r.left) / r.width);
-          my.set((e.clientY - r.top) / r.height);
-        }}
-        onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave(); }}
+        onMouseLeave={onLeave}
         onMouseEnter={onEnter}
       >
-        {/* Glare */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(212,169,106,0.09) 0%, transparent 60%)` }}
-        />
-        <p className="font-serif text-3xl md:text-4xl font-light leading-tight text-[var(--bg)] group-hover:text-[var(--accent-2)] transition-colors duration-300 break-words min-w-0 relative z-10">
+        <p className="font-serif text-3xl md:text-4xl font-light leading-tight text-[var(--bg)] group-hover:text-[var(--accent-2)] transition-colors duration-300 break-words min-w-0">
           {lang === "fi" ? mat.nameFi : mat.nameEn}
         </p>
-        <p className="text-sm text-[var(--bg)] opacity-55 leading-relaxed max-w-sm relative z-10">
+        <p className="text-sm text-[var(--bg)] opacity-55 leading-relaxed max-w-sm">
           {mat.desc[lang]}
         </p>
-        <div className="md:text-right relative z-10">
+        <div className="md:text-right">
           <p className="font-serif text-3xl italic font-light leading-none" style={{ color: "var(--accent-2)" }}>
             {mat.stat}<span className="text-xl">{mat.unit}</span>
           </p>
-          <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--bg)] opacity-40 mt-2">
+          <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--bg)] opacity-50 mt-2">
             {mat.label[lang]}
           </p>
         </div>
@@ -841,7 +713,7 @@ function MaterialsSection() {
 }
 
 
-/* ─── ValueItem, 3D tilt + glare + blur-neighbours ─ */
+/* ─── ValueItem — quiet lift; hover dims siblings ─ */
 type ValueDatum = {
   num: string;
   tag:   { fi: string; en: string };
@@ -860,97 +732,44 @@ function ValueItem({
   onLeave: () => void;
   icon: React.ReactNode;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX  = useTransform(smy, (val) => `${(val - 0.5) * 11}deg`);
-  const rotY  = useTransform(smx, (val) => `${(0.5 - val) * 11}deg`);
-  const shimX = useTransform(smx, (val) => `${val * 100}%`);
-  const shimY = useTransform(smy, (val) => `${val * 100}%`);
-
   return (
     <div
       style={{
-        opacity: isBlurred ? 0.4 : 1,
-        filter:  isBlurred ? "blur(1.5px)" : "none",
-        transition: "opacity 0.35s ease, filter 0.35s ease",
+        opacity: isBlurred ? 0.45 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       <motion.div
-        ref={cardRef}
-        className="group relative flex flex-col gap-5 px-0 md:px-6 py-10 border-b md:border-b-0 md:border-r border-[var(--line)] last:border-r-0 overflow-hidden cursor-default"
-        style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
+        className="group relative flex flex-col gap-5 px-0 md:px-6 py-10 border-b md:border-b-0 md:border-r border-[var(--line)] last:border-r-0 cursor-default"
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: i * 0.12, duration: 0.65, ease: [0.22, 1, 0.36, 1] as const }}
-        whileHover={{ y: -5, boxShadow: "0 24px 56px -18px rgba(26,24,20,0.14)", transition: { type: "spring", stiffness: 300, damping: 24 } }}
-        onMouseMove={(e) => {
-          const r = cardRef.current?.getBoundingClientRect();
-          if (!r) return;
-          mx.set((e.clientX - r.left) / r.width);
-          my.set((e.clientY - r.top) / r.height);
-        }}
-        onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave(); }}
+        transition={{ delay: i * 0.12, duration: 0.65, ease }}
+        whileHover={{ y: -4, transition: { type: "spring", stiffness: 280, damping: 30 } }}
+        onMouseLeave={onLeave}
         onMouseEnter={onEnter}
       >
-        {/* Gradient wash */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(135deg, var(--accent-2), transparent)" }}
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 0.06 }}
-          transition={{ duration: 0.4 }}
-        />
-        {/* Mouse-following glare */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(212,169,106,0.12) 0%, transparent 55%)` }}
-        />
-
         {/* Icon pill */}
         <motion.div
-          className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-[var(--accent-2)] border border-[var(--line)]"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center text-[var(--accent-2)] border border-[var(--line)]"
           style={{ background: "var(--bg-3)" }}
-          initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
-          whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
+          initial={{ scale: 0.85, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: i * 0.12 + 0.2, duration: 0.55, type: "spring", stiffness: 260, damping: 18 }}
-          whileHover={{ scale: 1.18, rotate: 8, boxShadow: "0 8px 24px rgba(196,122,58,0.25)" }}
+          transition={{ delay: i * 0.12 + 0.2, duration: 0.55, ease }}
         >
           {icon}
-          <motion.div
-            className="absolute inset-0 rounded-2xl border border-[var(--accent-2)]"
-            initial={{ scale: 1, opacity: 0 }}
-            whileHover={{ scale: 1.6, opacity: 0 }}
-            transition={{ duration: 0.6, repeat: Infinity }}
-          />
         </motion.div>
 
-        <span className="font-mono text-[9px] tracking-[0.2em] uppercase" style={{ color: "var(--accent-2)" }}>
+        <span className="font-mono text-[10px] tracking-[0.2em] uppercase" style={{ color: "var(--accent-2-strong)" }}>
           {v.num} / {v.tag[lang]}
         </span>
 
-        <motion.h3
-          className="font-serif text-2xl italic text-[var(--ink)]"
-          whileHover={{ color: "var(--accent-2)" }}
-          transition={{ duration: 0.2 }}
-        >
+        <h3 className="font-serif text-2xl italic text-[var(--ink)] group-hover:text-[var(--accent-2-strong)] transition-colors duration-300">
           {v.title[lang]}
-        </motion.h3>
+        </h3>
 
         <p className="text-sm text-[var(--ink-soft)] leading-relaxed">{v.desc[lang]}</p>
-
-        {/* Bottom sweep line */}
-        <motion.div
-          className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-transparent"
-          initial={{ scaleX: 0 }}
-          whileHover={{ scaleX: 1 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as const }}
-          style={{ transformOrigin: "left" }}
-        />
       </motion.div>
     </div>
   );
@@ -1062,155 +881,7 @@ function ValuesGrid() {
   );
 }
 
-/* ─── Contact Modal ─────────────────────────────── */
-function ContactModal({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setError(false);
-    try {
-      await submitForm({ formType: "leimu-contact", name, email, subject, message });
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Virhe lähetettäessä lomaketta:", err);
-      setError(true);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 md:p-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        onClick={onClose}
-      >
-        <div className="absolute inset-0 bg-[rgba(26,24,20,0.65)] backdrop-blur-sm" />
-        <motion.div
-          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-modal overflow-hidden"
-          initial={{ opacity: 0, y: 28, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 12, scale: 0.97 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--line)]">
-            <div>
-              <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">LEIMU by Shane</p>
-              <h2 className="font-serif text-xl italic text-[var(--ink)]">Yhteydenottopyyntö</h2>
-            </div>
-            <button onClick={onClose}
-              className="w-11 h-11 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--ink-mute)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
-              aria-label="Sulje">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M1 1l10 10M11 1L1 11"/>
-              </svg>
-            </button>
-          </div>
-
-          <div className="px-6 py-6">
-            <AnimatePresence mode="wait">
-              {submitted ? (
-                <motion.div
-                  key="thanks"
-                  className="py-8 text-center"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <motion.div
-                    className="w-14 h-14 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-5"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.1 }}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12l4 4 10-10" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </motion.div>
-                  <p className="font-serif text-2xl italic text-[var(--ink)] mb-3">Kiitos yhteydenotosta!</p>
-                  <p className="text-sm text-[var(--ink-soft)] leading-relaxed max-w-sm mx-auto">
-                    Palautteesi on meille tärkeä, joten käsittelemme viestisi ja olemme sinuun yhteydessä tarvittaessa.{" "}
-                    <em className="not-italic font-medium text-[var(--ink)]">Kiitos!</em>
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.form
-                  key="form"
-                  onSubmit={handleSubmit}
-                  className="space-y-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Nimi</label>
-                      <input required value={name} onChange={e => setName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors"/>
-                    </div>
-                    <div>
-                      <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Sähköposti</label>
-                      <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors"/>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Mitä asia koskee?</label>
-                    <input required value={subject} onChange={e => setSubject(e.target.value)}
-                      placeholder="Esim. tilaus, yhteistyö, kysymys..."
-                      className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors placeholder:text-[var(--ink-mute)]"/>
-                  </div>
-                  <div>
-                    <label className="font-mono text-[8px] tracking-[0.15em] uppercase text-[var(--ink-mute)] block mb-1.5">Kerro tarkemmin</label>
-                    <textarea required value={message} onChange={e => setMessage(e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors resize-none leading-relaxed"/>
-                  </div>
-                  <div className="pt-2 space-y-3">
-                    {error && (
-                      <p className="text-sm text-red-500 text-center leading-snug" role="alert">
-                        Viestin lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
-                      </p>
-                    )}
-                    <button type="submit" disabled={isSubmitting}
-                      className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-50 flex justify-center items-center gap-2">
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-                            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                          </svg>
-                          Lähetetään…
-                        </>
-                      ) : "Lähetä →"}
-                    </button>
-                  </div>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
-
-/* ─── Magnetic Liquid-Glow CTA ──────────────────── */
+/* ─── Magnetic CTA ──────────────────────────────── */
 function MagneticCTA({
   children, href, onClick, primary = false,
 }: {
@@ -1239,25 +910,11 @@ function MagneticCTA({
     rest: { scale: 1, boxShadow: primary ? "0 2px 16px rgba(26,24,20,0.14)" : "0 0 0 1px rgba(196,122,58,0)" },
     hover: {
       scale: 1.05,
-      boxShadow: "0 12px 40px rgba(196,122,58,0.30), 0 0 0 1px rgba(196,122,58,0.85), 0 0 24px rgba(196,122,58,0.45)",
+      boxShadow: "0 12px 40px -12px rgba(26,24,20,0.24), 0 0 0 1px rgba(196,122,58,0.6)",
     },
   };
 
-  const body = (
-    <>
-      <motion.span
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "linear-gradient(105deg, transparent 40%, rgba(212,169,106,0.42) 50%, transparent 60%)",
-          backgroundSize: "220% 100%",
-        }}
-        variants={{ rest: { backgroundPosition: "-120% 0" }, hover: { backgroundPosition: "220% 0" } }}
-        transition={{ duration: 0.6, ease: "easeInOut" }}
-      />
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
-    </>
-  );
+  const body = <span className="relative z-10 flex items-center gap-2">{children}</span>;
 
   const motionProps = {
     className,
@@ -1274,9 +931,9 @@ function MagneticCTA({
 
   if (href) {
     return (
-      <Link href={href} passHref legacyBehavior>
-        <motion.a {...motionProps}>{body}</motion.a>
-      </Link>
+      <MotionLink href={href} {...motionProps}>
+        {body}
+      </MotionLink>
     );
   }
   return (

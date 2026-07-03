@@ -1,10 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import {
-  motion, AnimatePresence,
-  useMotionValue, useSpring, useTransform as useTf,
-} from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useStore } from "@/context/store";
 import { SCENTS, PRICE_TABLE, calcPrice } from "@/lib/scents";
@@ -19,19 +16,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { SuccessCheck } from "@/components/ui/SuccessCheck";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
-  headingReveal, fadeUpItem, staggerContainer,
+  EASE_PREMIUM, headingReveal, fadeUpItem, staggerContainer,
   VIEWPORT_ONCE, VIEWPORT_NEAR,
 } from "@/lib/motionVariants";
 
 /* ─── Constants ────────────────────────────────── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
-
 const JAR_LABELS: Record<JarColor, { fi: string; en: string }> = {
   white: { fi: "Valkoinen", en: "White" },
   green: { fi: "Vihreä", en: "Green" },
@@ -72,7 +61,7 @@ function FluidBackground({ waxColor }: { waxColor: string | null }) {
           : "none",
         opacity: waxColor ? 1 : 0,
       }}
-      transition={{ duration: 3, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 3, ease: EASE_PREMIUM }}
     />
   );
 }
@@ -81,7 +70,7 @@ function FluidBackground({ waxColor }: { waxColor: string | null }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-[var(--line)] last:border-0">
-      <span className="tag-mono text-[8px] text-[var(--ink-mute)] flex-shrink-0">{label}</span>
+      <span className="tag-mono flex-shrink-0">{label}</span>
       <span className="text-sm text-[var(--ink)] text-right">{value}</span>
     </div>
   );
@@ -124,13 +113,13 @@ function ProgressBar({ step }: { step: string }) {
       {steps.map((s, i) => (
         <div key={s} className="flex items-center">
           <div className={`flex items-center gap-2 ${i <= current ? "text-[var(--ink)]" : "text-[var(--ink-mute)]"}`}>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center tag-mono text-[8px] transition-colors ${i < current ? "bg-[var(--accent)] text-[var(--bg)]" : i === current ? "bg-[var(--ink)] text-[var(--bg)]" : "border border-[var(--line)] text-[var(--ink-mute)]"}`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] transition-colors ${i <= current ? "bg-[var(--ink)] text-[var(--bg)]" : "border border-[var(--line)] text-[var(--ink-mute)]"}`}>
               {i < current ? "✓" : i + 1}
             </div>
-            <span className="tag-mono text-[9px] hidden md:inline">{labels[i]}</span>
+            <span className="tag-mono hidden md:inline" style={i <= current ? { color: "var(--ink)" } : undefined}>{labels[i]}</span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`mx-3 h-px w-10 transition-colors ${i < current ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`} />
+            <div className={`mx-3 h-px w-10 transition-colors ${i < current ? "bg-[var(--accent-2)]" : "bg-[var(--line)]"}`} />
           )}
         </div>
       ))}
@@ -138,71 +127,49 @@ function ProgressBar({ step }: { step: string }) {
   );
 }
 
-/* ─── Tilt Scent Card ───────────────────────────── */
-function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
-  scent: Scent; index: number; lang: "fi" | "en";
+/* ─── Scent Card ────────────────────────────────────────────────────────
+   Editorial treatment matching the home ScentIndex language: bezel tray,
+   one warm dusk grade over the photo, Cormorant caption below. Hover is a
+   single quiet gesture — slow image zoom + amber ring tint. */
+function ScentCard({ scent, lang, onSelect, onHover, onLeave }: {
+  scent: Scent; lang: "fi" | "en";
   onSelect: (s: Scent) => void;
   onHover?: (waxColor: string) => void;
   onLeave?: () => void;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX = useTf(smy, v => `${(v - 0.5) * 12}deg`);
-  const rotY = useTf(smx, v => `${(0.5 - v) * 12}deg`);
-  const shimX = useTf(smx, v => `${v * 100}%`);
-  const shimY = useTf(smy, v => `${v * 100}%`);
   return (
     <motion.button
-      ref={ref}
-      className="group relative flex flex-col text-left rounded-2xl border border-[var(--line)] bg-[var(--bg)] cursor-pointer overflow-hidden"
-      style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
-      onMouseMove={(e) => {
-        const r = ref.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave?.(); }}
+      type="button"
+      variants={fadeUpItem}
+      className="group block text-left"
       onClick={() => onSelect(scent)}
       onMouseEnter={() => onHover?.(scent.waxColor)}
-      whileHover={{ y: -6, scale: 1.02, borderColor: "rgba(212,169,106,0.6)", boxShadow: "0 20px 56px -16px rgba(26,24,20,0.18)" }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 380, damping: 26 }}
-      custom={index}
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
+      onMouseLeave={() => onLeave?.()}
+      aria-label={`${lang === "fi" ? scent.name : scent.nameEn} — ${lang === "fi" ? "avaa tuoksukortti" : "open scent card"}`}
     >
-      <div className="relative w-full aspect-square overflow-hidden">
-        <Image src={scent.image} alt={lang === "fi" ? scent.name : scent.nameEn} fill
-          className="object-cover transition-transform duration-500 group-hover:scale-107"
-          sizes="(max-width: 768px) 50vw, 20vw" />
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(255,255,255,0.15) 0%, transparent 60%)` }}
-        />
-        <div className="absolute inset-0 bg-[var(--ink)]/0 group-hover:bg-[var(--ink)]/15 transition-all duration-300 flex items-center justify-center">
-          <span className="tag-mono text-[8px] px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-md !text-white border border-white/25 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-            {lang === "fi" ? "Lue lisää" : "Learn more"}
-          </span>
+      <div className="rounded-[var(--radius-lg)] bg-[var(--bg-2)] ring-1 ring-[var(--line)] p-1.5 transition-shadow duration-300 group-hover:shadow-e2 group-hover:ring-[var(--accent-2)]">
+        <div className="relative overflow-hidden rounded-[calc(var(--radius-lg)-6px)]" style={{ aspectRatio: "4 / 5" }}>
+          <Image src={scent.image} alt="" fill
+            className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+            sizes="(max-width: 768px) 50vw, 20vw" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 mix-blend-multiply"
+            style={{ background: "linear-gradient(180deg, rgba(196,122,58,0.06) 0%, rgba(26,24,20,0.12) 100%)" }}
+          />
         </div>
       </div>
-      <div className="p-3 pb-4 bg-[var(--ink)]" style={{ transform: "translateZ(10px)" }}>
-        <p className="font-serif text-lg italic text-white leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
-        <p className="tag-mono text-[8px] mt-1 !text-white/75">{lang === "fi" ? scent.profile : scent.profileEn}</p>
-        <p className="mt-2 font-serif text-xl text-white">{scent.price}</p>
-      </div>
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)]"
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.3 }}
-        style={{ transformOrigin: "left" }}
-      />
+      <span className="block pt-3 px-1">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="font-serif italic text-xl leading-tight text-[var(--ink)] min-w-0">
+            {lang === "fi" ? scent.name : scent.nameEn}
+          </span>
+          <span className="font-serif text-lg text-[var(--ink)] flex-shrink-0">{scent.price}</span>
+        </span>
+        <span className="mt-0.5 block text-[13px] text-[var(--ink-mute)] leading-snug">
+          {lang === "fi" ? scent.profile : scent.profileEn}
+        </span>
+      </span>
     </motion.button>
   );
 }
@@ -219,18 +186,18 @@ function ProductGrid({ scents, onSelect, onHover, onLeave }: {
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
         {lang === "fi" ? <><span>Tutustu </span><em>tuoksuihin</em></> : <><span>Explore the </span><em>scents</em></>}
       </h2>
-      {(() => {
-        const display = [...scents];
-        [display[0], display[3]] = [display[3], display[0]];
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {display.map((scent, i) => (
-              <TiltScentCard key={scent.id} scent={scent} index={i} lang={lang}
-                onSelect={onSelect} onHover={onHover} onLeave={onLeave} />
-            ))}
-          </div>
-        );
-      })()}
+      <motion.div
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={VIEWPORT_ONCE}
+      >
+        {scents.map((scent) => (
+          <ScentCard key={scent.id} scent={scent} lang={lang}
+            onSelect={onSelect} onHover={onHover} onLeave={onLeave} />
+        ))}
+      </motion.div>
     </section>
   );
 }
@@ -247,7 +214,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-serif italic text-base text-[var(--ink)] leading-tight truncate">{lang === "fi" ? scent.name : scent.nameEn}</p>
-        <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5 truncate">{lang === "fi" ? scent.profile : scent.profileEn}</p>
+        <p className="text-[12px] text-[var(--ink-mute)] mt-0.5 truncate">{lang === "fi" ? scent.profile : scent.profileEn}</p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         <button onClick={() => setQuantity(scent.id, qty - 1)} disabled={qty === 0}
@@ -262,7 +229,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
           </AnimatePresence>
         </div>
         <button onClick={() => setQuantity(scent.id, qty + 1)} disabled={total >= 6}
-          className="w-11 h-11 rounded-full border border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--ink)] hover:border-[var(--ink)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+          className="w-11 h-11 rounded-full border border-[var(--ink)] bg-[var(--ink)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--accent-2-strong)] hover:border-[var(--accent-2-strong)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
@@ -284,7 +251,7 @@ function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void
         <p className="font-serif italic text-sm text-[var(--ink)]">
           {JAR_LABELS[item.jarColor][lang]} · {totalInItem} {lang === "fi" ? "kpl" : "pcs"}
         </p>
-        <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5 leading-relaxed">{scentLine}</p>
+        <p className="text-[12px] text-[var(--ink-mute)] mt-0.5 leading-relaxed">{scentLine}</p>
       </div>
       <button onClick={onRemove} aria-label="Poista"
         className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors p-1 mt-0.5 flex-shrink-0">
@@ -337,7 +304,7 @@ function ConfigureStep({
 
           {/* Jar selector */}
           <div className="mb-8">
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-1">
+            <p className="tag-mono mb-1">
               {lang === "fi" ? "Valitse purkin väri" : "Choose jar colour"}
             </p>
             <p className="text-[11px] leading-snug text-[var(--ink-soft)] mb-3">
@@ -349,9 +316,9 @@ function ConfigureStep({
               {jars.map((jar) => (
                 <button key={jar} onClick={() => setJar(jar)}
                   className={["flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200",
-                    config.jar === jar ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
+                    config.jar === jar ? "border-[var(--accent-2)] bg-[var(--accent-2-tint)]" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
                   <div className="w-14 h-18"><CandleSVG jar={jar} animate={false} /></div>
-                  <span className="tag-mono text-[8px] text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
+                  <span className="tag-mono text-[10px] !text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
                 </button>
               ))}
             </div>
@@ -360,7 +327,7 @@ function ConfigureStep({
           {/* Scent steppers */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="tag-mono text-[8px] text-[var(--ink-mute)]">
+              <p className="tag-mono">
                 {lang === "fi" ? "Valitse tuoksut" : "Choose scents"}
               </p>
               <span className={`tag-mono text-[10px] ${currentQty >= 6 ? "text-[var(--accent-2-strong)]" : "text-[var(--ink-mute)]"}`}>
@@ -373,7 +340,7 @@ function ConfigureStep({
           </div>
 
           <button onClick={handleAddToCart} disabled={currentQty === 0}
-            className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+            className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
             {lang === "fi" ? "+ Lisää koriin" : "+ Add to cart"}
           </button>
         </div>
@@ -382,8 +349,8 @@ function ConfigureStep({
         <div className="md:sticky md:top-24">
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
             <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
-              <p className="tag-mono text-[9px]">{lang === "fi" ? "Ostoskori" : "Cart"}</p>
-              <p className="tag-mono text-[9px] text-[var(--ink-mute)]">
+              <p className="tag-mono !text-[var(--ink)]">{lang === "fi" ? "Ostoskori" : "Cart"}</p>
+              <p className="tag-mono">
                 {cartQty} {lang === "fi" ? "kynttilää" : "candles"}
               </p>
             </div>
@@ -418,7 +385,7 @@ function ConfigureStep({
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="tag-mono text-[8px] text-[var(--ink-mute)]">{lang === "fi" ? "Yhteensä" : "Total"}</p>
+                  <p className="tag-mono">{lang === "fi" ? "Yhteensä" : "Total"}</p>
                   <AnimatePresence mode="wait">
                     <motion.p key={cartPrice} className="font-serif text-3xl italic text-[var(--ink)]"
                       initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
@@ -430,7 +397,7 @@ function ConfigureStep({
               </div>
 
               <button onClick={onProceed} disabled={cart.length === 0}
-                className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
                 {lang === "fi" ? "Jatka tilaukseen →" : "Proceed to checkout →"}
               </button>
             </div>
@@ -467,7 +434,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   return (
     <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-lg mx-auto">
       <ProgressBar step="checkout" />
-      <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
+      <button onClick={onBack} className="tag-mono text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {lang === "fi" ? "Takaisin" : "Back"}
       </button>
@@ -494,19 +461,19 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
         <div className="flex items-start gap-3 pt-3 pb-1">
           <input type="checkbox" id="delivery" checked={formData.wantsDelivery}
             onChange={(e) => setFormData({ ...formData, wantsDelivery: e.target.checked })}
-            className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
+            className="mt-0.5 w-4 h-4 accent-[var(--accent-2-strong)] cursor-pointer flex-shrink-0" />
           <label htmlFor="delivery" className="cursor-pointer">
             <p className="text-sm text-[var(--ink)]">Tarvitsen kuljetuksen</p>
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5">Postitus +8€</p>
+            <p className="text-[12px] text-[var(--ink-mute)] mt-0.5">Postitus +8€</p>
           </label>
         </div>
         <div className="flex items-start gap-3 pb-1">
           <input type="checkbox" id="personalMsg" checked={formData.wantsPersonalMessage}
             onChange={(e) => setFormData({ ...formData, wantsPersonalMessage: e.target.checked })}
-            className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
+            className="mt-0.5 w-4 h-4 accent-[var(--accent-2-strong)] cursor-pointer flex-shrink-0" />
           <label htmlFor="personalMsg" className="cursor-pointer">
             <p className="text-sm text-[var(--ink)]">Haluan itsekirjoitetun viestin sinetöityyn kuoreen</p>
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5">Käsinkirjoitettu viesti lisätään tilaukseen</p>
+            <p className="text-[12px] text-[var(--ink-mute)] mt-0.5">Käsinkirjoitettu viesti lisätään tilaukseen</p>
           </label>
         </div>
         {formData.wantsPersonalMessage && (
@@ -517,21 +484,21 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <label className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1.5">Kirjoita viestisi</label>
+            <label className="tag-mono block mb-1.5">Kirjoita viestisi</label>
             <textarea
               value={formData.personalMessage}
               onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
               rows={5}
               className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors duration-base resize-none leading-relaxed"
             />
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-1.5">
+            <p className="text-[12px] text-[var(--ink-mute)] mt-1.5 leading-snug">
               Erottele viestit numeroilla, esim: 1. Hyvää syntymäpäivää! 2. Rakastan sinua...
             </p>
           </motion.div>
         )}
         <div className="pt-4 border-t border-[var(--line)]">
           <button type="submit"
-            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200">
+            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200">
             {lang === "fi" ? "Seuraava →" : "Next →"}
           </button>
         </div>
@@ -588,7 +555,7 @@ function SummaryStep({
   return (
     <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-4xl mx-auto">
       <ProgressBar step="summary" />
-      <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
+      <button onClick={onBack} className="tag-mono text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {lang === "fi" ? "Takaisin" : "Back"}
       </button>
@@ -599,7 +566,7 @@ function SummaryStep({
         {/* Left: Order details */}
         <div className="space-y-8">
           <div>
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">Purkkivalinnat</p>
+            <p className="tag-mono mb-3">Purkkivalinnat</p>
             {(["white", "green", "red"] as JarColor[]).map((color) =>
               colorCounts[color] > 0 ? (
                 <div key={color} className="flex justify-between items-center py-2.5 border-b border-[var(--line)]">
@@ -618,7 +585,7 @@ function SummaryStep({
             const scentItems = SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0);
             return (
               <div key={color}>
-                <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">
+                <p className="tag-mono mb-3">
                   Tuoksut ({JAR_LABELS[color].fi})
                 </p>
                 {scentItems.map((s) => (
@@ -627,7 +594,7 @@ function SummaryStep({
                       <Image src={s.image} alt={s.name} fill className="object-cover" sizes="32px" />
                     </div>
                     <span className="font-serif italic text-sm text-[var(--ink)] flex-1">{s.name}</span>
-                    <span className="tag-mono text-[8px] text-[var(--ink-mute)]">×{colorScents[color][s.id]}</span>
+                    <span className="tag-mono">×{colorScents[color][s.id]}</span>
                   </div>
                 ))}
               </div>
@@ -642,7 +609,7 @@ function SummaryStep({
             {discountApplied && <Row label="Alennus (15%)" value={`-${discountAmount}€`} />}
             {formData.wantsDelivery && <Row label="Toimitus" value="+8€" />}
             <div className="border-t border-[var(--line)] pt-3 flex justify-between items-baseline">
-              <span className="tag-mono text-[9px] text-[var(--ink-mute)]">Hinta yhteensä</span>
+              <span className="tag-mono">Hinta yhteensä</span>
               <AnimatePresence mode="wait">
                 <motion.span key={finalPrice} className="font-serif text-3xl italic text-[var(--ink)]"
                   initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
@@ -654,7 +621,7 @@ function SummaryStep({
           </div>
 
           <div>
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-2">Alekoodi</p>
+            <p className="tag-mono mb-2">Alekoodi</p>
             {discountApplied ? (
               <motion.p className="text-sm text-[var(--accent)] font-serif italic"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -667,7 +634,7 @@ function SummaryStep({
                   className={["flex-1 px-4 py-2.5 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-sm font-mono focus:outline-none transition-colors duration-base",
                     discountError ? "border-[var(--destructive)] focus:border-[var(--destructive)]" : "border-[var(--field-border)] focus:border-[var(--accent-2)]"].join(" ")} />
                 <button onClick={handleApply}
-                  className="px-4 py-2.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.1em] uppercase rounded-xl hover:bg-[var(--accent)] transition-colors">
+                  className="px-4 py-2.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.1em] uppercase rounded-xl hover:bg-[var(--accent-2-strong)] transition-colors">
                   OK
                 </button>
               </div>
@@ -678,7 +645,7 @@ function SummaryStep({
           </div>
 
           <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-5">
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">Yhteystiedot</p>
+            <p className="tag-mono mb-3">Yhteystiedot</p>
             <Row label="Nimi" value={`${formData.firstName} ${formData.lastName}`} />
             <Row label="Sähköposti" value={formData.email} />
             <Row label="Osoite" value={formData.address} />
@@ -686,7 +653,7 @@ function SummaryStep({
             <Row label="Postitus" value={formData.wantsDelivery ? "Kyllä" : "Ei"} />
             {formData.wantsPersonalMessage && formData.personalMessage && (
               <div className="py-1.5 border-b border-[var(--line)]">
-                <span className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1">Henkilökohtainen viesti</span>
+                <span className="tag-mono block mb-1">Henkilökohtainen viesti</span>
                 <p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">{formData.personalMessage}</p>
               </div>
             )}
@@ -696,7 +663,7 @@ function SummaryStep({
           <div className="flex items-start gap-3 py-1">
             <input type="checkbox" id="privacyConsent" checked={privacyAccepted}
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
+              className="mt-0.5 w-4 h-4 accent-[var(--accent-2-strong)] cursor-pointer flex-shrink-0" />
             <label htmlFor="privacyConsent" className="cursor-pointer text-sm text-[var(--ink-soft)] leading-snug">
               Olen lukenut ja hyväksyn, että tiedot käsitellään{" "}
               <PrivacyLink className="underline underline-offset-2 text-[var(--ink)] hover:text-[var(--accent-2)] transition-colors">
@@ -713,7 +680,7 @@ function SummaryStep({
           )}
 
           <button onClick={() => onConfirm(finalPrice)} disabled={!privacyAccepted || isSubmitting}
-            className="w-full py-4 bg-[var(--accent)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {isSubmitting ? (<><Spinner size={14} /> Käsitellään…</>) : "Vahvista tilaus →"}
           </button>
         </div>
@@ -752,7 +719,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
 
       <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6">
-          <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">Tilauksesi sisältö</p>
+          <p className="tag-mono mb-4">Tilauksesi sisältö</p>
           {(["white", "green", "red"] as JarColor[]).map((color) => {
             if (colorCounts[color] === 0) return null;
             return (
@@ -764,7 +731,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
                   </p>
                 </div>
                 {SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0).map((s) => (
-                  <p key={s.id} className="tag-mono text-[8px] text-[var(--ink-mute)] ml-5 leading-relaxed">
+                  <p key={s.id} className="tag-mono ml-5 leading-relaxed">
                     {s.name} ×{colorScents[color][s.id]}
                   </p>
                 ))}
@@ -772,7 +739,7 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
             );
           })}
           <div className="border-t border-[var(--line)] pt-4 mt-4 flex justify-between items-baseline">
-            <span className="tag-mono text-[9px] text-[var(--ink-mute)]">
+            <span className="tag-mono">
               {formData.wantsDelivery ? "Hinta (sis. toimitus)" : "Hinta yhteensä"}
             </span>
             <span className="font-serif text-2xl italic text-[var(--ink)]">{finalPrice}€</span>
@@ -781,33 +748,40 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6">
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">Maksutavat</p>
-            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
-              <p>💵 Käteinen (toimituksen yhteydessä)</p>
-              <p>📱 MobilePay: <span className="font-mono text-[var(--ink)]">+358505418295</span></p>
-              <p>📲 Siirto-sovellus: <span className="font-mono text-[var(--ink)]">+358505418295</span></p>
+            <p className="tag-mono mb-4">Maksutavat</p>
+            <div className="text-sm">
+              <div className="flex justify-between items-baseline gap-4 py-2 border-b border-[var(--line)]">
+                <span className="text-[var(--ink)]">Käteinen</span>
+                <span className="text-[var(--ink-mute)] text-[13px]">toimituksen yhteydessä</span>
+              </div>
+              <div className="flex justify-between items-baseline gap-4 py-2 border-b border-[var(--line)]">
+                <span className="text-[var(--ink)]">MobilePay</span>
+                <span className="font-mono text-[13px] text-[var(--ink)]">+358 50 5418295</span>
+              </div>
+              <div className="flex justify-between items-baseline gap-4 py-2">
+                <span className="text-[var(--ink)]">Siirto</span>
+                <span className="font-mono text-[13px] text-[var(--ink)]">+358 50 5418295</span>
+              </div>
             </div>
-            <div className="mt-4 p-3 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--line)]">
-              <p className="tag-mono text-[8px] text-[var(--ink-mute)] leading-relaxed">
-                📌 Mainitse maksussa oma nimesi, jotta voimme yhdistää sen tilaukseesi.
-              </p>
-            </div>
+            <p className="mt-4 pt-3 border-t border-[var(--line)] text-[13px] leading-relaxed text-[var(--ink-soft)]">
+              Mainitse maksussa oma nimesi, jotta voimme yhdistää sen tilaukseesi.
+            </p>
           </div>
           <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-5 space-y-2">
             <p className="text-sm text-[var(--ink-soft)]">
-              📦 <strong className="text-[var(--ink)]">Toimitusaika:</strong>{" "}
+              <strong className="text-[var(--ink)]">Toimitusaika:</strong>{" "}
               Toimitus Oulun alueella henkilökohtaisesti tai postitse 5-7 arkipäivän kuluessa.
             </p>
             <p className="text-sm text-[var(--ink-soft)]">
-              💬 <strong className="text-[var(--ink)]">Kysyttävää?</strong>{" "}
+              <strong className="text-[var(--ink)]">Kysyttävää?</strong>{" "}
               <a href="mailto:leimucandles@gmail.com"
-                className="text-[var(--accent)] hover:text-[var(--ink)] transition-colors">
+                className="text-[var(--accent-2-strong)] underline underline-offset-2 hover:text-[var(--ink)] transition-colors">
                 leimucandles@gmail.com
               </a>
             </p>
           </div>
           <p className="text-center font-serif italic text-[var(--ink-mute)] text-sm px-2">
-            Tuoksuisia hetkiä ja kiitos kun tuet LEIMU Candlesia! ✦
+            Tuoksuisia hetkiä ja kiitos kun tuet LEIMU Candlesia.
           </p>
         </div>
       </div>
@@ -962,7 +936,7 @@ export function TuotteetClient() {
               <ThankyouStep formData={formData} orderSnapshot={orderSnapshot} finalPrice={confirmedPrice} />
               <div className="mt-12 text-center">
                 <button onClick={resetOrder}
-                  className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] underline underline-offset-4 transition-colors">
+                  className="tag-mono hover:text-[var(--ink)] underline underline-offset-4 transition-colors">
                   Tee uusi tilaus
                 </button>
               </div>
@@ -980,13 +954,13 @@ export function TuotteetClient() {
             initial={{ opacity: 0, scale: 1.05, filter: "blur(6px)" }}
             whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
             viewport={VIEWPORT_NEAR}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.5, ease: EASE_PREMIUM }}
           >
             <video src="/images/Valmistus.mp4" autoPlay muted loop playsInline preload="metadata"
               className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,24,20,0.35)] via-transparent to-transparent pointer-events-none" />
             <div className="absolute bottom-5 left-5">
-              <span className="font-mono text-[8px] tracking-[0.18em] uppercase text-white/60">
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/70">
                 Oulu · Studio
               </span>
             </div>
@@ -1031,7 +1005,7 @@ export function TuotteetClient() {
               ].map(({ val, label }) => (
                 <div key={label}>
                   <p className="font-serif text-2xl italic text-[var(--ink)] leading-none">{val}</p>
-                  <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--ink-mute)] mt-1">{label}</p>
+                  <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--ink-mute)] mt-1">{label}</p>
                 </div>
               ))}
             </div>
@@ -1051,7 +1025,7 @@ export function TuotteetClient() {
           initial={{ opacity: 0, y: 24, filter: "blur(5px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={VIEWPORT_NEAR}
-          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.85, ease: EASE_PREMIUM }}
         >
           {[
             { src: "/images/3-kynttilaata.png", alt: "LEIMU kynttilät", offset: "md:mt-0" },
@@ -1065,7 +1039,7 @@ export function TuotteetClient() {
               initial={{ opacity: 0, y: 28, filter: "blur(5px)" }}
               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               viewport={VIEWPORT_NEAR}
-              transition={{ duration: 0.75, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.75, delay: i * 0.1, ease: EASE_PREMIUM }}
               custom={i}
             >
               <Image src={src} alt={alt} fill
@@ -1083,7 +1057,7 @@ export function TuotteetClient() {
             whileInView="visible"
             viewport={VIEWPORT_NEAR}
           >
-            <motion.p variants={fadeUpItem} className="tag-mono text-[var(--accent)] mb-3">Luksusta arjen keskelle</motion.p>
+            <motion.p variants={fadeUpItem} className="tag-mono mb-3">Luksusta arjen keskelle</motion.p>
             <motion.h2 variants={headingReveal} className="heading-display text-4xl md:text-5xl mb-8 text-[var(--ink)]">
               Enemmän kuin<br /><em>pelkkä kynttilä.</em>
             </motion.h2>
@@ -1105,14 +1079,14 @@ export function TuotteetClient() {
             </div>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <a href="#configurator"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200">
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200">
                 Tee tilaus
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                   <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </a>
-              <span className="flex items-center gap-2 tag-mono text-[9px] text-[var(--ink-mute)]">
-                ✦ Ilmainen lahjapussi jokaiseen tilaukseen
+              <span className="flex items-center gap-2 tag-mono">
+                Ilmainen lahjapussi jokaiseen tilaukseen
               </span>
             </div>
           </motion.div>
@@ -1123,7 +1097,7 @@ export function TuotteetClient() {
             initial={{ opacity: 0, x: 36, filter: "blur(6px)" }}
             whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             viewport={VIEWPORT_NEAR}
-            transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.9, delay: 0.15, ease: EASE_PREMIUM }}
             whileHover={{ scale: 1.02, boxShadow: "0 32px 80px -22px rgba(26,24,20,0.16)" }}
           >
             <Image src="/images/Lahjasetti mainos.png" alt="LEIMU lahjasetti" fill
@@ -1132,7 +1106,7 @@ export function TuotteetClient() {
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/15" />
             <div className="absolute bottom-5 left-5 right-5">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-md border border-white/20">
-                <span className="tag-mono text-[8px] text-white">✦ Tyylikäs lahjapussi + vahasinetti</span>
+                <span className="tag-mono text-[10px] !text-white">Tyylikäs lahjapussi + vahasinetti</span>
               </div>
             </div>
           </motion.div>

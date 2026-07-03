@@ -225,8 +225,8 @@ export function CandleSVG({
       <rect x="30" y="116" width="60" height="46" rx="3"
         fill="rgba(255,255,255,0.08)" stroke={s.stroke} strokeWidth="0.6" />
       <text x="60" y="137" textAnchor="middle"
-        fontFamily="'DM Serif Display', serif"
-        fontStyle="italic" fontSize="13" fontWeight="400"
+        fontFamily="var(--font-serif), serif"
+        fontStyle="italic" fontSize="13" fontWeight="500"
         fill={s.textColor} opacity="0.95">
         {label}
       </text>

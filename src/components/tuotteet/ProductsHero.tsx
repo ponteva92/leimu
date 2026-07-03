@@ -28,14 +28,12 @@ const COPY = {
     l1: "Kynttilä, joka on",
     l2: "täysin sinun",
     body: "Valitse purkin väri ja tuoksut, lisää koriin ja tilaa helposti. Jokainen LEIMU valetaan käsin pienissä erissä — 100 % soijavahasta ja sheabutterista, puhtaalla puuvillasydämellä ja Suomen luontoon inspiroituneilla tuoksuilla, läpikuultavaan maitolasipurkkiin. Viimeistelynä käsinleimattu vahasinetti ja tyylikäs lahjapussi — pala luonnollista rauhaa, joka on täysin sinun.",
-    scroll: "Vieritä",
   },
   en: {
     eyebrow: "LEIMU — Products",
     l1: "A candle that is",
     l2: "entirely yours",
     body: "Choose your jar colour and scents, add to cart and order with ease. Every LEIMU is hand-poured in small batches — 100% soy wax and shea butter, a pure cotton wick, and scents inspired by Finnish nature, in a translucent frosted milk-glass jar. Finished with a hand-stamped wax seal and an elegant gift bag — a piece of natural calm that is entirely yours.",
-    scroll: "Scroll",
   },
 } as const;
 
@@ -118,16 +116,6 @@ export function ProductsHero() {
           </h1>
 
           <p className="max-w-md text-base leading-relaxed text-[var(--ink-soft)]">{t.body}</p>
-
-          <div className="mt-2 flex items-center gap-3 text-[var(--ink-mute)]">
-            <span className="tag-mono text-[9px]">{t.scroll}</span>
-            <motion.span
-              aria-hidden="true"
-              className="block h-8 w-px origin-top bg-[var(--line)]"
-              animate={reducedMotion ? undefined : { scaleY: [0.35, 1, 0.35] }}
-              transition={reducedMotion ? undefined : { duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </div>
         </motion.div>
 
         {/* ── RIGHT — Living Still Life canvas ── */}
