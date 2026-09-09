@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useMotionValue, useTransform as useTf, useSpring, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useStore } from "@/context/store";
 import { SCENTS } from "@/lib/scents";
 import { ScentModal } from "@/components/ScentModal";
@@ -26,19 +26,19 @@ function StatsStrip() {
   ];
 
   return (
-    <section className="border-y border-[var(--line)] bg-[var(--bg-2)]">
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-14 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-6 text-center md:text-left">
+    <section className="chapter-dark border-t border-[var(--line)]">
+      <div className="max-w-6xl mx-auto px-6 md:px-10 py-10 md:py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6 text-center md:text-left">
           {stats.map((s, i) => (
             <motion.div
               key={i}
-              className="flex flex-col gap-2"
-              initial={{ opacity: 0, y: 28, filter: "blur(8px)", scale: 0.97 }}
-              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+              className="flex flex-col gap-1.5"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={VIEWPORT_NEAR}
-              transition={{ delay: i * 0.12, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ delay: i * 0.08, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="font-serif italic text-4xl md:text-5xl text-[var(--ink)] leading-[1.1] pb-1">
+              <p className="font-serif italic text-3xl md:text-4xl text-[var(--ink)] leading-[1.1] pb-0.5">
                 {s.value}
               </p>
               <p className="tag-mono text-[9px] text-[var(--ink-mute)]">{s.label[lang]}</p>
@@ -69,8 +69,8 @@ function StoryTeaser() {
   ];
 
   return (
-    <section ref={containerRef} className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
-      <div className="grid md:grid-cols-2 gap-16 items-center">
+    <section ref={containerRef} className="py-28 md:py-32 px-6 md:px-10 max-w-7xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-16 lg:gap-24 items-center">
         {/* Image collage */}
         <div className="relative h-[480px] md:h-[560px]">
           {images.map((img, i) => {
@@ -82,7 +82,7 @@ function StoryTeaser() {
             return (
               <motion.div
                 key={i}
-                className={`absolute rounded-xl overflow-hidden ${positions[i]}`}
+                className={`absolute rounded-lg overflow-hidden shadow-e2 ${positions[i]}`}
                 style={{ y: img.style }}
                 initial={{ opacity: 0, scale: 1.08, filter: "blur(8px)" }}
                 whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
@@ -149,7 +149,7 @@ function StoryTeaser() {
   );
 }
 
-/* ─── Bento Card (3-D tilt + shimmer) ──────────────── */
+/* ─── Bento Card (photography first — crop + ember light, no 3-D tilt) ── */
 function BentoCard({ scent, isLarge, index, lang, onOpen }: {
   scent: import("@/types").Scent;
   isLarge: boolean;
@@ -157,34 +157,15 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
   lang: "fi" | "en";
   onOpen: () => void;
 }) {
-  const cardRef = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 200, damping: 20 });
-  const smy = useSpring(my, { stiffness: 200, damping: 20 });
-  const rotateX = useTf(smy, v => `${(v - 0.5) * 14}deg`);
-  const rotateY = useTf(smx, v => `${(0.5 - v) * 14}deg`);
-  const shimmerX = useTf(smx, v => `${v * 100}%`);
-  const shimmerY = useTf(smy, v => `${v * 100}%`);
-
   return (
     <motion.button
-      ref={cardRef}
       className={[
-        "group relative rounded-2xl border border-[var(--line)] overflow-hidden cursor-pointer text-left",
+        "group relative rounded-xl border border-[var(--line)] overflow-hidden cursor-pointer text-left",
         isLarge ? "row-span-2" : "",
       ].join(" ")}
-      style={{ transformStyle: "preserve-3d", perspective: "800px", rotateX, rotateY }}
-      onMouseMove={(e) => {
-        const r = cardRef.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); }}
       onClick={onOpen}
-      whileHover={{ scale: 1.02, boxShadow: "0 24px 64px -16px rgba(26,24,20,0.22)" }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -4, boxShadow: "0 20px 48px -18px rgba(26,24,20,0.22)" }}
+      whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 280, damping: 30 }}
       custom={index}
       variants={{
@@ -195,44 +176,26 @@ function BentoCard({ scent, isLarge, index, lang, onOpen }: {
       whileInView="visible"
       viewport={{ once: true, margin: "-80px 0px" }}
     >
-      {/* Background image */}
       <Image
         src={scent.image}
         alt={lang === "fi" ? scent.name : scent.nameEn}
         fill
-        className="object-cover transition-transform duration-700 group-hover:scale-106"
+        className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
         sizes="(max-width: 768px) 50vw, 33vw"
       />
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-      {/* Samsung shimmer — light radial following mouse */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none rounded-2xl"
-        style={{
-          background: `radial-gradient(circle at ${shimmerX} ${shimmerY}, rgba(255,255,255,0.13) 0%, transparent 55%)`,
-        }}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/20 to-transparent" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{ background: `radial-gradient(ellipse 70% 50% at 50% 80%, ${scent.waxColor}33, transparent 70%)` }}
       />
-      {/* Glow border */}
-      <motion.div
-        className="absolute inset-0 rounded-2xl pointer-events-none"
-        style={{ border: "1px solid rgba(212,169,106,0)" }}
-        whileHover={{ border: "1px solid rgba(212,169,106,0.55)", boxShadow: "inset 0 0 20px rgba(212,169,106,0.08)" }}
-        transition={{ duration: 0.25 }}
-      />
-      {/* Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4" style={{ transform: "translateZ(20px)" }}>
-        <p className={`font-serif italic text-white drop-shadow-md ${isLarge ? "text-2xl" : "text-base"}`}>
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+        <p className={`font-serif italic text-white drop-shadow-md ${isLarge ? "text-2xl md:text-3xl" : "text-base md:text-lg"}`}>
           {lang === "fi" ? scent.name : scent.nameEn}
         </p>
         <p className="tag-mono text-[8px] !text-white/90 mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
           {lang === "fi" ? scent.profile : scent.profileEn}
         </p>
-      </div>
-      {/* Hover pill */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <span className="tag-mono text-[8px] px-2.5 py-1.5 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/25">
-          {lang === "fi" ? "Avaa" : "Open"}
-        </span>
       </div>
     </motion.button>
   );
@@ -243,7 +206,7 @@ function FeaturedScents() {
   const { lang, openModal } = useStore();
 
   return (
-    <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
+    <section className="py-28 md:py-32 px-6 md:px-10 max-w-7xl mx-auto">
       <motion.div
         variants={staggerCinematic}
         initial="hidden"
@@ -273,7 +236,7 @@ function FeaturedScents() {
         // Swap Havu (index 0) and Mustikka (index 3)
         [display[0], display[3]] = [display[3], display[0]];
         return (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px]">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 auto-rows-[180px] md:auto-rows-[220px]">
             {display.map((scent, i) => {
               const isLarge = i === 0;
               return (
@@ -368,7 +331,7 @@ function CustomerReviews() {
           {tripled.map((review, i) => (
             <div
               key={i}
-              className="flex-shrink-0 flex flex-col justify-between rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6"
+              className="flex-shrink-0 flex flex-col justify-between rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-6"
               style={{ width: 300 }}
             >
               {/* Opening quote mark */}
@@ -512,7 +475,7 @@ function Benefits() {
   return (
     <>
       {/* Light section: 4 values */}
-      <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
+      <section className="py-28 md:py-32 px-6 md:px-10 max-w-7xl mx-auto">
         <motion.div
           variants={staggerCinematic}
           initial="hidden"
@@ -546,10 +509,9 @@ function Benefits() {
               transition={{ delay: i * 0.12, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
             >
               <motion.div
-                className="w-12 h-12 rounded-xl border border-[var(--line)] flex items-center justify-center text-[var(--accent-2)]"
+                className="w-12 h-12 rounded-lg border border-[var(--line)] flex items-center justify-center text-[var(--accent-2)]"
                 whileHover={{
-                  scale: 1.15,
-                  rotate: 8,
+                  scale: 1.06,
                   borderColor: "var(--accent-2)",
                   backgroundColor: "rgba(196,122,58,0.08)",
                 }}
@@ -564,50 +526,55 @@ function Benefits() {
           ))}
         </div>
       </section>
-
-      {/* Dark pull quote */}
-      <section className="bg-[var(--ink)] py-28 px-6 md:px-10 overflow-hidden">
-        <motion.div
-          className="max-w-4xl mx-auto text-center"
-          variants={staggerCinematic}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT_NEAR}
-        >
-          <motion.p
-            variants={{
-              hidden:  { opacity: 0, y: 40, filter: "blur(8px)" },
-              visible: { opacity: 1, y: 0,  filter: "blur(0px)",
-                transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] } },
-            }}
-            className="font-serif text-3xl md:text-5xl font-light italic leading-snug"
-            style={{ color: "var(--bg)" }}
-          >
-            {lang === "fi" ? (
-              <>
-                &ldquo;Kynttilä ei ole vain valo,{" "}
-                <span style={{ color: "var(--accent-2)" }}>se on hetki.</span>&rdquo;
-              </>
-            ) : (
-              <>
-                &ldquo;A candle is not just light.{" "}
-                <span style={{ color: "var(--accent-2)" }}>It&apos;s a moment.</span>&rdquo;
-              </>
-            )}
-          </motion.p>
-          <motion.p
-            variants={{
-              hidden:  { opacity: 0, y: 12 },
-              visible: { opacity: 0.4, y: 0,
-                transition: { duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] } },
-            }}
-            className="tag-mono mt-8 text-[var(--bg)]"
-          >
-            LEIMU Candles
-          </motion.p>
-        </motion.div>
-      </section>
     </>
+  );
+}
+
+/* ─── Ember pull quote — seam from dark hero into the page ─── */
+function PullQuote() {
+  const { lang } = useStore();
+
+  return (
+    <section className="chapter-dark chapter-ember relative overflow-hidden py-28 md:py-36 px-6 md:px-10">
+      <motion.div
+        className="max-w-4xl mx-auto text-center"
+        variants={staggerCinematic}
+        initial="hidden"
+        whileInView="visible"
+        viewport={VIEWPORT_NEAR}
+      >
+        <motion.p
+          variants={{
+            hidden:  { opacity: 0, y: 40, filter: "blur(8px)" },
+            visible: { opacity: 1, y: 0,  filter: "blur(0px)",
+              transition: { duration: 1.3, ease: [0.22, 1, 0.36, 1] } },
+          }}
+          className="font-serif text-3xl md:text-5xl lg:text-6xl font-light italic leading-snug text-[var(--ink)]"
+        >
+          {lang === "fi" ? (
+            <>
+              &ldquo;Kynttilä ei ole vain valo,{" "}
+              <span className="text-[var(--accent-2)]">se on hetki.</span>&rdquo;
+            </>
+          ) : (
+            <>
+              &ldquo;A candle is not just light.{" "}
+              <span className="text-[var(--accent-2)]">It&apos;s a moment.</span>&rdquo;
+            </>
+          )}
+        </motion.p>
+        <motion.p
+          variants={{
+            hidden:  { opacity: 0, y: 12 },
+            visible: { opacity: 0.55, y: 0,
+              transition: { duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] } },
+          }}
+          className="tag-mono mt-10 text-[var(--ink)]"
+        >
+          LEIMU Candles
+        </motion.p>
+      </motion.div>
+    </section>
   );
 }
 
@@ -615,26 +582,27 @@ function Benefits() {
 /* ─── Page ──────────────────────────────────────────────────────────
    The hero is sticky (z-0); everything below sits in a higher-z, opaque
    shell so it glides up and over the hero as you scroll — the hero dims
-   and recedes rather than scrolling away.                                 */
+   and recedes rather than scrolling away. Ritual-first: quote → stats →
+   scents → gift → story → why → reviews → instagram.                      */
 export function HomeClient() {
   return (
     <>
       <ScentModal />
       <HeroCandle />
-      <div className="home-calm relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]">
-        {/* Premium seam — a warm hairline where the content rises over the hero */}
+      <div className="home-calm relative z-10 bg-[var(--bg)] shadow-[0_-32px_80px_-16px_rgba(0,0,0,0.55)]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-px inset-x-0 h-px"
-          style={{ background: "linear-gradient(to right, transparent, rgba(26,24,20,0.12) 25%, rgba(196,122,58,0.28) 50%, rgba(26,24,20,0.12) 75%, transparent)" }}
+          style={{ background: "linear-gradient(to right, transparent, rgba(216,148,86,0.18) 25%, rgba(216,148,86,0.45) 50%, rgba(216,148,86,0.18) 75%, transparent)" }}
         />
+        <PullQuote />
         <StatsStrip />
-        <StoryTeaser />
         <FeaturedScents />
         <GiftCeremony />
+        <StoryTeaser />
+        <Benefits />
         <CustomerReviews />
         <InstagramFeed />
-        <Benefits />
       </div>
     </>
   );

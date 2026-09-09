@@ -115,10 +115,10 @@ export function CustomCursor() {
       rawLean.set(clamp(-vx * 0.42, -1.2, 1.2));
 
       /* Particle emission — throttled to ~30 fps */
-      if (now - lastPRef.current > 30) {
+      if (now - lastPRef.current > 55) {
         lastPRef.current = now;
         setParticles((prev) => [
-          ...prev.slice(-9),
+          ...prev.slice(-4),
           { id: ++pidRef.current, x: e.clientX, y: e.clientY },
         ]);
       }
@@ -151,7 +151,7 @@ export function CustomCursor() {
                 "radial-gradient(ellipse at 50% 80%, rgba(255,180,40,0.38) 0%, transparent 80%)",
               filter: "blur(2.5px)",
             }}
-            initial={{ scale: 1, opacity: 0.38, y: 0 }}
+            initial={{ scale: 1, opacity: 0.22, y: 0 }}
             animate={{ scale: 0.15, opacity: 0, y: -12 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.65, ease: "easeOut" }}

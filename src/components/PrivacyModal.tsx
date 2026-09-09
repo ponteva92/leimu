@@ -90,7 +90,7 @@ function PrivacyModal({ onClose }: { onClose: () => void }) {
 
         {/* Panel */}
         <motion.div
-          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-modal overflow-hidden"
+          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-xl border border-[var(--line)] shadow-modal overflow-hidden"
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.97 }}

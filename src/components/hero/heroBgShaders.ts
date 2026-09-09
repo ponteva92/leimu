@@ -27,10 +27,10 @@ export const bgFrag = /* glsl */ `
   uniform float uTime;
   uniform float uAspect;
   uniform float uOpacity;
-  uniform vec3  uBase;   // tan   #CBB799
-  uniform vec3  uAmber;  // amber #C68E58
-  uniform vec3  uCream;  // cream #F5F5F0
-  uniform vec3  uDeep;   // deep warm shade for troughs
+  uniform vec3  uBase;   // charcoal #16140F
+  uniform vec3  uAmber;  // ember   #D89456
+  uniform vec3  uCream;  // cream   #F2ECDF
+  uniform vec3  uDeep;   // near-black troughs
 
   float hash(vec2 p) {
     p = fract(p * vec2(123.34, 345.45));
@@ -80,14 +80,14 @@ export const bgFrag = /* glsl */ `
       distance(uv, vec2(0.78 * uAspect + 0.12 * cos(t * 0.9), 0.30 + 0.10 * sin(t * 1.4))));
 
     vec3 col = uBase;
-    col = mix(col, uDeep,  smoothstep(0.2, 0.9, f) * 0.55);  // depth in the troughs
-    col = mix(col, uAmber, clamp(r.x * 0.9, 0.0, 1.0) * 0.6); // amber veins
-    col = mix(col, uAmber, o2 * 0.5);                         // lower warm bloom
-    col = mix(col, uCream, o1 * 0.35 + pow(f, 3.0) * 0.15);   // cream highlight
+    col = mix(col, uDeep,  smoothstep(0.15, 0.92, f) * 0.72);  // depth in the troughs
+    col = mix(col, uAmber, clamp(r.x * 0.9, 0.0, 1.0) * 0.38); // ember veins
+    col = mix(col, uAmber, o2 * 0.42);                         // lower warm bloom
+    col = mix(col, uCream, o1 * 0.12 + pow(f, 3.0) * 0.06);    // faint cream
 
-    // soft vignette so the edges sit back behind the content
-    float vig = smoothstep(1.25, 0.2, length((vUv - 0.5) * vec2(uAspect, 1.0)));
-    col *= mix(0.86, 1.0, vig);
+    // deep vignette so the flame reads as the only light
+    float vig = smoothstep(1.35, 0.18, length((vUv - 0.5) * vec2(uAspect, 1.0)));
+    col *= mix(0.62, 1.0, vig);
 
     gl_FragColor = vec4(col, uOpacity);
   }

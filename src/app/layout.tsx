@@ -174,10 +174,15 @@ export default function RootLayout({
           <CustomCursor />
           <SiteHeader />
           <main id="main">{children}</main>
-          <footer className="border-t border-[var(--line)] bg-[var(--bg-2)] py-16 px-8 mt-24">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+          <footer className="relative border-t border-[var(--line)] bg-[var(--bg-2)] py-20 px-8 mt-8">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{ background: "linear-gradient(to right, transparent, rgba(196,122,58,0.28) 50%, transparent)" }}
+            />
+            <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-10">
               <div>
-                <p className="font-serif text-2xl italic mb-3 text-[var(--ink)]">LEIMU</p>
+                <p className="font-serif text-3xl italic mb-3 text-[var(--ink)]">LEIMU</p>
                 <p className="tag-mono mb-6">Käsintehtyjä kynttilöitä</p>
                 <p className="text-sm text-[var(--ink-soft)] leading-relaxed max-w-xs">
                   Jokainen LEIMU-kynttilä on pieneräinen käsityö, valmistettu
@@ -213,8 +218,17 @@ export default function RootLayout({
                 >
                   leimucandles@gmail.com
                 </a>
-                {/* Social icons */}
-                <div className="flex items-center gap-4 mt-6">
+                <p className="text-sm text-[var(--ink-mute)] mt-3">Oulu, Suomi</p>
+                <p className="text-sm text-[var(--ink-mute)] mt-8">
+                  © {new Date().getFullYear()} LEIMU. Kaikki oikeudet pidätetään.
+                </p>
+              </div>
+              <div>
+                <p className="tag-mono mb-6">Instagram</p>
+                <p className="text-sm text-[var(--ink-soft)] leading-relaxed mb-5 max-w-[14rem]">
+                  Pieniä eriä, liekkejä ja Oulun studio.
+                </p>
+                <div className="flex items-center gap-4">
                   <a
                     href="https://www.instagram.com/leimucandles/"
                     target="_blank"
@@ -240,9 +254,14 @@ export default function RootLayout({
                     </svg>
                   </a>
                 </div>
-                <p className="text-sm text-[var(--ink-mute)] mt-8">
-                  © {new Date().getFullYear()} LEIMU. Kaikki oikeudet pidätetään.
-                </p>
+                <a
+                  href="https://www.instagram.com/leimucandles/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] mt-6"
+                >
+                  @leimucandles
+                </a>
               </div>
             </div>
           </footer>

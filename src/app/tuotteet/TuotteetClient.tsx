@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import {
   motion, AnimatePresence,
-  useMotionValue, useSpring, useTransform as useTf,
 } from "framer-motion";
 import Image from "next/image";
 import { useStore } from "@/context/store";
@@ -138,38 +137,21 @@ function ProgressBar({ step }: { step: string }) {
   );
 }
 
-/* ─── Tilt Scent Card ───────────────────────────── */
+/* ─── Editorial scent card ──────────────────────── */
 function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
   scent: Scent; index: number; lang: "fi" | "en";
   onSelect: (s: Scent) => void;
   onHover?: (waxColor: string) => void;
   onLeave?: () => void;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX = useTf(smy, v => `${(v - 0.5) * 12}deg`);
-  const rotY = useTf(smx, v => `${(0.5 - v) * 12}deg`);
-  const shimX = useTf(smx, v => `${v * 100}%`);
-  const shimY = useTf(smy, v => `${v * 100}%`);
   return (
     <motion.button
-      ref={ref}
-      className="group relative flex flex-col text-left rounded-2xl border border-[var(--line)] bg-[var(--bg)] cursor-pointer overflow-hidden"
-      style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
-      onMouseMove={(e) => {
-        const r = ref.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave?.(); }}
+      className="group relative flex flex-col text-left rounded-xl border border-[var(--line)] bg-[var(--bg)] cursor-pointer overflow-hidden"
+      onMouseLeave={() => { onLeave?.(); }}
       onClick={() => onSelect(scent)}
       onMouseEnter={() => onHover?.(scent.waxColor)}
-      whileHover={{ y: -6, scale: 1.02, borderColor: "rgba(212,169,106,0.6)", boxShadow: "0 20px 56px -16px rgba(26,24,20,0.18)" }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ y: -4, boxShadow: "0 16px 40px -16px rgba(26,24,20,0.16)" }}
+      whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 380, damping: 26 }}
       custom={index}
       variants={fadeUp}
@@ -179,30 +161,19 @@ function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
     >
       <div className="relative w-full aspect-square overflow-hidden">
         <Image src={scent.image} alt={lang === "fi" ? scent.name : scent.nameEn} fill
-          className="object-cover transition-transform duration-500 group-hover:scale-107"
+          className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
           sizes="(max-width: 768px) 50vw, 20vw" />
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(255,255,255,0.15) 0%, transparent 60%)` }}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          style={{ background: `radial-gradient(ellipse at 50% 80%, ${scent.waxColor}40, transparent 65%)` }}
         />
-        <div className="absolute inset-0 bg-[var(--ink)]/0 group-hover:bg-[var(--ink)]/15 transition-all duration-300 flex items-center justify-center">
-          <span className="tag-mono text-[8px] px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-md !text-white border border-white/25 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-            {lang === "fi" ? "Lue lisää" : "Learn more"}
-          </span>
-        </div>
       </div>
-      <div className="p-3 pb-4 bg-[var(--ink)]" style={{ transform: "translateZ(10px)" }}>
-        <p className="font-serif text-lg italic text-white leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
-        <p className="tag-mono text-[8px] mt-1 !text-white/75">{lang === "fi" ? scent.profile : scent.profileEn}</p>
-        <p className="mt-2 font-serif text-xl text-white">{scent.price}</p>
+      <div className="p-3.5 pb-4 bg-[var(--bg-2)]">
+        <p className="font-serif text-lg italic text-[var(--ink)] leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
+        <p className="tag-mono text-[8px] mt-1 text-[var(--ink-mute)]">{lang === "fi" ? scent.profile : scent.profileEn}</p>
+        <p className="mt-2 font-serif text-xl text-[var(--ink)]">{scent.price}</p>
       </div>
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)]"
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.3 }}
-        style={{ transformOrigin: "left" }}
-      />
     </motion.button>
   );
 }
@@ -327,37 +298,35 @@ function ConfigureStep({
 
       <div className="divider mb-16" />
 
-      <div id="configurator" className="grid md:grid-cols-2 gap-10 items-start">
-        {/* Left: Configurator */}
-        <div>
-          <p className="tag-mono mb-2">{lang === "fi" ? "Lisää koriin" : "Add to cart"}</p>
+      <div id="configurator" className="grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-10 lg:gap-16 items-start">
+        {/* Left: live candle atelier */}
+        <div className="lg:sticky lg:top-28">
+          <p className="tag-mono mb-2">{lang === "fi" ? "Esikatselu" : "Preview"}</p>
           <h2 className="heading-display text-3xl md:text-4xl mb-8 text-[var(--ink)]">
             {lang === "fi" ? <><span>Kokoa oma </span><em>tilauksesi</em></> : <><span>Build your </span><em>order</em></>}
           </h2>
-
-          {/* Jar selector */}
-          <div className="mb-8">
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-1">
-              {lang === "fi" ? "Valitse purkin väri" : "Choose jar colour"}
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] px-6 py-10 flex flex-col items-center">
+            <div className="w-36 h-48 md:w-44 md:h-56">
+              <CandleSVG jar={config.jar} animate />
+            </div>
+            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-6">
+              {lang === "fi" ? "Kaikki purkit ovat läpikuultavaa maitolasia (mattalasi)." : "All jars are translucent frosted milk glass."}
             </p>
-            <p className="text-[11px] leading-snug text-[var(--ink-soft)] mb-3">
-              {lang === "fi"
-                ? "Kaikki purkit ovat läpikuultavaa maitolasia (mattalasi)."
-                : "All jars are translucent frosted milk glass."}
-            </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-6">
               {jars.map((jar) => (
                 <button key={jar} onClick={() => setJar(jar)}
-                  className={["flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200",
-                    config.jar === jar ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
-                  <div className="w-14 h-18"><CandleSVG jar={jar} animate={false} /></div>
+                  className={["flex flex-col items-center gap-2 p-2.5 rounded-lg border transition-all duration-200",
+                    config.jar === jar ? "border-[var(--accent-2)] bg-[var(--accent-2-tint)]" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
+                  <div className={`w-3.5 h-3.5 rounded-full ${JAR_DOT[jar]}`} />
                   <span className="tag-mono text-[8px] text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
                 </button>
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Scent steppers */}
+        {/* Right: scents + cart */}
+        <div>
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <p className="tag-mono text-[8px] text-[var(--ink-mute)]">
@@ -376,11 +345,8 @@ function ConfigureStep({
             className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
             {lang === "fi" ? "+ Lisää koriin" : "+ Add to cart"}
           </button>
-        </div>
 
-        {/* Right: Cart */}
-        <div className="md:sticky md:top-24">
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
+          <div className="mt-10 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
             <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
               <p className="tag-mono text-[9px]">{lang === "fi" ? "Ostoskori" : "Cart"}</p>
               <p className="tag-mono text-[9px] text-[var(--ink-mute)]">
@@ -465,7 +431,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-lg mx-auto">
+    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-xl mx-auto">
       <ProgressBar step="checkout" />
       <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -930,7 +896,7 @@ export function TuotteetClient() {
 
         <div className="px-6 md:px-10"><div className="divider" /></div>
 
-      <div className="px-6 md:px-10 max-w-7xl mx-auto pt-16 pb-24">
+      <div className="px-6 md:px-10 max-w-7xl mx-auto pt-20 pb-28">
         <AnimatePresence mode="wait">
           {step === "configure" && (
             <motion.div key="configure" exit={{ opacity: 0, x: -32 }}>

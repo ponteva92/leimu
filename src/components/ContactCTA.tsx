@@ -17,13 +17,17 @@ import { EASE_SPRING_MAGNETIC } from "@/lib/motionVariants";
 export function ContactCTA({
   variant = "navbar",
   label,
+  tone = "light",
 }: {
   variant?: "navbar" | "hero";
   label?: string;
+  tone?: "light" | "dark";
 }) {
   const { lang, openContact, setCursorType } = useStore();
   const text = label ?? (lang === "fi" ? "Ota yhteyttä" : "Contact");
   const isHero = variant === "hero";
+  const isDarkNav = variant === "navbar" && tone === "dark";
+  const glass = isHero || isDarkNav;
 
   return (
     <motion.button
@@ -38,7 +42,7 @@ export function ContactCTA({
       variants={{
         rest: {
           scale: 1,
-          boxShadow: isHero
+          boxShadow: glass
             ? "0 0 0 1px rgba(196,122,58,0.45), 0 8px 26px -6px rgba(26,24,20,0.22)"
             : "0 2px 16px rgba(26,24,20,0.14)",
         },
@@ -52,12 +56,14 @@ export function ContactCTA({
       className={[
         "group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full font-mono uppercase",
         isHero
-          ? "px-7 py-3.5 text-[11px] tracking-[0.2em] border border-[rgba(196,122,58,0.7)] text-[#F5F5F0]"
-          : "px-5 py-2 text-[12px] tracking-[0.14em] bg-[var(--ink)] text-[var(--bg)]",
+          ? "px-7 py-3.5 text-[11px] tracking-[0.2em] border border-[rgba(196,122,58,0.7)] text-[#F2ECDF]"
+          : isDarkNav
+            ? "px-5 py-2 text-[12px] tracking-[0.14em] border border-[rgba(196,122,58,0.55)] text-[#F2ECDF]"
+            : "px-5 py-2 text-[12px] tracking-[0.14em] bg-[var(--ink)] text-[var(--bg)]",
       ].join(" ")}
     >
       {/* frosted backing — hero variant only (reads as glass on the dark hero) */}
-      {isHero && (
+      {glass && (
         <span
           aria-hidden="true"
           className="absolute inset-0"

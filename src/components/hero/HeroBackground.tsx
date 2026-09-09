@@ -17,11 +17,11 @@ const HeroBackgroundGL = dynamic(() => import("./HeroBackgroundGL"), {
   loading: () => null,
 });
 
-/* Warm-orb gradient in the hero palette — backdrop + fallback in one. */
+/* Ember-orb gradient in the cinematic hero palette — backdrop + fallback. */
 const FALLBACK_GRADIENT = `
-  radial-gradient(58% 50% at 24% 62%, rgba(245,245,240,0.28), transparent 70%),
-  radial-gradient(55% 55% at 80% 30%, rgba(198,142,88,0.42), transparent 70%),
-  radial-gradient(140% 120% at 50% 40%, #CBB799 0%, #BCA67F 100%)
+  radial-gradient(58% 50% at 28% 58%, rgba(216,148,86,0.22), transparent 70%),
+  radial-gradient(50% 50% at 78% 28%, rgba(216,148,86,0.14), transparent 72%),
+  radial-gradient(140% 120% at 50% 40%, #16140F 0%, #0C0A08 100%)
 `;
 
 export function HeroBackground() {
