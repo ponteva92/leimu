@@ -6,9 +6,9 @@ import type { Variants } from "framer-motion";
 
 /* Brand palette for this hero (overrides the global cream theme) */
 export const HERO = {
-  bg: "#CBB799", // warm tan
-  cream: "#F5F5F0",
-  amber: "#C68E58",
+  bg: "#16140F", // charcoal cinematic chapter
+  cream: "#F2ECDF",
+  amber: "#D89456",
 } as const;
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -17,26 +17,26 @@ const EASE_OUT = [0.16, 1, 0.3, 1] as const;
    Container staggers the two lines + supporting copy / CTA in sequence.    */
 export const heroStagger: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } },
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.22 } },
 };
 
 export const heroLine: Variants = {
-  hidden: { opacity: 0, y: 34, filter: "blur(10px)" },
+  hidden: { opacity: 0, y: 40, filter: "blur(12px)" },
   visible: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.6, ease: EASE_OUT },
+    transition: { duration: 0.9, ease: EASE_OUT },
   },
 };
 
 export const heroFade: Variants = {
-  hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 22, filter: "blur(8px)" },
   visible: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.5, ease: EASE_OUT },
+    transition: { duration: 0.75, ease: EASE_OUT },
   },
 };
 
@@ -48,15 +48,15 @@ export const heroFade: Variants = {
    No infinite loop — the brief bans perpetual motion on primary UI. */
 export const amberBreatheAnimate = {
   textShadow: [
-    "0 0 0px rgba(198,142,88,0.0), 0 0 12px rgba(198,142,88,0.10)",
-    "0 0 28px rgba(198,142,88,0.55), 0 0 64px rgba(198,142,88,0.30)",
-    "0 0 14px rgba(198,142,88,0.22), 0 0 34px rgba(198,142,88,0.14)",
+    "0 0 0px rgba(216,148,86,0.0), 0 0 12px rgba(216,148,86,0.12)",
+    "0 0 36px rgba(216,148,86,0.62), 0 0 72px rgba(216,148,86,0.32)",
+    "0 0 16px rgba(216,148,86,0.28), 0 0 40px rgba(216,148,86,0.16)",
   ],
 };
 
 export const amberBreatheTransition = {
-  duration: 1.6,
-  delay: 0.9,
+  duration: 2.1,
+  delay: 1.05,
   ease: "easeOut",
   times: [0, 0.55, 1],
 } as const;

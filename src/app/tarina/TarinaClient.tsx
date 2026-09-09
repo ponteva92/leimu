@@ -67,21 +67,7 @@ function DropCap({ letter, delay = 0 }: { letter: string; delay?: number }) {
       >
         {letter}
       </motion.text>
-      {/* Golden shimmer overlay sweep */}
-      <motion.rect
-        x="0" y="0" width="60" height="80"
-        fill="url(#dc-shimmer)"
-        initial={{ x: -60 }}
-        animate={isInView ? { x: 60 } : { x: -60 }}
-        transition={{ duration: 0.7, delay: delay + 0.8, ease: "easeInOut" }}
-      />
-      <defs>
-        <linearGradient id="dc-shimmer" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stopColor="rgba(255,222,100,0)" />
-          <stop offset="50%"  stopColor="rgba(255,222,100,0.45)" />
-          <stop offset="100%" stopColor="rgba(255,222,100,0)" />
-        </linearGradient>
-      </defs>
+      {/* Letter, no gold sweep — calm on a cinematic page */}
     </svg>
   );
 }
@@ -216,23 +202,24 @@ function FounderStory() {
   ];
 
   return (
-    <section ref={sectionRef} className="pt-36 pb-24 px-6 md:px-10 max-w-7xl mx-auto">
+    <section ref={sectionRef} className="chapter-dark chapter-ember relative overflow-hidden pt-36 pb-28 px-6 md:px-10">
+      <div className="max-w-7xl mx-auto">
       <div className="grid md:grid-cols-[320px_1fr] gap-16 lg:gap-24 items-start">
         {/* Left: Sticky photo + meta */}
         <div className="md:sticky md:top-24 flex flex-col gap-6">
           <FadeUp>
-            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-e4">
+            <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden shadow-e4">
               <motion.div className="absolute inset-0" style={{ y: springY }}>
                 <LivingPortrait />
               </motion.div>
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,24,20,0.55)] via-transparent to-transparent pointer-events-none" />
               {/* Bottom info tag */}
-              <div className="absolute bottom-4 left-4 right-4 bg-[var(--bg)] border border-[var(--line)] rounded-xl px-4 py-3">
-                <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[var(--ink-mute)] mb-0.5">
+              <div className="absolute bottom-4 left-4 right-4 bg-[#F7F2EA] border border-[#D8D0BF] rounded-lg px-4 py-3">
+                <p className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#655F4F] mb-0.5">
                   Oulu · Studio
                 </p>
-                <p className="font-serif text-lg italic text-[var(--ink)]">LEIMU by Shane</p>
+                <p className="font-serif text-lg italic text-[#1A1814]">LEIMU by Shane</p>
               </div>
             </div>
           </FadeUp>
@@ -404,6 +391,7 @@ function FounderStory() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </section>
   );
@@ -661,28 +649,24 @@ function MaterialItem({
   const my = useMotionValue(0.5);
   const smx = useSpring(mx, { stiffness: 200, damping: 22 });
   const smy = useSpring(my, { stiffness: 200, damping: 22 });
-  const rotX  = useTransform(smy, (v) => `${(v - 0.5) * 5}deg`);
-  const rotY  = useTransform(smx, (v) => `${(0.5 - v) * 5}deg`);
   const shimX = useTransform(smx, (v) => `${v * 100}%`);
   const shimY = useTransform(smy, (v) => `${v * 100}%`);
 
   return (
     <div
       style={{
-        opacity: isBlurred ? 0.45 : 1,
-        filter:  isBlurred ? "blur(1px)" : "none",
-        transition: "opacity 0.35s ease, filter 0.35s ease",
+        opacity: isBlurred ? 0.5 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       <motion.div
         ref={cardRef}
         className="group grid md:grid-cols-[minmax(0,200px)_1fr_110px] gap-6 md:gap-12 py-8 border-t border-[rgba(216,208,191,0.12)] items-center cursor-default relative overflow-hidden"
-        style={{ transformStyle: "preserve-3d", perspective: "900px", rotateX: rotX, rotateY: rotY }}
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
-        whileHover={{ paddingLeft: "16px", transition: { duration: 0.3 } }}
+        whileHover={{ paddingLeft: "12px", transition: { duration: 0.3 } }}
         onMouseMove={(e) => {
           const r = cardRef.current?.getBoundingClientRect();
           if (!r) return;
@@ -860,43 +844,23 @@ function ValueItem({
   onLeave: () => void;
   icon: React.ReactNode;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX  = useTransform(smy, (val) => `${(val - 0.5) * 11}deg`);
-  const rotY  = useTransform(smx, (val) => `${(0.5 - val) * 11}deg`);
-  const shimX = useTransform(smx, (val) => `${val * 100}%`);
-  const shimY = useTransform(smy, (val) => `${val * 100}%`);
-
   return (
     <div
       style={{
-        opacity: isBlurred ? 0.4 : 1,
-        filter:  isBlurred ? "blur(1.5px)" : "none",
-        transition: "opacity 0.35s ease, filter 0.35s ease",
+        opacity: isBlurred ? 0.55 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       <motion.div
-        ref={cardRef}
         className="group relative flex flex-col gap-5 px-0 md:px-6 py-10 border-b md:border-b-0 md:border-r border-[var(--line)] last:border-r-0 overflow-hidden cursor-default"
-        style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: i * 0.12, duration: 0.65, ease: [0.22, 1, 0.36, 1] as const }}
-        whileHover={{ y: -5, boxShadow: "0 24px 56px -18px rgba(26,24,20,0.14)", transition: { type: "spring", stiffness: 300, damping: 24 } }}
-        onMouseMove={(e) => {
-          const r = cardRef.current?.getBoundingClientRect();
-          if (!r) return;
-          mx.set((e.clientX - r.left) / r.width);
-          my.set((e.clientY - r.top) / r.height);
-        }}
-        onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave(); }}
+        whileHover={{ y: -3, transition: { type: "spring", stiffness: 300, damping: 24 } }}
+        onMouseLeave={onLeave}
         onMouseEnter={onEnter}
       >
-        {/* Gradient wash */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{ background: "linear-gradient(135deg, var(--accent-2), transparent)" }}
@@ -904,29 +868,16 @@ function ValueItem({
           whileHover={{ opacity: 0.06 }}
           transition={{ duration: 0.4 }}
         />
-        {/* Mouse-following glare */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(212,169,106,0.12) 0%, transparent 55%)` }}
-        />
 
-        {/* Icon pill */}
         <motion.div
-          className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-[var(--accent-2)] border border-[var(--line)]"
+          className="relative w-11 h-11 rounded-lg flex items-center justify-center text-[var(--accent-2)] border border-[var(--line)]"
           style={{ background: "var(--bg-3)" }}
-          initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
-          whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: i * 0.12 + 0.2, duration: 0.55, type: "spring", stiffness: 260, damping: 18 }}
-          whileHover={{ scale: 1.18, rotate: 8, boxShadow: "0 8px 24px rgba(196,122,58,0.25)" }}
+          transition={{ delay: i * 0.12 + 0.2, duration: 0.45 }}
         >
           {icon}
-          <motion.div
-            className="absolute inset-0 rounded-2xl border border-[var(--accent-2)]"
-            initial={{ scale: 1, opacity: 0 }}
-            whileHover={{ scale: 1.6, opacity: 0 }}
-            transition={{ duration: 0.6, repeat: Infinity }}
-          />
         </motion.div>
 
         <span className="font-mono text-[9px] tracking-[0.2em] uppercase" style={{ color: "var(--accent-2)" }}>
@@ -1100,7 +1051,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       >
         <div className="absolute inset-0 bg-[rgba(26,24,20,0.65)] backdrop-blur-sm" />
         <motion.div
-          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-2xl border border-[var(--line)] shadow-modal overflow-hidden"
+          className="relative z-10 w-full max-w-lg bg-[var(--bg)] rounded-xl border border-[var(--line)] shadow-modal overflow-hidden"
           initial={{ opacity: 0, y: 28, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -1355,7 +1306,6 @@ export function TarinaClient() {
   return (
     <div className="calm-headings">
       <FounderStory />
-      <div className="px-6 md:px-10"><div className="divider" /></div>
       <ProcessTimeline />
       <MaterialsSection />
       <ValuesGrid />

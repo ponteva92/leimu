@@ -79,10 +79,10 @@ export const flameFrag = /* glsl */ `
     float alpha = shape * clamp(uIgnite, 0.0, 1.0);
 
     // soft outer glow halo so the flame reads as a light source
-    float halo = smoothstep(1.7, 0.0, edge) * smoothstep(0.0, 0.04, y) * smoothstep(1.20, 0.45, ny);
-    alpha = max(alpha, halo * 0.22 * clamp(uIgnite, 0.0, 1.0));
+    float halo = smoothstep(1.85, 0.0, edge) * smoothstep(0.0, 0.04, y) * smoothstep(1.20, 0.45, ny);
+    alpha = max(alpha, halo * 0.34 * clamp(uIgnite, 0.0, 1.0));
 
-    col *= 1.0 + flick * 0.25 + uFlicker * 0.18;
+    col *= 1.0 + flick * 0.32 + uFlicker * 0.28;
 
     gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
   }
@@ -115,11 +115,11 @@ export const candleFrag = /* glsl */ `
     float pool = smoothstep(uRadius, uRadius * 0.08, dist);
     pool = pow(pool, 1.4) * uFlicker;
 
-    float ambient = 0.14;
-    float lightAmt = mix(1.0, ambient + pool * 1.30, uLit);
+    float ambient = 0.10;
+    float lightAmt = mix(1.0, ambient + pool * 1.55, uLit);
 
     vec3 col = tex.rgb * lightAmt;
-    col = mix(col, col * uWarm, uLit * pool * 0.55); // warm the lit pool
+    col = mix(col, col * uWarm, uLit * pool * 0.62); // warm the lit pool
 
     gl_FragColor = vec4(col, tex.a);
   }

@@ -9,10 +9,19 @@ import { useStore } from "@/context/store";
 import { ContactCTA } from "@/components/ContactCTA";
 
 /* The inner nav bar. Positioning + scroll-reveal live in SiteHeader; this just
-   reacts to `scrolled` for its frosted-glass background. */
-export function Navbar({ scrolled }: { scrolled: boolean }) {
+   reacts to `scrolled` / `tone` for frosted-glass vs charcoal glass. */
+export function Navbar({
+  scrolled,
+  tone = "light",
+}: {
+  scrolled: boolean;
+  tone?: "light" | "dark";
+}) {
   const pathname = usePathname();
   const { lang, toggleLang } = useStore();
+  const dark = tone === "dark";
+  const ink = dark ? "var(--chapter-ink)" : "var(--ink)";
+  const mute = dark ? "var(--chapter-ink-mute)" : "var(--ink-mute)";
 
   const links = [
     { href: "/",         label: { fi: "Etusivu",  en: "Home"     } },
@@ -32,13 +41,26 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
 
   return (
     <div
-      className={["relative z-30", scrolled ? "border-b border-[rgba(26,24,20,0.07)]" : ""].join(" ")}
+      className={[
+        "relative z-30",
+        scrolled
+          ? dark
+            ? "border-b border-[rgba(242,236,223,0.08)]"
+            : "border-b border-[rgba(26,24,20,0.07)]"
+          : "",
+      ].join(" ")}
       style={{
         backdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
         WebkitBackdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
-        backgroundColor: scrolled ? "rgba(247, 242, 234, 0.55)" : "transparent",
+        backgroundColor: scrolled
+          ? dark
+            ? "rgba(22, 20, 15, 0.62)"
+            : "rgba(247, 242, 234, 0.55)"
+          : "transparent",
         boxShadow: scrolled
-          ? "inset 0 1px 0 rgba(255,255,255,0.55), 0 10px 36px rgba(26,24,20,0.07)"
+          ? dark
+            ? "inset 0 1px 0 rgba(242,236,223,0.06), 0 10px 36px rgba(0,0,0,0.28)"
+            : "inset 0 1px 0 rgba(255,255,255,0.55), 0 10px 36px rgba(26,24,20,0.07)"
           : "none",
         transition:
           "background-color 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.5s cubic-bezier(0.22,1,0.36,1), backdrop-filter 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s cubic-bezier(0.22,1,0.36,1)",
@@ -60,7 +82,10 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
               alt="LEIMU"
               width={90}
               height={36}
-              className="h-[54px] w-auto object-contain transition-opacity duration-300 group-hover:opacity-85"
+              className={[
+                "h-[54px] w-auto object-contain transition-[opacity,filter] duration-300 group-hover:opacity-85",
+                dark ? "brightness-0 invert" : "",
+              ].join(" ")}
               priority
             />
             {/* subtle golden shimmer sweep on hover */}
@@ -93,11 +118,9 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                 className="relative font-mono text-[13px] tracking-[0.12em] uppercase group outline-none"
               >
                 <motion.span
-                  className={[
-                    "transition-colors duration-200",
-                    isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)]",
-                  ].join(" ")}
-                  whileHover={{ color: "var(--ink)" }}
+                  className="transition-colors duration-200"
+                  style={{ color: isActive ? ink : mute }}
+                  whileHover={{ color: ink }}
                   transition={{ duration: 0.15 }}
                 >
                   {link.label[lang]}
@@ -109,20 +132,20 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                     <motion.span
                       key="active"
                       layoutId="nav-underline"
-                      className="absolute -bottom-0.5 left-0 right-0 h-px bg-[var(--ink)]"
+                      className="absolute -bottom-0.5 left-0 right-0 h-px"
+                      style={{ backgroundColor: ink, transformOrigin: "left" }}
                       initial={{ scaleX: 0, opacity: 0 }}
                       animate={{ scaleX: 1, opacity: 1 }}
                       exit={{ scaleX: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ transformOrigin: "left" }}
                     />
                   ) : (
                     <motion.span
-                      className="absolute -bottom-0.5 left-0 right-0 h-px bg-[var(--ink-mute)]"
+                      className="absolute -bottom-0.5 left-0 right-0 h-px"
+                      style={{ backgroundColor: mute, transformOrigin: "left" }}
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1, opacity: 0.4 }}
                       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ transformOrigin: "left" }}
                     />
                   )}
                 </AnimatePresence>
@@ -136,27 +159,34 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           {/* Language toggle */}
           <motion.button
             onClick={toggleLang}
-            className="font-mono text-[13px] tracking-[0.1em] text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors cursor-pointer"
-            whileHover={{ scale: 1.05 }}
+            className="font-mono text-[13px] tracking-[0.1em] transition-colors cursor-pointer"
+            style={{ color: mute }}
+            whileHover={{ scale: 1.05, color: ink }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
             aria-label={`Vaihda kieli — ${lang === "fi" ? "EN" : "FI"}`}
           >
-            <span className={lang === "fi" ? "text-[var(--ink)]" : ""}>FI</span>
+            <span style={{ color: lang === "fi" ? ink : undefined }}>FI</span>
             <span className="mx-1.5 opacity-40">/</span>
-            <span className={lang === "en" ? "text-[var(--ink)]" : ""}>EN</span>
+            <span style={{ color: lang === "en" ? ink : undefined }}>EN</span>
           </motion.button>
 
           {/* Contact CTA — magnetic liquid glow */}
           <div className="hidden md:block">
-            <ContactCTA variant="navbar" />
+            <ContactCTA variant="navbar" tone={tone} />
           </div>
 
           {/* Order CTA — filled */}
           <Link href="/tuotteet" passHref legacyBehavior>
             <motion.a
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-[12px] font-mono tracking-[0.14em] uppercase rounded-full bg-[var(--ink)] text-[var(--bg)] overflow-hidden relative"
-              style={{ boxShadow: "0 2px 16px rgba(26,24,20,0.14)" }}
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-[12px] font-mono tracking-[0.14em] uppercase rounded-full overflow-hidden relative"
+              style={{
+                backgroundColor: dark ? "var(--chapter-ink)" : "var(--ink)",
+                color: dark ? "var(--chapter-bg)" : "var(--bg)",
+                boxShadow: dark
+                  ? "0 2px 20px rgba(216,148,86,0.18)"
+                  : "0 2px 16px rgba(26,24,20,0.14)",
+              }}
               whileHover={{ scale: 1.04, boxShadow: "0 6px 28px rgba(26,24,20,0.22)" }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 380, damping: 22 }}
@@ -186,7 +216,12 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg)]/70 text-[var(--ink)] shadow-sm backdrop-blur-sm transition-colors md:hidden"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-colors md:hidden"
+            style={{
+              borderColor: dark ? "rgba(242,236,223,0.22)" : "var(--line)",
+              backgroundColor: dark ? "rgba(22,20,15,0.55)" : "rgba(247,242,234,0.70)",
+              color: ink,
+            }}
             aria-label={menuOpen ? "Sulje valikko" : "Avaa valikko"}
             aria-expanded={menuOpen}
           >
@@ -205,7 +240,12 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           <motion.nav
             key="mobile-menu"
             role="navigation"
-            className="absolute inset-x-0 top-full z-40 border-b border-[var(--line)] bg-[var(--bg)] shadow-[0_24px_44px_-22px_rgba(26,24,20,0.3)] md:hidden"
+            className="absolute inset-x-0 top-full z-40 border-b md:hidden"
+            style={{
+              borderColor: dark ? "rgba(242,236,223,0.10)" : "var(--line)",
+              backgroundColor: dark ? "var(--chapter-bg)" : "var(--bg)",
+              boxShadow: "0 24px 44px -22px rgba(26,24,20,0.3)",
+            }}
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
@@ -219,10 +259,11 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className={[
-                      "border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors last:border-0",
-                      isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)] hover:text-[var(--ink)]",
-                    ].join(" ")}
+                    className="border-b py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors last:border-0"
+                    style={{
+                      borderColor: dark ? "rgba(242,236,223,0.10)" : "var(--line)",
+                      color: isActive ? ink : mute,
+                    }}
                   >
                     {link.label[lang]}
                   </Link>

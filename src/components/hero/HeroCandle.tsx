@@ -98,18 +98,18 @@ export function HeroCandle() {
       {/* Animated WebGL backdrop — warm fluid mesh + soft orbs (CSS-gradient fallback) */}
       <HeroBackground />
 
-      {/* Left scrim — lifts the cream text to AA over the warm backdrop, fades out before the candle */}
+      {/* Left scrim — lifts cream type to AA over charcoal, fades before the candle */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0"
-        style={{ background: "linear-gradient(105deg, rgba(26,24,20,0.60) 0%, rgba(26,24,20,0.50) 45%, rgba(26,24,20,0.16) 68%, transparent 84%)" }}
+        style={{ background: "linear-gradient(105deg, rgba(12,10,8,0.88) 0%, rgba(12,10,8,0.68) 40%, rgba(12,10,8,0.22) 66%, transparent 86%)" }}
       />
 
       {/* faint top vignette so the navbar/marquee read cleanly */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-40"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.10), transparent)" }}
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent)" }}
       />
 
       <motion.div
@@ -183,14 +183,14 @@ export function HeroCandle() {
         {/* ───────── RIGHT — auto-lit candle + heat-mirage logo (all WebGL) ───────── */}
         <div className="relative h-[64vh] min-h-[480px] w-full md:h-[88vh]">
           <div className="absolute inset-0 translate-y-4 md:translate-y-8">
-            {/* warm glow behind the candle */}
+            {/* ember glow behind the candle — the only light in the room */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[58%] h-[52%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              className="pointer-events-none absolute left-1/2 top-[58%] h-[58%] w-[64%] -translate-x-1/2 -translate-y-1/2 rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(214,150,80,0.30) 0%, rgba(196,122,58,0.10) 45%, transparent 72%)",
-                filter: "blur(45px)",
+                  "radial-gradient(circle, rgba(216,148,86,0.48) 0%, rgba(196,122,58,0.18) 42%, transparent 72%)",
+                filter: "blur(52px)",
                 mixBlendMode: "screen",
               }}
             />

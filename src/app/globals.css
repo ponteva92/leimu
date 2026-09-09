@@ -46,6 +46,7 @@
   --shadow-e3: 0 6px 16px -4px rgba(26, 24, 20, 0.10), 0 12px 36px -8px rgba(26, 24, 20, 0.10);
   --shadow-e4: 0 24px 64px -20px rgba(26, 24, 20, 0.22);
   --shadow-glow: 0 8px 28px -6px rgba(196, 122, 58, 0.28);
+  --shadow-ember: 0 24px 80px -20px rgba(216, 148, 86, 0.35);
 
   /* ── Motion tokens (ease-out default) ── */
   --dur-fast: 150ms;
@@ -61,6 +62,15 @@
   --section-md: 80px;
   --section-base: 60px;
   --maxw-content: 1200px;
+
+  /* ── Cinematic chapter (hero + story openings) — not a site-wide dark mode ── */
+  --chapter-bg: #16140F;
+  --chapter-bg-2: #1E1B15;
+  --chapter-ink: #F2ECDF;
+  --chapter-ink-soft: #C9C1AE;
+  --chapter-ink-mute: #9A917D;
+  --chapter-amber: #D89456;
+  --chapter-line: rgba(242, 236, 223, 0.12);
 }
 
 /* ── Dark tokens — defined and ready, but OPT-IN ──────────────────────────
@@ -227,12 +237,38 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
   z-index: 9990;
   pointer-events: none;
   mix-blend-mode: overlay;
-  opacity: 0.05;
+  opacity: 0.032;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .grain-overlay { opacity: 0.04; }
+  .grain-overlay { opacity: 0.022; }
+}
+
+/* ── Cinematic chapter surface — remaps tokens locally, never on <html> ── */
+.chapter-dark {
+  --bg: var(--chapter-bg);
+  --bg-2: var(--chapter-bg-2);
+  --bg-3: #27231B;
+  --ink: var(--chapter-ink);
+  --ink-soft: var(--chapter-ink-soft);
+  --ink-mute: var(--chapter-ink-mute);
+  --line: var(--chapter-line);
+  --accent: #8AA678;
+  --accent-2: var(--chapter-amber);
+  --accent-3: #B49A72;
+  background-color: var(--chapter-bg);
+  color: var(--chapter-ink);
+}
+
+.chapter-ember {
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 38%, rgba(216, 148, 86, 0.18), transparent 68%),
+    radial-gradient(ellipse 50% 40% at 80% 90%, rgba(196, 122, 58, 0.08), transparent 70%);
+}
+
+header[data-tone="dark"] nav a::after {
+  background: var(--chapter-ink);
 }
 
 /* ─── Scrollbar ─────────────────────────────────── */

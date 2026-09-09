@@ -8,13 +8,21 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="grid min-h-[70vh] place-items-center px-gutter text-center">
-      <div className="max-w-md">
-        <p className="tag-mono mb-3">404</p>
+    <div className="relative grid min-h-[80vh] place-items-center px-6 text-center">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 42%, rgba(196,122,58,0.10), transparent 70%)",
+        }}
+      />
+      <div className="relative max-w-md">
+        <p className="tag-mono mb-4">404</p>
         <h1 className="heading-display mb-5 text-4xl text-[var(--ink)] md:text-5xl">
           Tätä sivua ei löytynyt.
         </h1>
-        <p className="mb-8 leading-relaxed text-[var(--ink-soft)]">
+        <p className="mb-10 leading-relaxed text-[var(--ink-soft)]">
           Sivu on voitu siirtää tai poistaa. Tarkista osoite tai palaa etusivulle.
         </p>
         <Link

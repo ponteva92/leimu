@@ -58,7 +58,7 @@ export function Preloader() {
       {!done && (
         <motion.div
           className="fixed inset-0 z-[10000] flex items-center justify-center"
-          style={{ backgroundColor: "var(--bg)" }}
+          style={{ backgroundColor: "var(--chapter-bg)" }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, filter: "blur(8px)" }}
           transition={{ duration: 0.9, ease: EASE_PREMIUM }}
@@ -66,16 +66,16 @@ export function Preloader() {
         >
           <div className="flex flex-col items-center gap-7">
             <motion.span
-              className="font-serif text-3xl md:text-4xl tracking-[0.34em] text-[var(--ink)]"
+              className="font-serif text-3xl md:text-4xl tracking-[0.34em] text-[var(--chapter-ink)]"
               initial={{ opacity: 0.35 }}
               animate={{ opacity: [0.35, 1, 0.35] }}
               transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
             >
               LEIMU
             </motion.span>
-            <div className="relative h-px w-28 overflow-hidden bg-[var(--line)]">
+            <div className="relative h-px w-28 overflow-hidden bg-[rgba(242,236,223,0.12)]">
               <motion.div
-                className="absolute inset-y-0 left-0 bg-[var(--accent-2)]"
+                className="absolute inset-y-0 left-0 bg-[var(--chapter-amber)]"
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 2.4, ease: EASE_PREMIUM }}

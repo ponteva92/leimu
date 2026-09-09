@@ -94,10 +94,10 @@ export function ProductsHero() {
             <p className="tag-mono">{t.eyebrow}</p>
           </div>
 
-          <h1 className="font-serif leading-[0.92] text-[var(--ink)]">
+          <h1 className="font-serif leading-[0.94] text-[var(--ink)]">
             <span className="block overflow-hidden pb-[0.05em]">
               <motion.span
-                className="block text-2xl font-light tracking-tight text-[var(--ink-soft)] md:text-3xl"
+                className="block text-xl font-light tracking-tight text-[var(--ink-soft)] md:text-2xl"
                 initial={{ y: "115%", scale: 1.04 }}
                 animate={{ y: "0%", scale: 1 }}
                 transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
@@ -107,7 +107,7 @@ export function ProductsHero() {
             </span>
             <span className="mt-1 block overflow-hidden pb-[0.08em]">
               <motion.span
-                className="block text-6xl italic md:text-8xl"
+                className="block text-5xl italic md:text-7xl"
                 initial={{ y: "115%", scale: 1.04 }}
                 animate={{ y: "0%", scale: 1 }}
                 transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1], delay: 0.42 }}
@@ -117,7 +117,7 @@ export function ProductsHero() {
             </span>
           </h1>
 
-          <p className="max-w-md text-base leading-relaxed text-[var(--ink-soft)]">{t.body}</p>
+          <p className="max-w-sm text-[15px] leading-relaxed text-[var(--ink-soft)]">{t.body}</p>
 
           <div className="mt-2 flex items-center gap-3 text-[var(--ink-mute)]">
             <span className="tag-mono text-[9px]">{t.scroll}</span>
@@ -132,7 +132,7 @@ export function ProductsHero() {
 
         {/* ── RIGHT — Living Still Life canvas ── */}
         <motion.div
-          className="relative order-1 h-[46vh] min-h-[300px] w-full overflow-hidden rounded-3xl border border-[var(--line)] md:order-2 md:h-[78vh]"
+          className="relative order-1 h-[46vh] min-h-[300px] w-full overflow-hidden rounded-xl border border-[var(--line)] md:order-2 md:h-[78vh]"
           style={{ boxShadow: "0 30px 80px -34px rgba(26,24,20,0.55)" }}
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
