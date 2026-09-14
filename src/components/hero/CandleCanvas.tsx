@@ -39,7 +39,7 @@ export default function CandleCanvas({
     <div className="absolute inset-0">
       <Canvas
         dpr={[1, 1.75]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: true }}
         camera={{ fov: 32, position: [0, 0, 8], near: 0.1, far: 50 }}
         frameloop="always"
         resize={{ offsetSize: true }}

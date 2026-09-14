@@ -57,7 +57,7 @@ export default function HeroBackgroundGL() {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}
+        gl={{ antialias: false, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: true }}
       frameloop="always"
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
     >

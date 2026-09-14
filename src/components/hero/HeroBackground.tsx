@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { WebGLGuard, canCreateWebGL } from "@/components/WebGLGuard";
 
 const HeroBackgroundGL = dynamic(() => import("./HeroBackgroundGL"), {
   ssr: false,
@@ -31,16 +32,7 @@ export function HeroBackground() {
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    let webglOK = false;
-    try {
-      const c = document.createElement("canvas");
-      webglOK = !!(
-        window.WebGLRenderingContext &&
-        (c.getContext("webgl") || c.getContext("experimental-webgl"))
-      );
-    } catch {
-      webglOK = false;
-    }
+    const webglOK = canCreateWebGL();
 
     const sync = () => setAnimate(webglOK && !mq.matches);
     sync();
@@ -51,7 +43,11 @@ export function HeroBackground() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: FALLBACK_GRADIENT }} />
-      {animate && <HeroBackgroundGL />}
+      {animate && (
+        <WebGLGuard>
+          <HeroBackgroundGL />
+        </WebGLGuard>
+      )}
     </div>
   );
 }

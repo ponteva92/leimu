@@ -17,6 +17,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
+import { WebGLGuard, useWebGLEnabled } from "@/components/WebGLGuard";
 
 const HeroImageCanvas = dynamic(() => import("./HeroImageCanvas"), {
   ssr: false,
@@ -47,6 +48,7 @@ export function ProductsHero() {
   const [isMobile, setIsMobile] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const webgl = useWebGLEnabled();
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -139,24 +141,32 @@ export function ProductsHero() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
         >
-          {mounted && !isMobile && !reducedMotion ? (
-            <HeroImageCanvas
-              scrollProgress={scrollProgress}
-              reducedMotion={reducedMotion}
-              isMobile={isMobile}
-            />
+          {mounted && !isMobile && !reducedMotion && webgl ? (
+            <WebGLGuard fallback={<ProductsHeroPoster />}>
+              <HeroImageCanvas
+                scrollProgress={scrollProgress}
+                reducedMotion={reducedMotion}
+                isMobile={isMobile}
+              />
+            </WebGLGuard>
           ) : (
-            <Image
-              src="/images/tuotteet-hero.png"
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
+            <ProductsHeroPoster />
           )}
         </motion.div>
       </motion.div>
     </section>
+  );
+}
+
+function ProductsHeroPoster() {
+  return (
+    <Image
+      src="/images/tuotteet-hero.png"
+      alt=""
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 50vw"
+      priority
+    />
   );
 }

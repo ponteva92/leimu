@@ -89,7 +89,7 @@ export default function HeroImageCanvas(props: HeroProps) {
     <Canvas
       frameloop={active ? "always" : "never"}
       dpr={[1, props.isMobile ? 1.5 : 1.9]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: true }}
       camera={{ fov: 40, position: [0, 0, 4], near: 0.1, far: 20 }}
       resize={{ offsetSize: true }}
       style={{ width: "100%", height: "100%", display: "block" }}

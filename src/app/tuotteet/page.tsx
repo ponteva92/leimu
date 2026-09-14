@@ -32,9 +32,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = "force-dynamic";
+
 export default function TuotteetPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-[70vh] bg-[var(--bg)]" />}>
       <TuotteetClient />
     </Suspense>
   );

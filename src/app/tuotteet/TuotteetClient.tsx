@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useStore } from "@/context/store";
 import { SCENTS, PRICE_TABLE, flattenCart, scentById } from "@/lib/scents";
 import { previewPrice, submitForm } from "@/lib/formSubmit";
@@ -797,6 +797,7 @@ function ProcessVideo() {
 
 export function TuotteetClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const {
     cart, clearCart, lang, openModal, setQuantity, totalQty,
     checkoutStep, setCheckoutStep, lastOrder, setLastOrder, hydrated,
@@ -809,7 +810,6 @@ export function TuotteetClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const [hoveredWaxColor, setHoveredWaxColor] = useState<string | null>(null);
-  const scentHandled = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -819,18 +819,19 @@ export function TuotteetClient() {
   }, [hydrated, checkoutStep, cart.length, setCheckoutStep]);
 
   useEffect(() => {
-    if (scentHandled.current) return;
+    if (!hydrated) return;
     const id = searchParams.get("scent");
     if (!id) return;
     const scent = scentById(id);
     if (!scent) return;
-    scentHandled.current = true;
     if (totalQty() === 0) setQuantity(id, 1);
     openModal(scent);
-    window.setTimeout(() => {
+    const t = window.setTimeout(() => {
       document.getElementById("configurator")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 280);
-  }, [searchParams, openModal, setQuantity, totalQty]);
+    router.replace("/tuotteet", { scroll: false });
+    return () => window.clearTimeout(t);
+  }, [hydrated, searchParams, openModal, setQuantity, totalQty, router]);
 
   const handleConfirm = async () => {
     if (isSubmitting || !formData.paymentMethod) return;

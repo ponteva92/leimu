@@ -11,6 +11,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { WebGLGuard, useWebGLEnabled } from "@/components/WebGLGuard";
 import { useInView } from "framer-motion";
 import * as THREE from "three";
 import { portraitVert, portraitFrag, dustVert, dustFrag } from "./portraitShaders";
@@ -126,6 +127,7 @@ export default function LivingPortrait() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { margin: "200px" });
   const [reducedMotion, setReducedMotion] = useState(false);
+  const webgl = useWebGLEnabled();
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -137,17 +139,24 @@ export default function LivingPortrait() {
 
   return (
     <div ref={wrapRef} className="absolute inset-0">
-      <Canvas
-        frameloop={inView ? "always" : "never"}
-        dpr={[1, 1.8]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        camera={{ fov: 35, position: [0, 0, 4], near: 0.1, far: 20 }}
-        style={{ width: "100%", height: "100%", display: "block" }}
-      >
-        <Suspense fallback={null}>
-          <Portrait reducedMotion={reducedMotion} />
-        </Suspense>
-      </Canvas>
+      {webgl ? (
+        <WebGLGuard>
+          <Canvas
+            frameloop={inView ? "always" : "never"}
+            dpr={[1, 1.8]}
+            gl={{ antialias: true, alpha: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: true }}
+            camera={{ fov: 35, position: [0, 0, 4], near: 0.1, far: 20 }}
+            style={{ width: "100%", height: "100%", display: "block" }}
+          >
+            <Suspense fallback={null}>
+              <Portrait reducedMotion={reducedMotion} />
+            </Suspense>
+          </Canvas>
+        </WebGLGuard>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={IMG_SRC} alt="" className="h-full w-full object-cover" />
+      )}
     </div>
   );
 }

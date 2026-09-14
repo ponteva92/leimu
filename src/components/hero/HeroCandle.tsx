@@ -14,10 +14,12 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useTransform, useScroll } from "framer-motion";
 import { useStore } from "@/context/store";
 import { SPRING_PREMIUM } from "@/lib/motionVariants";
 import { ContactCTA } from "@/components/ContactCTA";
+import { WebGLGuard, useWebGLEnabled } from "@/components/WebGLGuard";
 import { HeroBackground } from "./HeroBackground";
 import {
   HERO,
@@ -62,6 +64,7 @@ export function HeroCandle() {
   const [isMobile, setIsMobile] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const webgl = useWebGLEnabled();
   useEffect(() => setMounted(true), []);
 
   /* ── Environment ── */
@@ -196,11 +199,32 @@ export function HeroCandle() {
             />
             {/* WebGL candle + flame + heat-mirage logo + scent aura */}
             <div className="absolute inset-0">
-              <CandleCanvas isMobile={isMobile} reducedMotion={reducedMotion} />
+              {webgl ? (
+                <WebGLGuard fallback={<HeroCandlePoster />}>
+                  <CandleCanvas isMobile={isMobile} reducedMotion={reducedMotion} />
+                </WebGLGuard>
+              ) : (
+                <HeroCandlePoster />
+              )}
             </div>
           </div>
         </div>
       </motion.div>
     </section>
+  );
+}
+
+function HeroCandlePoster() {
+  return (
+    <div className="relative h-full w-full">
+      <Image
+        src="/images/hero-candle.jpg"
+        alt=""
+        fill
+        className="object-contain object-bottom"
+        sizes="(max-width: 768px) 100vw, 50vw"
+        priority
+      />
+    </div>
   );
 }

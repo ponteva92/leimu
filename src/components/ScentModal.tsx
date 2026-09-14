@@ -79,7 +79,7 @@ export function ScentModal() {
 
           <motion.div
             ref={panelRef}
-            className="relative z-10 w-full max-w-3xl glass rounded-2xl overflow-hidden shadow-[var(--shadow-modal)]"
+            className="relative z-10 w-full max-w-3xl overflow-hidden rounded-2xl bg-[var(--ink)] shadow-[var(--shadow-modal)]"
             variants={card}
             role="dialog"
             aria-modal="true"

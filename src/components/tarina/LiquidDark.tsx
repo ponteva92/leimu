@@ -11,6 +11,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { WebGLGuard, useWebGLEnabled } from "@/components/WebGLGuard";
 import { useInView } from "framer-motion";
 import * as THREE from "three";
 import { liquidVert, liquidFrag } from "./liquidDarkShaders";
@@ -51,6 +52,7 @@ export default function LiquidDark() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { margin: "200px" });
   const [reducedMotion, setReducedMotion] = useState(false);
+  const webgl = useWebGLEnabled();
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -62,17 +64,21 @@ export default function LiquidDark() {
 
   return (
     <div ref={wrapRef} className="absolute inset-0" aria-hidden="true">
-      <Canvas
-        frameloop={inView ? "always" : "never"}
-        dpr={[1, 1.25]}
-        gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
-        camera={{ fov: 40, position: [0, 0, 4], near: 0.1, far: 20 }}
-        style={{ width: "100%", height: "100%", display: "block" }}
-      >
-        <Suspense fallback={null}>
-          <Caustics reducedMotion={reducedMotion} />
-        </Suspense>
-      </Canvas>
+      {webgl ? (
+        <WebGLGuard>
+          <Canvas
+            frameloop={inView ? "always" : "never"}
+            dpr={[1, 1.25]}
+            gl={{ antialias: false, alpha: false, powerPreference: "high-performance", failIfMajorPerformanceCaveat: true }}
+            camera={{ fov: 40, position: [0, 0, 4], near: 0.1, far: 20 }}
+            style={{ width: "100%", height: "100%", display: "block" }}
+          >
+            <Suspense fallback={null}>
+              <Caustics reducedMotion={reducedMotion} />
+            </Suspense>
+          </Canvas>
+        </WebGLGuard>
+      ) : null}
     </div>
   );
 }
