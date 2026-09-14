@@ -251,10 +251,15 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
    Scoped behind .cursor-ready (added by CustomCursor on mount) so a JS failure
    leaves the normal system cursor rather than no cursor at all. */
 @media (min-width: 768px) {
-  html.cursor-ready *,
-  html.cursor-ready *::before,
-  html.cursor-ready *::after {
-    cursor: none !important;
+  html.cursor-ready,
+  html.cursor-ready *:not(input):not(textarea):not(select):not([contenteditable="true"]) {
+    cursor: none;
+  }
+  html.cursor-ready input,
+  html.cursor-ready textarea,
+  html.cursor-ready select,
+  html.cursor-ready [contenteditable="true"] {
+    cursor: text;
   }
 }
 

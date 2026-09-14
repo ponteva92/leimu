@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useStore } from "@/context/store";
+import { COPY } from "@/lib/copy";
+import { useDialogTrap } from "@/lib/useDialogTrap";
 
 const backdrop = {
   hidden:  { opacity: 0 },
@@ -11,10 +14,6 @@ const backdrop = {
   exit:    { opacity: 0, transition: { duration: 0.18 } },
 };
 
-/**
- * Premium elastic spring: stiffness 480, damping 28, mass 0.65
- * Damping ratio ~0.55 => card overshoots ~4% and settles in ~380ms.
- */
 const card = {
   hidden:  { opacity: 0, scale: 0.92, y: 24, filter: "blur(8px)" },
   visible: {
@@ -28,36 +27,42 @@ const card = {
 };
 
 export function ScentModal() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const panelRef = useRef<HTMLDivElement>(null);
   const { modalScent, closeModal, setQuantity, config, totalQty, lang, isMuted } = useStore();
   const currentQty = modalScent ? (config.quantities[modalScent.id] ?? 0) : 0;
   const total = totalQty();
+  const open = Boolean(modalScent);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => { if (e.key === "Escape") closeModal(); },
-    [closeModal],
-  );
+  const onClose = useCallback(() => closeModal(), [closeModal]);
+  useDialogTrap(open, onClose, panelRef);
 
   useEffect(() => {
-    if (!modalScent) return;
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
+    if (!modalScent || isMuted) return;
     import("@/lib/audioService").then(({ playModalOpenSound }) =>
       playModalOpenSound(isMuted),
     );
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [modalScent, handleKeyDown, isMuted]);
+  }, [modalScent, isMuted]);
 
   const handleAddAndClose = () => {
     if (!modalScent) return;
-    if (currentQty === 0 && total < 6) setQuantity(modalScent.id, 1);
+    if (pathname === "/tuotteet") {
+      if (currentQty === 0 && total < 6) setQuantity(modalScent.id, 1);
+      closeModal();
+      setTimeout(() => {
+        document.getElementById("configurator")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return;
+    }
+    const id = modalScent.id;
     closeModal();
-    setTimeout(() => {
-      document.getElementById("configurator")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
+    router.push(`/tuotteet?scent=${encodeURIComponent(id)}`);
   };
+
+  const name = modalScent
+    ? (lang === "fi" ? modalScent.name : modalScent.nameEn)
+    : "";
 
   return (
     <AnimatePresence>
@@ -68,22 +73,23 @@ export function ScentModal() {
           initial="hidden"
           animate="visible"
           exit="exit"
-          onClick={closeModal}
-          aria-modal="true"
-          role="dialog"
-          aria-label={`Tuoksukortti: ${modalScent.name}`}
+          onClick={onClose}
         >
           <div className="absolute inset-0 bg-black/55 backdrop-blur-md" />
 
           <motion.div
+            ref={panelRef}
             className="relative z-10 w-full max-w-3xl glass rounded-2xl overflow-hidden shadow-[var(--shadow-modal)]"
             variants={card}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scent-modal-title"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={closeModal}
+              onClick={onClose}
               className="absolute top-5 right-5 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/20 text-white/70 hover:text-white hover:bg-black/30 backdrop-blur-md transition-colors"
-              aria-label="Sulje"
+              aria-label={COPY.scent.close[lang]}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -94,7 +100,7 @@ export function ScentModal() {
               <div className="relative min-h-[260px] bg-[var(--ink)] overflow-hidden">
                 <Image
                   src={modalScent.image}
-                  alt={lang === "fi" ? modalScent.name : modalScent.nameEn}
+                  alt={name}
                   fill
                   className="object-cover opacity-90"
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -106,8 +112,8 @@ export function ScentModal() {
                   />
                 )}
                 <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="font-serif text-3xl italic text-white leading-none">
-                    {lang === "fi" ? modalScent.name : modalScent.nameEn}
+                  <p id="scent-modal-title" className="font-serif text-3xl italic text-white leading-none">
+                    {name}
                   </p>
                   <p className="tag-mono text-[9px] text-white/60 mt-1">
                     {lang === "fi" ? modalScent.profile : modalScent.profileEn}
@@ -131,9 +137,9 @@ export function ScentModal() {
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {modalScent.tags.map((tag) => (
-                      <span key={tag}
+                      <span key={tag.en}
                         className="tag-mono text-[9px] px-2.5 py-1 rounded-full border border-white/15 text-white/75">
-                        {tag}
+                        {tag[lang]}
                       </span>
                     ))}
                   </div>
@@ -155,7 +161,7 @@ export function ScentModal() {
                   onClick={handleAddAndClose}
                   className="mt-auto w-full py-3.5 bg-[var(--accent-2)] text-[#1A1814] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-white transition-colors duration-300"
                 >
-                  {lang === "fi" ? "Valitse tuoksu" : "Choose scent"} &rarr;
+                  {pathname === "/tuotteet" ? COPY.scent.choose[lang] : COPY.scent.order[lang]} &rarr;
                 </button>
               </div>
             </div>

@@ -1,4 +1,14 @@
-import type { Scent } from "@/types";
+import type {
+  Scent, JarColor, CartItem, OrderLineInput, PriceResult, LocalizedTag,
+} from "@/types";
+
+const MATERIAL_TAGS: LocalizedTag[] = [
+  { fi: "Lasipurkki", en: "Glass jar" },
+  { fi: "Bambukansi", en: "Bamboo lid" },
+  { fi: "100% Soijavaha", en: "100% soy wax" },
+  { fi: "10% Sheabutter", en: "10% shea butter" },
+  { fi: "Puuvillasydän", en: "Cotton wick" },
+];
 
 export const SCENTS: Scent[] = [
   {
@@ -15,7 +25,7 @@ export const SCENTS: Scent[] = [
     image: "/images/scent-havu.jpg",
     burnTime: "~36h",
     price: "9€",
-    tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tags: MATERIAL_TAGS,
   },
   {
     id: "havu-vanilja",
@@ -31,7 +41,7 @@ export const SCENTS: Scent[] = [
     image: "/images/scent-havu-vanilja.jpg",
     burnTime: "~36h",
     price: "9€",
-    tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tags: MATERIAL_TAGS,
   },
   {
     id: "vanilja",
@@ -47,7 +57,7 @@ export const SCENTS: Scent[] = [
     image: "/images/scent-vanilja.jpg",
     burnTime: "~36h",
     price: "9€",
-    tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tags: MATERIAL_TAGS,
   },
   {
     id: "mustikka",
@@ -63,7 +73,7 @@ export const SCENTS: Scent[] = [
     image: "/images/scent-mustikka.jpg",
     burnTime: "~36h",
     price: "9€",
-    tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tags: MATERIAL_TAGS,
   },
   {
     id: "mustikka-vanilja",
@@ -79,7 +89,7 @@ export const SCENTS: Scent[] = [
     image: "/images/scent-mustikka-vanilja.jpg",
     burnTime: "~36h",
     price: "9€",
-    tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tags: MATERIAL_TAGS,
   },
 ];
 
@@ -87,8 +97,80 @@ export const PRICE_TABLE: Record<number, number> = {
   1: 9, 2: 18, 3: 25, 4: 34, 5: 40, 6: 47,
 };
 
+export const DELIVERY_FEE = 8;
+const JAR_IDS: JarColor[] = ["white", "green", "red"];
+
+export function featuredScents(): Scent[] {
+  const mustikka = SCENTS.find((s) => s.id === "mustikka");
+  const rest = SCENTS.filter((s) => s.id !== "mustikka");
+  return mustikka ? [mustikka, ...rest] : [...SCENTS];
+}
+
+export function scentById(id: string): Scent | undefined {
+  return SCENTS.find((s) => s.id === id);
+}
+
 export function calcPrice(total: number): number {
   if (total <= 0) return 0;
   if (total <= 6) return PRICE_TABLE[total] ?? total * 9;
   return 47 + (total - 6) * 9;
+}
+
+export function flattenCart(cart: CartItem[]): OrderLineInput[] {
+  const lines: OrderLineInput[] = [];
+  for (const item of cart) {
+    for (const [scentId, qty] of Object.entries(item.quantities)) {
+      if (qty > 0) lines.push({ scentId, jarColor: item.jarColor, qty });
+    }
+  }
+  return lines;
+}
+
+export function priceOrder(
+  items: OrderLineInput[],
+  delivery: "pickup" | "post",
+  code?: string,
+  opts?: { discountCode?: string; discountPercent?: number },
+): PriceResult {
+  if (!items.length) return { ok: false, error: "Empty cart." };
+
+  const validIds = new Set(SCENTS.map((s) => s.id));
+  const validJars = new Set<string>(JAR_IDS);
+  let totalCandles = 0;
+
+  for (const item of items) {
+    if (!validIds.has(item.scentId)) return { ok: false, error: "Unknown scent." };
+    if (!validJars.has(item.jarColor)) return { ok: false, error: "Unknown jar." };
+    if (!Number.isInteger(item.qty) || item.qty < 1) {
+      return { ok: false, error: "Invalid quantity." };
+    }
+    totalCandles += item.qty;
+  }
+
+  const basePrice = calcPrice(totalCandles);
+  const envCode = (opts?.discountCode ?? "").trim().toUpperCase();
+  const envPct = opts?.discountPercent ?? 0;
+  const submitted = (code ?? "").trim().toUpperCase();
+
+  let discountAmount = 0;
+  let codeApplied = false;
+
+  if (submitted) {
+    if (!envCode || submitted !== envCode || !(envPct > 0)) {
+      return { ok: false, error: "Invalid code." };
+    }
+    discountAmount = Math.floor(basePrice * (envPct / 100));
+    codeApplied = true;
+  }
+
+  const deliveryFee = delivery === "post" ? DELIVERY_FEE : 0;
+  return {
+    ok: true,
+    totalCandles,
+    basePrice,
+    discountAmount,
+    deliveryFee,
+    total: basePrice - discountAmount + deliveryFee,
+    codeApplied,
+  };
 }

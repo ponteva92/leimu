@@ -52,14 +52,14 @@ const COPY = {
   // Verbatim brand copy, paragraphed at sentence boundaries for legibility.
   body: {
     fi: [
-      "Jokaiseen LEIMU Candles -tilaukseen tulee mukaan musta kiitoskortti, joka sisältää sinun omavalintaisen viestin. Viesti on käsinkirjoitettu kultaisella musteella, ja se sinetöidään upealla LEIMUn logolla varustetulla kultaisella vahasinetillä.",
-      "Tämän ansiosta LEIMU Candles sopii täydellisesti esim. pikkujoulu- tai yrityslahjaksi. Voit myös hemmotella itseäsi ylellisellä kokemuksella, jolloin voimme kirjoittaa sinulle yllätysviestin!",
-      "LEIMU Candles on ylellinen elämys lahjansaajalle, jollaista muut kynttilät eivät tarjoa – oli saajana sitten läheinen tai sinä itse. Mieleenpainuva lahja, koska sinä olet sen ansainnut.",
+      "Jokaiseen LEIMU-tilaukseen kuuluu musta kiitoskortti ja kultainen vahasinetti. Voit lisätä oman käsinkirjoitetun viestin. Jos jätät viestin tyhjäksi, Shane kirjoittaa lyhyen oletustekstin.",
+      "Tämän ansiosta LEIMU sopii lahjaksi pikkujouluun, yritykselle tai itselle.",
+      "LEIMU on elämys lahjansaajalle — olipa saajana läheinen tai sinä itse.",
     ],
     en: [
-      "Every LEIMU Candles order arrives with a black thank-you card carrying a message of your choosing. It is handwritten in gold ink and closed with a golden wax seal pressed with the LEIMU mark.",
-      "That makes LEIMU Candles a flawless gift for a Christmas party or a corporate occasion. Or treat yourself to the indulgence — and let us write you a surprise message.",
-      "LEIMU Candles is a luxurious experience for whoever receives it, the kind ordinary candles never offer — whether that's someone close to you, or you. An unforgettable gift, because you have earned it.",
+      "Every LEIMU order includes a black thank-you card and a gold wax seal. You can add your own handwritten message. If you leave it empty, Shane writes a short default.",
+      "That makes LEIMU a gift for a Christmas party, a company, or yourself.",
+      "LEIMU is an experience for whoever receives it — someone close to you, or you.",
     ],
   },
   details: [

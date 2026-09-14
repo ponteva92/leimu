@@ -7,12 +7,13 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/context/store";
 import { ContactCTA } from "@/components/ContactCTA";
+import { COPY } from "@/lib/copy";
 
 /* The inner nav bar. Positioning + scroll-reveal live in SiteHeader; this just
    reacts to `scrolled` for its frosted-glass background. */
 export function Navbar({ scrolled }: { scrolled: boolean }) {
   const pathname = usePathname();
-  const { lang, toggleLang } = useStore();
+  const { lang, toggleLang, isMuted, toggleMute, setNavMenuOpen, openContact } = useStore();
 
   const links = [
     { href: "/",         label: { fi: "Etusivu",  en: "Home"     } },
@@ -23,12 +24,12 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
   /* Mobile hamburger menu (md:hidden). Labels per spec: Etusivu / Tuotteet / Tarinamme. */
   const [menuOpen, setMenuOpen] = useState(false);
   const mobileLinks = [
-    { href: "/",         label: { fi: "Etusivu",   en: "Home"      } },
-    { href: "/tuotteet", label: { fi: "Tuotteet",  en: "Products"  } },
-    { href: "/tarina",   label: { fi: "Tarinamme", en: "Our story" } },
+    { href: "/",         label: COPY.nav.home },
+    { href: "/tuotteet", label: COPY.nav.products },
+    { href: "/tarina",   label: COPY.nav.storyLong },
   ];
-  // Close the menu whenever the route changes.
   useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => { setNavMenuOpen(menuOpen); }, [menuOpen, setNavMenuOpen]);
 
   return (
     <div
@@ -140,12 +141,33 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            aria-label={`Vaihda kieli — ${lang === "fi" ? "EN" : "FI"}`}
+            aria-label={COPY.nav.lang[lang]}
           >
             <span className={lang === "fi" ? "text-[var(--ink)]" : ""}>FI</span>
             <span className="mx-1.5 opacity-40">/</span>
             <span className={lang === "en" ? "text-[var(--ink)]" : ""}>EN</span>
           </motion.button>
+
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full text-[var(--ink-mute)] hover:text-[var(--ink)]"
+            aria-label={isMuted ? COPY.nav.unmute[lang] : COPY.nav.mute[lang]}
+            aria-pressed={isMuted}
+          >
+            {isMuted ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                <path d="m22 9-6 6M16 9l6 6" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M19 6a9 9 0 0 1 0 12" />
+              </svg>
+            )}
+          </button>
 
           {/* Contact CTA — magnetic liquid glow */}
           <div className="hidden md:block">
@@ -187,7 +209,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg)]/70 text-[var(--ink)] shadow-sm backdrop-blur-sm transition-colors md:hidden"
-            aria-label={menuOpen ? "Sulje valikko" : "Avaa valikko"}
+            aria-label={menuOpen ? COPY.scent.close[lang] : (lang === "fi" ? "Avaa valikko" : "Open menu")}
             aria-expanded={menuOpen}
           >
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -220,7 +242,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
                     className={[
-                      "border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors last:border-0",
+                      "border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] transition-colors",
                       isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)] hover:text-[var(--ink)]",
                     ].join(" ")}
                   >
@@ -228,6 +250,28 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                   </Link>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => { setMenuOpen(false); openContact(); }}
+                className="border-b border-[var(--line)] py-4 text-left font-mono text-[13px] uppercase tracking-[0.14em] text-[var(--ink-mute)] hover:text-[var(--ink)]"
+              >
+                {COPY.nav.contact[lang]}
+              </button>
+              <Link
+                href="/tuotteet"
+                onClick={() => setMenuOpen(false)}
+                className="border-b border-[var(--line)] py-4 font-mono text-[13px] uppercase tracking-[0.14em] text-[var(--ink)]"
+              >
+                {COPY.nav.order[lang]}
+              </Link>
+              <button
+                type="button"
+                onClick={() => toggleMute()}
+                className="py-4 text-left font-mono text-[13px] uppercase tracking-[0.14em] text-[var(--ink-mute)] hover:text-[var(--ink)]"
+                aria-pressed={isMuted}
+              >
+                {isMuted ? COPY.nav.unmute[lang] : COPY.nav.mute[lang]}
+              </button>
             </div>
           </motion.nav>
         )}

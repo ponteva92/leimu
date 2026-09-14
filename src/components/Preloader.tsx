@@ -1,13 +1,8 @@
 "use client";
 
 /**
- * Preloader — the first second.
- *
- * Holds a calm, neutral curtain over the page until the things that would
- * otherwise "pop" are ready: web fonts (document.fonts.ready) and the
- * window load event. A short minimum keeps the wordmark from flickering on
- * fast loads; a hard cap guarantees we never trap the user. The curtain
- * then lifts on the Premium Ease curve.
+ * Preloader — skip on return visits (`sessionStorage.leimuSeen`),
+ * otherwise lift after ~300ms so the wordmark never traps the user.
  */
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,33 +14,19 @@ export function Preloader() {
 
   useEffect(() => {
     let cancelled = false;
-    const start = performance.now();
+
+    if (sessionStorage.getItem("leimuSeen")) {
+      setDone(true);
+      return;
+    }
 
     const finish = () => {
       if (cancelled) return;
-      const elapsed = performance.now() - start;
-      const MIN_MS = 650; // let the mark breathe at least this long
-      window.setTimeout(() => {
-        if (!cancelled) setDone(true);
-      }, Math.max(0, MIN_MS - elapsed));
+      sessionStorage.setItem("leimuSeen", "1");
+      setDone(true);
     };
 
-    const fontsReady: Promise<unknown> =
-      typeof document !== "undefined" && "fonts" in document
-        ? (document as Document & { fonts: FontFaceSet }).fonts.ready
-        : Promise.resolve();
-
-    const windowLoaded = new Promise<void>((resolve) => {
-      if (document.readyState === "complete") resolve();
-      else window.addEventListener("load", () => resolve(), { once: true });
-    });
-
-    Promise.all([fontsReady, windowLoaded]).then(finish);
-
-    // Safety: never hold the curtain longer than 4s.
-    const cap = window.setTimeout(() => {
-      if (!cancelled) setDone(true);
-    }, 4000);
+    const cap = window.setTimeout(finish, 300);
 
     return () => {
       cancelled = true;

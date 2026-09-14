@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Cinzel, Cormorant_Garamond, Raleway, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SkipLink } from "@/components/SkipLink";
 import { StoreProvider } from "@/context/StoreProvider";
-import { PrivacyLink } from "@/components/PrivacyModal";
 import { CustomCursor } from "@/components/CustomCursor";
 import { Preloader } from "@/components/Preloader";
 import { GrainOverlay } from "@/components/GrainOverlay";
@@ -162,90 +163,14 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[var(--ink)] focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:tracking-[0.15em] focus:text-[var(--bg)]"
-        >
-          Siirry sisältöön
-        </a>
         <StoreProvider>
+          <SkipLink />
           <SmoothScroll />
           <Preloader />
           <CustomCursor />
           <SiteHeader />
           <main id="main">{children}</main>
-          <footer className="border-t border-[var(--line)] bg-[var(--bg-2)] py-16 px-8 mt-24">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div>
-                <p className="font-serif text-2xl italic mb-3 text-[var(--ink)]">LEIMU</p>
-                <p className="tag-mono mb-6">Käsintehtyjä kynttilöitä</p>
-                <p className="text-sm text-[var(--ink-soft)] leading-relaxed max-w-xs">
-                  Jokainen LEIMU-kynttilä on pieneräinen käsityö, valmistettu
-                  100% soijavahasta ja sheabutterista Suomessa.
-                </p>
-              </div>
-              <div>
-                <p className="tag-mono mb-6">Navigaatio</p>
-                <nav className="flex flex-col gap-3">
-                  {[
-                    { href: "/", label: "Etusivu" },
-                    { href: "/tuotteet", label: "Tuotteet" },
-                    { href: "/tarina", label: "Tarina" },
-                  ].map((link) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      className="text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-                  <PrivacyLink className="text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors text-left">
-                    Tietosuojaseloste
-                  </PrivacyLink>
-                </nav>
-              </div>
-              <div>
-                <p className="tag-mono mb-6">Yhteystiedot</p>
-                <a
-                  href="mailto:leimucandles@gmail.com"
-                  className="text-sm text-[var(--ink-soft)] hover:text-[var(--accent-2)] transition-colors"
-                >
-                  leimucandles@gmail.com
-                </a>
-                {/* Social icons */}
-                <div className="flex items-center gap-4 mt-6">
-                  <a
-                    href="https://www.instagram.com/leimucandles/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LEIMU Instagramissa"
-                    className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://www.facebook.com/LEIMUcandles/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LEIMU Facebookissa"
-                    className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                    </svg>
-                  </a>
-                </div>
-                <p className="text-sm text-[var(--ink-mute)] mt-8">
-                  © {new Date().getFullYear()} LEIMU. Kaikki oikeudet pidätetään.
-                </p>
-              </div>
-            </div>
-          </footer>
+          <SiteFooter />
           <ContactModalHost />
           <GrainOverlay />
         </StoreProvider>

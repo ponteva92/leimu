@@ -1,35 +1,47 @@
-/* ════════════════════════════════════════════════════════════════════════
-   LEIMU — Form submit proxy (Next.js Route Handler → Netlify Function)
-   ------------------------------------------------------------------------
-   The browser POSTs clean semantic JSON here; this server endpoint:
-     • validates `formType` (the Make.com Router condition),
-     • builds the EXACT Make payload (Finnish keys Make/Airtable expect),
-     • forces numeric fields to real numbers (so Airtable accepts them),
-     • stamps `Saapunut` server-side (trusted clock),
-     • forwards it to the Make webhook stored in MAKE_WEBHOOK_URL.
-
-   Why server-side: the webhook URL never reaches the browser bundle (no spam /
-   quota abuse), and there are no CORS problems (server-to-server).
-   ════════════════════════════════════════════════════════════════════════ */
-
 import { NextRequest, NextResponse } from "next/server";
+import { EMAIL_RE } from "@/lib/contacts";
+import { clientIp, rateLimit } from "@/lib/rateLimit";
+import { priceOrder, SCENTS } from "@/lib/scents";
+import { discountFromEnv } from "@/lib/discountEnv";
+import type { DeliveryMode, JarColor, OrderLineInput, PaymentMethod } from "@/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Coerce anything to a finite number (Airtable number fields), default 0. */
 function num(v: unknown): number {
   const n = typeof v === "number" ? v : parseFloat(String(v ?? "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 }
 const str = (v: unknown) => String(v ?? "").trim();
 
+function parseItems(raw: unknown): OrderLineInput[] | null {
+  if (!Array.isArray(raw)) return null;
+  const items: OrderLineInput[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") return null;
+    const r = row as Record<string, unknown>;
+    items.push({
+      scentId: String(r.scentId ?? ""),
+      jarColor: String(r.jarColor ?? "") as JarColor,
+      qty: Number(r.qty),
+    });
+  }
+  return items;
+}
+
 export async function POST(req: NextRequest) {
-  // Make.com webhook — read server-side only (never shipped to the browser).
-  // Overridable via the MAKE_WEBHOOK_URL env var; falls back to the LEIMU hook.
-  const WEBHOOK =
-    process.env.MAKE_WEBHOOK_URL ||
-    "https://hook.eu2.make.com/iu9qhalsmhgi5ymkcivgwu0u4jw22qpq";
+  const WEBHOOK = process.env.MAKE_WEBHOOK_URL;
+  if (!WEBHOOK) {
+    return NextResponse.json(
+      { ok: false, error: "Server is missing MAKE_WEBHOOK_URL." },
+      { status: 500 },
+    );
+  }
+
+  const ip = clientIp(req.headers);
+  if (!rateLimit(ip)) {
+    return NextResponse.json({ ok: false, error: "Too many requests." }, { status: 429 });
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -38,14 +50,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
   }
 
+  if (str(body.website)) {
+    return NextResponse.json({ ok: true });
+  }
+
   const Saapunut = new Date().toISOString();
   let payload: Record<string, unknown>;
+  let orderTotal: number | undefined;
 
   if (body.formType === "leimu-contact") {
+    const email = str(body.email);
     payload = {
       formType: "leimu-contact",
       "Nimi": str(body.name),
-      "Sähköposti": str(body.email),
+      "Sähköposti": email,
       "Aihe": str(body.subject),
       "Viesti": str(body.message),
       "Saapunut": Saapunut,
@@ -53,35 +71,73 @@ export async function POST(req: NextRequest) {
     if (!payload["Nimi"] || !payload["Sähköposti"] || !payload["Viesti"]) {
       return NextResponse.json({ ok: false, error: "Pakollisia kenttiä puuttuu." }, { status: 400 });
     }
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ ok: false, error: "Invalid email." }, { status: 400 });
+    }
   } else if (body.formType === "leimu-order") {
+    const items = parseItems(body.items);
+    if (!items) {
+      return NextResponse.json({ ok: false, error: "Invalid items." }, { status: 400 });
+    }
+    const delivery: DeliveryMode = body.delivery === "post" ? "post" : "pickup";
+    const payment = str(body.paymentMethod) as PaymentMethod;
+    if (payment !== "mobilepay" && payment !== "siirto" && payment !== "cash") {
+      return NextResponse.json({ ok: false, error: "Invalid payment method." }, { status: 400 });
+    }
+    if (payment === "cash" && delivery === "post") {
+      return NextResponse.json({ ok: false, error: "Cash is only for pickup." }, { status: 400 });
+    }
+    const priced = priceOrder(items, delivery, str(body.code), discountFromEnv());
+    if (!priced.ok) {
+      return NextResponse.json(priced, { status: 400 });
+    }
+    orderTotal = priced.total;
+
+    const email = str(body.email);
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ ok: false, error: "Invalid email." }, { status: 400 });
+    }
+
+    const scentQty: Record<string, number> = {};
+    const jarQty: Record<JarColor, number> = { white: 0, green: 0, red: 0 };
+    for (const line of items) {
+      scentQty[line.scentId] = (scentQty[line.scentId] ?? 0) + line.qty;
+      jarQty[line.jarColor] += line.qty;
+    }
+    const itemsLabel = items
+      .map((line) => {
+        const name = SCENTS.find((s) => s.id === line.scentId)?.name ?? line.scentId;
+        return `${line.jarColor}: ${name} x${line.qty}`;
+      })
+      .join(" | ");
+
     payload = {
       formType: "leimu-order",
-      // Asiakkaan tiedot
       "Tilaaja": str(body.tilaaja),
-      "Sähköposti": str(body.email),
-      "Osoite": str(body.address),
-      "Postinumero": str(body.zip),
-      "Kaupunki": str(body.city),
-      // Tilauksen perustiedot
-      "Toimitus": str(body.delivery),
-      "Kpl yhteensä": num(body.totalCandles),
-      "Hinta": num(body.price),
-      // Maut (numeroita)
-      "Havu": num(body.havu),
-      "Havu-Vanilja": num(body.havuVanilja),
-      "Vanilja": num(body.vanilja),
-      "Mustikka": num(body.mustikka),
-      "Mustikka-Vanilja": num(body.mustikkaVanilja),
-      // Purkkien värit (numeroita)
-      "Valkoiset purkit": num(body.white),
-      "Vihreät purkit": num(body.green),
-      "Punaiset purkit": num(body.red),
-      // Lisätiedot
-      "Tuotteet (erittely)": str(body.items),
+      "Sähköposti": email,
+      "Osoite": delivery === "post" ? str(body.address) : "",
+      "Postinumero": delivery === "post" ? str(body.zip) : "",
+      "Kaupunki": delivery === "post" ? str(body.city) : "Oulu",
+      "Toimitus": delivery === "post" ? "Posti (+8 €)" : "Nouto",
+      "Maksutapa": payment,
+      "Kpl yhteensä": priced.totalCandles,
+      "Hinta": priced.total,
+      "Havu": num(scentQty["havu"]),
+      "Havu-Vanilja": num(scentQty["havu-vanilja"]),
+      "Vanilja": num(scentQty["vanilja"]),
+      "Mustikka": num(scentQty["mustikka"]),
+      "Mustikka-Vanilja": num(scentQty["mustikka-vanilja"]),
+      "Valkoiset purkit": jarQty.white,
+      "Vihreät purkit": jarQty.green,
+      "Punaiset purkit": jarQty.red,
+      "Tuotteet (erittely)": itemsLabel,
       "Viesti kuoreen": str(body.personalMessage),
       "Saapunut": Saapunut,
     };
     if (!payload["Tilaaja"] || !payload["Sähköposti"]) {
+      return NextResponse.json({ ok: false, error: "Pakollisia kenttiä puuttuu." }, { status: 400 });
+    }
+    if (delivery === "post" && (!payload["Osoite"] || !payload["Postinumero"] || !payload["Kaupunki"])) {
       return NextResponse.json({ ok: false, error: "Pakollisia kenttiä puuttuu." }, { status: 400 });
     }
   } else {
@@ -90,8 +146,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    // The Make webhook has API-key auth ("x-make-apikey"). Provide the key via the
-    // MAKE_API_KEY env var (kept out of the public repo). If unset, no key is sent.
     if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
     const res = await fetch(WEBHOOK, {
       method: "POST",
@@ -103,7 +157,7 @@ export async function POST(req: NextRequest) {
       console.error("[submit] Make webhook responded", res.status, detail.slice(0, 300));
       return NextResponse.json({ ok: false, error: `Webhook ${res.status}` }, { status: 502 });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, total: orderTotal });
   } catch (err) {
     console.error("[submit] Failed to reach Make webhook:", err);
     return NextResponse.json({ ok: false, error: "Upstream request failed." }, { status: 502 });

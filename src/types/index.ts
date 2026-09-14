@@ -1,4 +1,13 @@
 export type JarColor = "white" | "green" | "red";
+export type Lang = "fi" | "en";
+export type CheckoutStep = "configure" | "checkout" | "summary" | "thankyou";
+export type DeliveryMode = "pickup" | "post";
+export type PaymentMethod = "mobilepay" | "siirto" | "cash";
+
+export interface LocalizedTag {
+  fi: string;
+  en: string;
+}
 
 export interface Scent {
   id: string;
@@ -13,8 +22,7 @@ export interface Scent {
   image: string;
   burnTime: string;
   price: string;
-  tags: string[];
-  /** Ambient page tint colour for fluid background gradient */
+  tags: LocalizedTag[];
   ambientColor?: string;
 }
 
@@ -31,9 +39,22 @@ export interface CheckoutData {
   address: string;
   zip: string;
   city: string;
-  wantsDelivery: boolean;
+  delivery: DeliveryMode;
   wantsPersonalMessage: boolean;
   personalMessage: string;
+  paymentMethod: PaymentMethod | "";
+}
+
+export interface OrderLineInput {
+  scentId: string;
+  jarColor: JarColor;
+  qty: number;
+}
+
+export interface LastOrder {
+  formData: CheckoutData;
+  items: CartItem[];
+  total: number;
 }
 
 export interface ConfiguratorState {
@@ -42,11 +63,28 @@ export interface ConfiguratorState {
   message: string;
 }
 
+export interface PriceOk {
+  ok: true;
+  totalCandles: number;
+  basePrice: number;
+  discountAmount: number;
+  deliveryFee: number;
+  total: number;
+  codeApplied: boolean;
+}
+
+export interface PriceErr {
+  ok: false;
+  error: string;
+}
+
+export type PriceResult = PriceOk | PriceErr;
+
 export interface StoreState {
   config: ConfiguratorState;
   cart: CartItem[];
   modalScent: Scent | null;
-  lang: "fi" | "en";
+  lang: Lang;
   setJar: (jar: JarColor) => void;
   setQuantity: (scentId: string, qty: number) => void;
   setMessage: (message: string) => void;
@@ -56,6 +94,7 @@ export interface StoreState {
   openContact: () => void;
   closeContact: () => void;
   toggleLang: () => void;
+  setLang: (lang: Lang) => void;
   totalQty: () => number;
   totalPrice: () => number;
   addToCart: (jarColor: JarColor, quantities: Record<string, number>) => void;
@@ -63,9 +102,16 @@ export interface StoreState {
   clearCart: () => void;
   cartTotalQty: () => number;
   cartTotalPrice: () => number;
-  /* ─── Cursor & Audio ─── */
   cursorType: "default" | "pointer" | "magnetic";
   setCursorType: (type: "default" | "pointer" | "magnetic") => void;
   isMuted: boolean;
   toggleMute: () => void;
+  checkoutStep: CheckoutStep;
+  setCheckoutStep: (step: CheckoutStep) => void;
+  lastOrder: LastOrder | null;
+  setLastOrder: (order: LastOrder | null) => void;
+  navMenuOpen: boolean;
+  setNavMenuOpen: (open: boolean) => void;
+  hydrated: boolean;
+  setHydrated: (v: boolean) => void;
 }

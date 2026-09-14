@@ -1,14 +1,4 @@
-/* ════════════════════════════════════════════════════════════════════════
-   LEIMU — client-side form submitter
-   ------------------------------------------------------------------------
-   Posts clean semantic data to our own /api/submit endpoint (a Next.js Route
-   Handler that runs as a Netlify Function). That endpoint builds the exact
-   Make.com payload and forwards it to the server-only webhook — so the webhook
-   URL is never exposed to the browser and there are no CORS issues.
-
-   Numeric order fields are sent as real numbers (not strings) so Airtable
-   accepts them; the server coerces them again as a safety net.
-   ════════════════════════════════════════════════════════════════════════ */
+import type { DeliveryMode, OrderLineInput, PaymentMethod, PriceOk } from "@/types";
 
 export type ContactSubmission = {
   formType: "leimu-contact";
@@ -16,6 +6,7 @@ export type ContactSubmission = {
   email: string;
   subject: string;
   message: string;
+  website?: string;
 };
 
 export type OrderSubmission = {
@@ -25,34 +16,44 @@ export type OrderSubmission = {
   address: string;
   zip: string;
   city: string;
-  delivery: string;
-  totalCandles: number;
-  price: number;
-  havu: number;
-  havuVanilja: number;
-  vanilja: number;
-  mustikka: number;
-  mustikkaVanilja: number;
-  white: number;
-  green: number;
-  red: number;
-  items: string;
+  delivery: DeliveryMode;
+  items: OrderLineInput[];
   personalMessage: string;
+  paymentMethod: PaymentMethod;
+  code?: string;
+  website?: string;
 };
 
-export async function submitForm(payload: ContactSubmission | OrderSubmission): Promise<void> {
-  const res = await fetch("/api/submit", {
+export type PricePreview = {
+  items: OrderLineInput[];
+  delivery: DeliveryMode;
+  code?: string;
+};
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      detail = ((await res.json()) as { error?: string })?.error ?? "";
-    } catch {
-      /* ignore non-JSON error bodies */
-    }
-    throw new Error(`Submit failed (${res.status})${detail ? `: ${detail}` : ""}`);
+  let data: { error?: string } & Partial<T> = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* ignore */
   }
+  if (!res.ok) {
+    throw new Error(data.error || `Submit failed (${res.status})`);
+  }
+  return data as T;
+}
+
+export async function submitForm(
+  payload: ContactSubmission | OrderSubmission,
+): Promise<{ ok: true; total?: number }> {
+  return postJson("/api/submit", payload);
+}
+
+export async function previewPrice(payload: PricePreview): Promise<PriceOk> {
+  return postJson("/api/price", payload);
 }

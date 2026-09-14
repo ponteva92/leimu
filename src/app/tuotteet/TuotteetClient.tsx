@@ -1,36 +1,26 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import {
-  motion, AnimatePresence,
-  useMotionValue, useSpring, useTransform as useTf,
-} from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useStore } from "@/context/store";
-import { SCENTS, PRICE_TABLE, calcPrice } from "@/lib/scents";
-import { submitForm } from "@/lib/formSubmit";
+import { SCENTS, PRICE_TABLE, flattenCart, scentById } from "@/lib/scents";
+import { previewPrice, submitForm } from "@/lib/formSubmit";
+import { COPY } from "@/lib/copy";
+import { CONTACTS, EMAIL_RE } from "@/lib/contacts";
 import { CandleSVG } from "@/components/CandleSVG";
 import { ScentModal } from "@/components/ScentModal";
+import { ScentCarousel } from "@/components/ScentCarousel";
 import { PrivacyLink } from "@/components/PrivacyModal";
-import type { Scent, JarColor, CartItem, CheckoutData } from "@/types";
+import { PaymentDetails } from "@/components/PaymentDetails";
+import { StickyCartBar } from "@/components/StickyCartBar";
+import type { Scent, JarColor, CartItem, CheckoutData, DeliveryMode, PaymentMethod, Lang } from "@/types";
 import { ProductsHero } from "@/components/tuotteet/ProductsHero";
 import { GiftCeremony } from "@/components/GiftCeremony";
 import { Spinner } from "@/components/ui/Spinner";
 import { SuccessCheck } from "@/components/ui/SuccessCheck";
 import { EmptyState } from "@/components/ui/EmptyState";
-import {
-  headingReveal, fadeUpItem, staggerContainer,
-  VIEWPORT_ONCE, VIEWPORT_NEAR,
-} from "@/lib/motionVariants";
-
-/* ─── Constants ────────────────────────────────── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
 
 const JAR_LABELS: Record<JarColor, { fi: string; en: string }> = {
   white: { fi: "Valkoinen", en: "White" },
@@ -38,10 +28,10 @@ const JAR_LABELS: Record<JarColor, { fi: string; en: string }> = {
   red:   { fi: "Punainen", en: "Red" },
 };
 
-const JAR_ADJ: Record<JarColor, string> = {
-  white: "Valkoisia",
-  green: "Vihreitä",
-  red:   "Punaisia",
+const JAR_ADJ: Record<JarColor, { fi: string; en: string }> = {
+  white: { fi: "Valkoisia", en: "White" },
+  green: { fi: "Vihreitä", en: "Green" },
+  red:   { fi: "Punaisia", en: "Red" },
 };
 
 const JAR_DOT: Record<JarColor, string> = {
@@ -50,18 +40,17 @@ const JAR_DOT: Record<JarColor, string> = {
   red:   "bg-[#8B2E2E]",
 };
 
+const emptyForm = (): CheckoutData => ({
+  firstName: "", lastName: "", email: "",
+  address: "", zip: "", city: "",
+  delivery: "pickup",
+  wantsPersonalMessage: false,
+  personalMessage: "",
+  paymentMethod: "",
+});
 
-
-
-/* ─── Fluid Background ─────────────────────────────────────────────────
-   Fixed ambient glow that slowly transitions (3 s) to the hovered
-   scent's waxColor.  Positioned behind everything (z-[-1]).
-   Uses a radial gradient radiating from top-center so it's subtle
-   on the warm page background.
-──────────────────────────────────────────────────────────────────────── */
 function FluidBackground({ waxColor }: { waxColor: string | null }) {
   const color = waxColor ?? "transparent";
-
   return (
     <motion.div
       className="fixed inset-0 pointer-events-none"
@@ -77,7 +66,6 @@ function FluidBackground({ waxColor }: { waxColor: string | null }) {
   );
 }
 
-/* ─── Helpers ──────────────────────────────────── */
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-[var(--line)] last:border-0">
@@ -87,12 +75,11 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InputField({ label, type = "text", required = false, value, onChange, error }: {
-  label: string; type?: string; required?: boolean;
+function InputField({ id, label, type = "text", required = false, value, onChange, error }: {
+  id: string; label: string; type?: string; required?: boolean;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
 }) {
-  const id = label.replace(/\s+/g, "-").toLowerCase();
   return (
     <div>
       <label htmlFor={id} className="tag-mono block mb-2">{label}</label>
@@ -115,10 +102,14 @@ function InputField({ label, type = "text", required = false, value, onChange, e
   );
 }
 
-function ProgressBar({ step }: { step: string }) {
-  const steps = ["configure", "checkout", "summary"];
-  const labels = ["Ostoskori", "Yhteystiedot", "Yhteenveto"];
-  const current = step === "thankyou" ? 2 : steps.indexOf(step);
+function ProgressBar({ step, lang }: { step: string; lang: Lang }) {
+  const steps = ["configure", "checkout", "summary"] as const;
+  const labels = [
+    COPY.checkout.steps.cart[lang],
+    COPY.checkout.steps.details[lang],
+    COPY.checkout.steps.summary[lang],
+  ];
+  const current = step === "thankyou" ? 2 : steps.indexOf(step as typeof steps[number]);
   return (
     <div className="flex items-center gap-0 mb-10">
       {steps.map((s, i) => (
@@ -138,104 +129,6 @@ function ProgressBar({ step }: { step: string }) {
   );
 }
 
-/* ─── Tilt Scent Card ───────────────────────────── */
-function TiltScentCard({ scent, index, lang, onSelect, onHover, onLeave }: {
-  scent: Scent; index: number; lang: "fi" | "en";
-  onSelect: (s: Scent) => void;
-  onHover?: (waxColor: string) => void;
-  onLeave?: () => void;
-}) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 220, damping: 22 });
-  const smy = useSpring(my, { stiffness: 220, damping: 22 });
-  const rotX = useTf(smy, v => `${(v - 0.5) * 12}deg`);
-  const rotY = useTf(smx, v => `${(0.5 - v) * 12}deg`);
-  const shimX = useTf(smx, v => `${v * 100}%`);
-  const shimY = useTf(smy, v => `${v * 100}%`);
-  return (
-    <motion.button
-      ref={ref}
-      className="group relative flex flex-col text-left rounded-2xl border border-[var(--line)] bg-[var(--bg)] cursor-pointer overflow-hidden"
-      style={{ transformStyle: "preserve-3d", perspective: "700px", rotateX: rotX, rotateY: rotY }}
-      onMouseMove={(e) => {
-        const r = ref.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); onLeave?.(); }}
-      onClick={() => onSelect(scent)}
-      onMouseEnter={() => onHover?.(scent.waxColor)}
-      whileHover={{ y: -6, scale: 1.02, borderColor: "rgba(212,169,106,0.6)", boxShadow: "0 20px 56px -16px rgba(26,24,20,0.18)" }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 380, damping: 26 }}
-      custom={index}
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-    >
-      <div className="relative w-full aspect-square overflow-hidden">
-        <Image src={scent.image} alt={lang === "fi" ? scent.name : scent.nameEn} fill
-          className="object-cover transition-transform duration-500 group-hover:scale-107"
-          sizes="(max-width: 768px) 50vw, 20vw" />
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at ${shimX} ${shimY}, rgba(255,255,255,0.15) 0%, transparent 60%)` }}
-        />
-        <div className="absolute inset-0 bg-[var(--ink)]/0 group-hover:bg-[var(--ink)]/15 transition-all duration-300 flex items-center justify-center">
-          <span className="tag-mono text-[8px] px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-md !text-white border border-white/25 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-            {lang === "fi" ? "Lue lisää" : "Learn more"}
-          </span>
-        </div>
-      </div>
-      <div className="p-3 pb-4 bg-[var(--ink)]" style={{ transform: "translateZ(10px)" }}>
-        <p className="font-serif text-lg italic text-white leading-tight">{lang === "fi" ? scent.name : scent.nameEn}</p>
-        <p className="tag-mono text-[8px] mt-1 !text-white/75">{lang === "fi" ? scent.profile : scent.profileEn}</p>
-        <p className="mt-2 font-serif text-xl text-white">{scent.price}</p>
-      </div>
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)]"
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.3 }}
-        style={{ transformOrigin: "left" }}
-      />
-    </motion.button>
-  );
-}
-
-/* ─── Product Grid ──────────────────────────────── */
-function ProductGrid({ scents, onSelect, onHover, onLeave }: {
-  scents: Scent[]; onSelect: (s: Scent) => void;
-  onHover?: (waxColor: string) => void;
-  onLeave?: () => void;
-}) {
-  const { lang } = useStore();
-  return (
-    <section className="mb-16">
-      <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
-        {lang === "fi" ? <><span>Tutustu </span><em>tuoksuihin</em></> : <><span>Explore the </span><em>scents</em></>}
-      </h2>
-      {(() => {
-        const display = [...scents];
-        [display[0], display[3]] = [display[3], display[0]];
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {display.map((scent, i) => (
-              <TiltScentCard key={scent.id} scent={scent} index={i} lang={lang}
-                onSelect={onSelect} onHover={onHover} onLeave={onLeave} />
-            ))}
-          </div>
-        );
-      })()}
-    </section>
-  );
-}
-
-/* ─── Quantity Stepper ──────────────────────────── */
 function QuantityStepper({ scent }: { scent: Scent }) {
   const { config, setQuantity, totalQty, lang } = useStore();
   const qty = config.quantities[scent.id] ?? 0;
@@ -250,18 +143,16 @@ function QuantityStepper({ scent }: { scent: Scent }) {
         <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5 truncate">{lang === "fi" ? scent.profile : scent.profileEn}</p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <button onClick={() => setQuantity(scent.id, qty - 1)} disabled={qty === 0}
+        <button type="button" onClick={() => setQuantity(scent.id, qty - 1)} disabled={qty === 0}
+          aria-label="-"
           className="w-11 h-11 rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center hover:bg-[var(--bg-2)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="2" viewBox="0 0 12 2" fill="none"><path d="M1 1h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
         <div className="w-7 text-center">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.span key={qty} className="block font-serif text-xl italic text-[var(--ink)]"
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}>{qty}</motion.span>
-          </AnimatePresence>
+          <span className="block font-serif text-xl italic text-[var(--ink)]">{qty}</span>
         </div>
-        <button onClick={() => setQuantity(scent.id, qty + 1)} disabled={total >= 6}
+        <button type="button" onClick={() => setQuantity(scent.id, qty + 1)} disabled={total >= 6}
+          aria-label="+"
           className="w-11 h-11 rounded-full border border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--ink)] hover:border-[var(--ink)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
@@ -270,9 +161,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
   );
 }
 
-/* ─── Cart Item Card ────────────────────────────── */
-function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void }) {
-  const { lang } = useStore();
+function CartItemCard({ item, onRemove, lang }: { item: CartItem; onRemove: () => void; lang: Lang }) {
   const totalInItem = Object.values(item.quantities).reduce((s, q) => s + q, 0);
   const scentLine = SCENTS.filter((s) => (item.quantities[s.id] ?? 0) > 0)
     .map((s) => `${lang === "fi" ? s.name : s.nameEn} ×${item.quantities[s.id]}`)
@@ -282,11 +171,11 @@ function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void
       <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${JAR_DOT[item.jarColor]}`} />
       <div className="flex-1 min-w-0">
         <p className="font-serif italic text-sm text-[var(--ink)]">
-          {JAR_LABELS[item.jarColor][lang]} · {totalInItem} {lang === "fi" ? "kpl" : "pcs"}
+          {JAR_LABELS[item.jarColor][lang]} · {totalInItem} {COPY.cart.pcs[lang]}
         </p>
         <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5 leading-relaxed">{scentLine}</p>
       </div>
-      <button onClick={onRemove} aria-label="Poista"
+      <button type="button" onClick={onRemove} aria-label={lang === "fi" ? "Poista" : "Remove"}
         className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors p-1 mt-0.5 flex-shrink-0">
         <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
           <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
@@ -296,46 +185,69 @@ function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void
   );
 }
 
-/* ─── Step 1: Configure ─────────────────────────── */
+function PriceTable({ highlight }: { highlight: number }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr>{Object.keys(PRICE_TABLE).map((n) => (
+            <th key={n} className="tag-mono text-[10px] text-[var(--ink-mute)] font-normal pb-1 pr-3 text-left">{n}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          <tr>{Object.values(PRICE_TABLE).map((p, i) => (
+            <td key={i} className={`font-serif italic text-sm pr-3 ${i + 1 === highlight ? "text-[var(--accent-2)]" : "text-[var(--ink-mute)]"}`}>{p}€</td>
+          ))}</tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ConfigureStep({
-  onProceed,
-  onScentHover,
-  onScentLeave,
+  onProceed, onScentHover, onScentLeave,
 }: {
   onProceed: () => void;
   onScentHover: (waxColor: string) => void;
   onScentLeave: () => void;
 }) {
-  const { lang, config, setJar, addToCart, cart, removeFromCart, totalQty, cartTotalQty, cartTotalPrice } = useStore();
+  const { lang, config, setJar, addToCart, cart, removeFromCart, totalQty, cartTotalQty, cartTotalPrice, openModal } = useStore();
   const currentQty = totalQty();
   const cartQty = cartTotalQty();
   const cartPrice = cartTotalPrice();
   const jars: JarColor[] = ["white", "green", "red"];
 
-  const handleAddToCart = () => {
-    if (currentQty === 0) return;
-    addToCart(config.jar, { ...config.quantities });
-  };
-
   return (
     <div>
-      <ProgressBar step="configure" />
+      <ProgressBar step="configure" lang={lang} />
 
-      {/* ── Product Grid ── */}
-      <ProductGrid scents={SCENTS} onSelect={useStore.getState().openModal}
-        onHover={onScentHover} onLeave={onScentLeave} />
+      <section className="mb-16">
+        <h2 id="scent-row-heading" className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
+          {lang === "fi" ? <><span>Tutustu </span><em>tuoksuihin</em></> : <><span>Explore the </span><em>scents</em></>}
+        </h2>
+        <ScentCarousel
+          labelledBy="scent-row-heading"
+          onSelect={openModal}
+          onHover={onScentHover}
+          onLeave={onScentLeave}
+        />
+      </section>
 
       <div className="divider mb-16" />
 
       <div id="configurator" className="grid md:grid-cols-2 gap-10 items-start">
-        {/* Left: Configurator */}
         <div>
           <p className="tag-mono mb-2">{lang === "fi" ? "Lisää koriin" : "Add to cart"}</p>
-          <h2 className="heading-display text-3xl md:text-4xl mb-8 text-[var(--ink)]">
+          <h2 className="heading-display text-3xl md:text-4xl mb-4 text-[var(--ink)]">
             {lang === "fi" ? <><span>Kokoa oma </span><em>tilauksesi</em></> : <><span>Build your </span><em>order</em></>}
           </h2>
+          <p className="text-sm text-[var(--ink-soft)] mb-6 leading-relaxed">{COPY.cart.rule[lang]}</p>
 
-          {/* Jar selector */}
+          <div className="mb-6 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-4">
+            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-2">{COPY.cart.total[lang]}</p>
+            <PriceTable highlight={cartQty} />
+          </div>
+
           <div className="mb-8">
             <p className="tag-mono text-[8px] text-[var(--ink-mute)] mb-1">
               {lang === "fi" ? "Valitse purkin väri" : "Choose jar colour"}
@@ -347,17 +259,16 @@ function ConfigureStep({
             </p>
             <div className="flex gap-3">
               {jars.map((jar) => (
-                <button key={jar} onClick={() => setJar(jar)}
+                <button key={jar} type="button" onClick={() => setJar(jar)}
                   className={["flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200",
                     config.jar === jar ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
-                  <div className="w-14 h-18"><CandleSVG jar={jar} animate={false} /></div>
+                  <div className="w-14 h-[4.5rem]"><CandleSVG jar={jar} animate={false} /></div>
                   <span className="tag-mono text-[8px] text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Scent steppers */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <p className="tag-mono text-[8px] text-[var(--ink-mute)]">
@@ -372,66 +283,39 @@ function ConfigureStep({
             </div>
           </div>
 
-          <button onClick={handleAddToCart} disabled={currentQty === 0}
+          <button type="button" onClick={() => { if (currentQty > 0) addToCart(config.jar, { ...config.quantities }); }} disabled={currentQty === 0}
             className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg)] font-mono text-[10px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
-            {lang === "fi" ? "+ Lisää koriin" : "+ Add to cart"}
+            {COPY.cart.add[lang]}
           </button>
         </div>
 
-        {/* Right: Cart */}
         <div className="md:sticky md:top-24">
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
             <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
-              <p className="tag-mono text-[9px]">{lang === "fi" ? "Ostoskori" : "Cart"}</p>
+              <p className="tag-mono text-[9px]">{COPY.cart.bar[lang]}</p>
               <p className="tag-mono text-[9px] text-[var(--ink-mute)]">
-                {cartQty} {lang === "fi" ? "kynttilää" : "candles"}
+                {cartQty} {COPY.cart.candles[lang]}
               </p>
             </div>
-
             <div className="px-6 min-h-[100px]">
               {cart.length === 0 ? (
-                <EmptyState message={lang === "fi" ? "Kori on tyhjä" : "Cart is empty"} />
+                <EmptyState message={COPY.cart.empty[lang]} />
               ) : (
                 cart.map((item) => (
-                  <CartItemCard key={item.id} item={item} onRemove={() => removeFromCart(item.id)} />
+                  <CartItemCard key={item.id} item={item} lang={lang} onRemove={() => removeFromCart(item.id)} />
                 ))
               )}
             </div>
-
             <div className="px-6 py-4 border-t border-[var(--line)] space-y-4">
-              {cartQty > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr>{Object.keys(PRICE_TABLE).map((n) => (
-                        <th key={n} className="tag-mono text-[10px] text-[var(--ink-mute)] font-normal pb-1 pr-3 text-left">{n} kpl</th>
-                      ))}</tr>
-                    </thead>
-                    <tbody>
-                      <tr>{Object.values(PRICE_TABLE).map((p, i) => (
-                        <td key={i} className={`font-serif italic text-sm pr-3 ${i + 1 === cartQty ? "text-[var(--accent-2)]" : "text-[var(--ink-mute)]"}`}>{p}€</td>
-                      ))}</tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="tag-mono text-[8px] text-[var(--ink-mute)]">{lang === "fi" ? "Yhteensä" : "Total"}</p>
-                  <AnimatePresence mode="wait">
-                    <motion.p key={cartPrice} className="font-serif text-3xl italic text-[var(--ink)]"
-                      initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.2 }}>
-                      {cartQty > 0 ? `${cartPrice}€` : "0€"}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
+              <div>
+                <p className="tag-mono text-[8px] text-[var(--ink-mute)]">{COPY.cart.total[lang]}</p>
+                <p className="font-serif text-3xl italic text-[var(--ink)]">
+                  {cartQty > 0 ? `${cartPrice}€` : "0€"}
+                </p>
               </div>
-
-              <button onClick={onProceed} disabled={cart.length === 0}
+              <button type="button" onClick={onProceed} disabled={cart.length === 0}
                 className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
-                {lang === "fi" ? "Jatka tilaukseen →" : "Proceed to checkout →"}
+                {COPY.cart.proceed[lang]} →
               </button>
             </div>
           </div>
@@ -441,23 +325,30 @@ function ConfigureStep({
   );
 }
 
-/* ─── Step 2: Checkout Form ─────────────────────── */
 function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   formData: CheckoutData; setFormData: (d: CheckoutData) => void;
   onBack: () => void; onNext: () => void;
 }) {
   const { lang } = useStore();
   const [emailError, setEmailError] = useState("");
-  const isEmail = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
   const field = (key: keyof CheckoutData) => ({
     value: formData[key] as string,
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
       setFormData({ ...formData, [key]: e.target.value }),
   });
+
+  const setDelivery = (delivery: DeliveryMode) => {
+    setFormData({
+      ...formData,
+      delivery,
+      paymentMethod: delivery === "post" && formData.paymentMethod === "cash" ? "" : formData.paymentMethod,
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEmail(formData.email.trim())) {
-      setEmailError(lang === "fi" ? "Tarkista sähköpostiosoite." : "Check your email address.");
+    if (!EMAIL_RE.test(formData.email.trim())) {
+      setEmailError(COPY.checkout.emailError[lang]);
       return;
     }
     setEmailError("");
@@ -465,74 +356,86 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-lg mx-auto">
-      <ProgressBar step="checkout" />
-      <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
+    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} className="max-w-lg mx-auto">
+      <ProgressBar step="checkout" lang={lang} />
+      <button type="button" onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        {lang === "fi" ? "Takaisin" : "Back"}
+        {COPY.checkout.back[lang]}
       </button>
-      <p className="tag-mono mb-2">{lang === "fi" ? "Yhteystiedot" : "Contact details"}</p>
+      <p className="tag-mono mb-2">{COPY.checkout.steps.details[lang]}</p>
       <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">
         {lang === "fi" ? <><span>Toimitus ja </span><em>tiedot</em></> : <><span>Delivery and </span><em>details</em></>}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {(["pickup", "post"] as DeliveryMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setDelivery(mode)}
+              className={[
+                "rounded-xl border p-4 text-left transition-colors",
+                formData.delivery === mode
+                  ? "border-[var(--accent)] bg-[var(--accent)]/5"
+                  : "border-[var(--line)] hover:border-[var(--accent-3)]",
+              ].join(" ")}
+            >
+              <p className="font-serif italic text-[var(--ink)]">
+                {mode === "pickup" ? COPY.checkout.pickup[lang] : COPY.checkout.post[lang]}
+              </p>
+              <p className="tag-mono text-[8px] mt-1 text-[var(--ink-mute)]">
+                {mode === "pickup" ? COPY.checkout.pickupHint[lang] : COPY.checkout.postHint[lang]}
+              </p>
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InputField label="Etunimi" required {...field("firstName")} />
-          <InputField label="Sukunimi" required {...field("lastName")} />
+          <InputField id="first-name" label={COPY.checkout.firstName[lang]} required {...field("firstName")} />
+          <InputField id="last-name" label={COPY.checkout.lastName[lang]} required {...field("lastName")} />
         </div>
         <InputField
-          label="Sähköposti" type="email" required
+          id="email"
+          label={COPY.checkout.email[lang]} type="email" required
           value={formData.email}
           onChange={(e) => { setFormData({ ...formData, email: e.target.value }); if (emailError) setEmailError(""); }}
           error={emailError}
         />
-        <InputField label="Osoite" required {...field("address")} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InputField label="Postinumero" required {...field("zip")} />
-          <InputField label="Kaupunki" required {...field("city")} />
-        </div>
-        <div className="flex items-start gap-3 pt-3 pb-1">
-          <input type="checkbox" id="delivery" checked={formData.wantsDelivery}
-            onChange={(e) => setFormData({ ...formData, wantsDelivery: e.target.checked })}
-            className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
-          <label htmlFor="delivery" className="cursor-pointer">
-            <p className="text-sm text-[var(--ink)]">Tarvitsen kuljetuksen</p>
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5">Postitus +8€</p>
-          </label>
-        </div>
+        {formData.delivery === "post" && (
+          <>
+            <InputField id="address" label={COPY.checkout.address[lang]} required {...field("address")} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InputField id="zip" label={COPY.checkout.zip[lang]} required {...field("zip")} />
+              <InputField id="city" label={COPY.checkout.city[lang]} required {...field("city")} />
+            </div>
+          </>
+        )}
         <div className="flex items-start gap-3 pb-1">
           <input type="checkbox" id="personalMsg" checked={formData.wantsPersonalMessage}
             onChange={(e) => setFormData({ ...formData, wantsPersonalMessage: e.target.checked })}
             className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
           <label htmlFor="personalMsg" className="cursor-pointer">
-            <p className="text-sm text-[var(--ink)]">Haluan itsekirjoitetun viestin sinetöityyn kuoreen</p>
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5">Käsinkirjoitettu viesti lisätään tilaukseen</p>
+            <p className="text-sm text-[var(--ink)]">{COPY.checkout.messageOpt[lang]}</p>
+            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-0.5">{COPY.checkout.messageHint[lang]}</p>
           </label>
         </div>
         {formData.wantsPersonalMessage && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <label className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1.5">Kirjoita viestisi</label>
+          <div>
+            <label htmlFor="personal-message" className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1.5">{COPY.checkout.messageLabel[lang]}</label>
             <textarea
+              id="personal-message"
               value={formData.personalMessage}
               onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
               rows={5}
               className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors duration-base resize-none leading-relaxed"
             />
-            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-1.5">
-              Erottele viestit numeroilla, esim: 1. Hyvää syntymäpäivää! 2. Rakastan sinua...
-            </p>
-          </motion.div>
+            <p className="tag-mono text-[8px] text-[var(--ink-mute)] mt-1.5">{COPY.checkout.messageHelp[lang]}</p>
+          </div>
         )}
         <div className="pt-4 border-t border-[var(--line)]">
           <button type="submit"
             className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200">
-            {lang === "fi" ? "Seuraava →" : "Next →"}
+            {COPY.checkout.next[lang]} →
           </button>
         </div>
       </form>
@@ -540,27 +443,31 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
   );
 }
 
-/* ─── Step 3: Summary ───────────────────────────── */
 function SummaryStep({
-  cart, formData, discountCode, setDiscountCode, discountApplied,
-  setDiscountApplied, discountError, setDiscountError, onBack, onConfirm,
-  isSubmitting, submitError,
+  cart, formData, setFormData, discountCode, setDiscountCode, discountApplied,
+  setDiscountApplied, discountError, setDiscountError, pricedPreview, setPricedPreview,
+  onBack, onConfirm, isSubmitting, submitError,
 }: {
   cart: CartItem[];
   formData: CheckoutData;
+  setFormData: (d: CheckoutData) => void;
   discountCode: string;
   setDiscountCode: (v: string) => void;
   discountApplied: boolean;
   setDiscountApplied: (v: boolean) => void;
   discountError: boolean;
   setDiscountError: (v: boolean) => void;
+  pricedPreview: { total: number; basePrice: number; discountAmount: number; deliveryFee: number } | null;
+  setPricedPreview: (v: { total: number; basePrice: number; discountAmount: number; deliveryFee: number } | null) => void;
   onBack: () => void;
-  onConfirm: (finalPrice: number) => void;
+  onConfirm: () => void;
   isSubmitting: boolean;
   submitError: boolean;
 }) {
   const { lang } = useStore();
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [payError, setPayError] = useState(false);
+  const [pricing, setPricing] = useState(false);
 
   const colorCounts: Record<JarColor, number> = { white: 0, green: 0, red: 0 };
   const colorScents: Record<JarColor, Record<string, number>> = { white: {}, green: {}, red: {} };
@@ -571,150 +478,179 @@ function SummaryStep({
     }
   }
 
-  const totalCandles = cart.reduce((s, item) => s + Object.values(item.quantities).reduce((a, q) => a + q, 0), 0);
-  const basePrice = calcPrice(totalCandles);
-  const discountAmount = discountApplied ? Math.floor(basePrice * 0.15) : 0;
-  const deliveryFee = formData.wantsDelivery ? 8 : 0;
-  const finalPrice = basePrice - discountAmount + deliveryFee;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await previewPrice({
+          items: flattenCart(cart),
+          delivery: formData.delivery,
+          code: discountApplied ? discountCode : undefined,
+        });
+        if (!cancelled) setPricedPreview(p);
+      } catch {
+        if (!cancelled) setPricedPreview(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [cart, formData.delivery, discountApplied, discountCode, setPricedPreview]);
 
-  const handleApply = () => {
-    if (discountCode.trim().toUpperCase() === "LEIMU29") {
-      setDiscountApplied(true); setDiscountError(false);
-    } else {
-      setDiscountError(true); setDiscountApplied(false);
+  const handleApply = async () => {
+    setPricing(true);
+    try {
+      const p = await previewPrice({
+        items: flattenCart(cart),
+        delivery: formData.delivery,
+        code: discountCode,
+      });
+      setDiscountApplied(p.codeApplied);
+      setDiscountError(false);
+      setPricedPreview(p);
+    } catch {
+      setDiscountError(true);
+      setDiscountApplied(false);
+    } finally {
+      setPricing(false);
     }
   };
 
+  const confirm = () => {
+    if (!formData.paymentMethod) {
+      setPayError(true);
+      return;
+    }
+    onConfirm();
+  };
+
+  const methods: PaymentMethod[] = formData.delivery === "pickup"
+    ? ["mobilepay", "siirto", "cash"]
+    : ["mobilepay", "siirto"];
+
   return (
-    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -32 }} className="max-w-4xl mx-auto">
-      <ProgressBar step="summary" />
-      <button onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
+    <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} className="max-w-4xl mx-auto">
+      <ProgressBar step="summary" lang={lang} />
+      <button type="button" onClick={onBack} className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] flex items-center gap-1.5 mb-8 transition-colors">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 10L2 6l4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        {lang === "fi" ? "Takaisin" : "Back"}
+        {COPY.checkout.back[lang]}
       </button>
-      <p className="tag-mono mb-2">{lang === "fi" ? "Tarkista tilauksesi ennen vahvistusta" : "Review before confirming"}</p>
-      <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">Yhteenveto</h2>
+      <p className="tag-mono mb-2">{COPY.checkout.review[lang]}</p>
+      <h2 className="heading-display text-4xl md:text-5xl mb-10 text-[var(--ink)]">{COPY.checkout.steps.summary[lang]}</h2>
 
       <div className="grid md:grid-cols-2 gap-10">
-        {/* Left: Order details */}
-        <div className="space-y-8">
-          <div>
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">Purkkivalinnat</p>
-            {(["white", "green", "red"] as JarColor[]).map((color) =>
-              colorCounts[color] > 0 ? (
-                <div key={color} className="flex justify-between items-center py-2.5 border-b border-[var(--line)]">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${JAR_DOT[color]}`} />
-                    <span className="text-sm text-[var(--ink)]">{JAR_ADJ[color]} purkkeja</span>
-                  </div>
-                  <span className="font-serif italic text-xl text-[var(--ink)]">{colorCounts[color]} kpl</span>
-                </div>
-              ) : null
-            )}
-          </div>
-
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6">
+          <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">{COPY.checkout.contents[lang]}</p>
           {(["white", "green", "red"] as JarColor[]).map((color) => {
             if (colorCounts[color] === 0) return null;
-            const scentItems = SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0);
             return (
-              <div key={color}>
-                <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">
-                  Tuoksut ({JAR_LABELS[color].fi})
-                </p>
-                {scentItems.map((s) => (
-                  <div key={s.id} className="flex items-center gap-3 py-2 border-b border-[var(--line)] last:border-0">
-                    <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={s.image} alt={s.name} fill className="object-cover" sizes="32px" />
-                    </div>
-                    <span className="font-serif italic text-sm text-[var(--ink)] flex-1">{s.name}</span>
-                    <span className="tag-mono text-[8px] text-[var(--ink-mute)]">×{colorScents[color][s.id]}</span>
-                  </div>
+              <div key={color} className="mb-4 last:mb-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${JAR_DOT[color]}`} />
+                  <p className="font-serif italic text-sm text-[var(--ink)]">
+                    {JAR_ADJ[color][lang]} · {colorCounts[color]} {COPY.cart.pcs[lang]}
+                  </p>
+                </div>
+                {SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0).map((s) => (
+                  <p key={s.id} className="tag-mono text-[8px] text-[var(--ink-mute)] ml-5 leading-relaxed">
+                    {lang === "fi" ? s.name : s.nameEn} ×{colorScents[color][s.id]}
+                  </p>
                 ))}
               </div>
             );
           })}
+          <div className="mt-4 space-y-1">
+            <Row label={COPY.cart.total[lang]} value={`${pricedPreview?.basePrice ?? "—"}€`} />
+            {discountApplied && pricedPreview && (
+              <Row label={`${COPY.checkout.discount[lang]}`} value={`-${pricedPreview.discountAmount}€`} />
+            )}
+            {formData.delivery === "post" && (
+              <Row label={COPY.checkout.delivery[lang]} value="+8€" />
+            )}
+            <Row
+              label={formData.delivery === "post" ? COPY.checkout.post[lang] : COPY.checkout.pickup[lang]}
+              value={formData.delivery === "post" ? `${formData.city}` : CONTACTS.pickupCity}
+            />
+          </div>
+          <div className="border-t border-[var(--line)] pt-4 mt-4 flex justify-between items-baseline">
+            <span className="tag-mono text-[9px] text-[var(--ink-mute)]">{COPY.cart.total[lang]}</span>
+            <span className="font-serif text-2xl italic text-[var(--ink)]">{pricedPreview?.total ?? "—"}€</span>
+          </div>
         </div>
 
-        {/* Right: Pricing + actions */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6 space-y-3">
-            <Row label="Kynttilät" value={`${basePrice}€`} />
-            {discountApplied && <Row label="Alennus (15%)" value={`-${discountAmount}€`} />}
-            {formData.wantsDelivery && <Row label="Toimitus" value="+8€" />}
-            <div className="border-t border-[var(--line)] pt-3 flex justify-between items-baseline">
-              <span className="tag-mono text-[9px] text-[var(--ink-mute)]">Hinta yhteensä</span>
-              <AnimatePresence mode="wait">
-                <motion.span key={finalPrice} className="font-serif text-3xl italic text-[var(--ink)]"
-                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.2 }}>
-                  {finalPrice}€
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          </div>
-
+        <div className="space-y-5">
           <div>
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-2">Alekoodi</p>
+            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-2">{COPY.checkout.code[lang]}</p>
             {discountApplied ? (
-              <motion.p className="text-sm text-[var(--accent)] font-serif italic"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                ✓ Alennus 15% lisätty
-              </motion.p>
+              <p className="text-sm text-[var(--accent)]">{discountCode.toUpperCase()}</p>
             ) : (
               <div className="flex gap-2">
                 <input type="text" value={discountCode}
                   onChange={(e) => { setDiscountCode(e.target.value); setDiscountError(false); }}
-                  className={["flex-1 px-4 py-2.5 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-sm font-mono focus:outline-none transition-colors duration-base",
-                    discountError ? "border-[var(--destructive)] focus:border-[var(--destructive)]" : "border-[var(--field-border)] focus:border-[var(--accent-2)]"].join(" ")} />
-                <button onClick={handleApply}
-                  className="px-4 py-2.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.1em] uppercase rounded-xl hover:bg-[var(--accent)] transition-colors">
-                  OK
+                  className={["flex-1 px-4 py-3 rounded-md border bg-[var(--bg)] text-sm focus:outline-none",
+                    discountError ? "border-[var(--destructive)]" : "border-[var(--field-border)] focus:border-[var(--accent-2)]"].join(" ")} />
+                <button type="button" onClick={handleApply} disabled={pricing}
+                  className="px-4 rounded-full border border-[var(--line)] tag-mono text-[9px]">
+                  {COPY.checkout.apply[lang]}
                 </button>
               </div>
             )}
             {discountError && (
-              <p className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--destructive)] mt-1.5">Virheellinen koodi</p>
+              <p className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--destructive)] mt-1.5">{COPY.checkout.codeBad[lang]}</p>
             )}
           </div>
 
-          <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-5">
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">Yhteystiedot</p>
-            <Row label="Nimi" value={`${formData.firstName} ${formData.lastName}`} />
-            <Row label="Sähköposti" value={formData.email} />
-            <Row label="Osoite" value={formData.address} />
-            <Row label="Postinumero ja kaupunki" value={`${formData.zip} ${formData.city}`} />
-            <Row label="Postitus" value={formData.wantsDelivery ? "Kyllä" : "Ei"} />
-            {formData.wantsPersonalMessage && formData.personalMessage && (
-              <div className="py-1.5 border-b border-[var(--line)]">
-                <span className="tag-mono text-[8px] text-[var(--ink-mute)] block mb-1">Henkilökohtainen viesti</span>
-                <p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">{formData.personalMessage}</p>
-              </div>
-            )}
-            <Row label="Hinta" value={`${finalPrice}€`} />
+          <div>
+            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-3">{COPY.checkout.payment[lang]}</p>
+            <div className="space-y-2">
+              {methods.map((m) => (
+                <label key={m} className={[
+                  "flex items-center gap-3 rounded-xl border p-3 cursor-pointer",
+                  formData.paymentMethod === m ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--line)]",
+                ].join(" ")}>
+                  <input type="radio" name="pay" checked={formData.paymentMethod === m}
+                    onChange={() => { setFormData({ ...formData, paymentMethod: m }); setPayError(false); }}
+                    className="accent-[var(--accent)]" />
+                  <span className="text-sm text-[var(--ink)]">
+                    {m === "mobilepay" ? COPY.checkout.mobilepay[lang] : m === "siirto" ? COPY.checkout.siirto[lang] : COPY.checkout.cash[lang]}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {payError && <p role="alert" className="text-sm text-[var(--destructive)] mt-2">{COPY.checkout.paymentNeed[lang]}</p>}
+            <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-4">
+              <PaymentDetails lang={lang} method={formData.paymentMethod} />
+            </div>
           </div>
 
-          <div className="flex items-start gap-3 py-1">
+          <div className="flex items-start gap-3">
             <input type="checkbox" id="privacyConsent" checked={privacyAccepted}
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-[var(--accent)] cursor-pointer flex-shrink-0" />
+              className="mt-0.5 w-4 h-4 accent-[var(--accent)]" />
             <label htmlFor="privacyConsent" className="cursor-pointer text-sm text-[var(--ink-soft)] leading-snug">
-              Olen lukenut ja hyväksyn, että tiedot käsitellään{" "}
-              <PrivacyLink className="underline underline-offset-2 text-[var(--ink)] hover:text-[var(--accent-2)] transition-colors">
-                tietosuojaselosteen
-              </PrivacyLink>{" "}
-              mukaisesti
+              {lang === "fi" ? (
+                <>Olen lukenut ja hyväksyn, että tiedot käsitellään{" "}
+                  <PrivacyLink className="underline underline-offset-2 text-[var(--ink)] hover:text-[var(--accent-2)]">
+                    {COPY.checkout.privacyLink.fi}
+                  </PrivacyLink>{" "}mukaisesti
+                </>
+              ) : (
+                <>I have read and accept that details are handled per the{" "}
+                  <PrivacyLink className="underline underline-offset-2 text-[var(--ink)] hover:text-[var(--accent-2)]">
+                    {COPY.checkout.privacyLink.en}
+                  </PrivacyLink>
+                </>
+              )}
             </label>
           </div>
 
           {submitError && (
             <p className="text-sm text-[var(--destructive)] text-center leading-snug" role="alert">
-              Tilauksen lähetys epäonnistui, tarkista yhteys ja yritä uudelleen.
+              {COPY.checkout.submitFail[lang]}
             </p>
           )}
 
-          <button onClick={() => onConfirm(finalPrice)} disabled={!privacyAccepted || isSubmitting}
+          <button type="button" onClick={confirm} disabled={!privacyAccepted || isSubmitting}
             className="w-full py-4 bg-[var(--accent)] text-[var(--bg)] font-mono text-[11px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--ink)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            {isSubmitting ? (<><Spinner size={14} /> Käsitellään…</>) : "Vahvista tilaus →"}
+            {isSubmitting ? (<><Spinner size={14} /> {COPY.checkout.processing[lang]}</>) : `${COPY.checkout.confirm[lang]} →`}
           </button>
         </div>
       </div>
@@ -722,10 +658,10 @@ function SummaryStep({
   );
 }
 
-/* ─── Step 4: Thank You ─────────────────────────── */
 function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
   formData: CheckoutData; orderSnapshot: CartItem[]; finalPrice: number;
 }) {
+  const { lang } = useStore();
   const colorCounts: Record<JarColor, number> = { white: 0, green: 0, red: 0 };
   const colorScents: Record<JarColor, Record<string, number>> = { white: {}, green: {}, red: {} };
   for (const item of orderSnapshot) {
@@ -742,17 +678,17 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
           <SuccessCheck size={30} />
         </div>
         <h1 className="heading-display text-4xl md:text-5xl text-[var(--ink)] mb-3">
-          Kiitos tilauksestasi{" "}<em>{formData.firstName}</em>!
+          {COPY.checkout.thanksTitle[lang]}{" "}<em>{formData.firstName}</em>!
         </h1>
-        <p className="text-[var(--ink-soft)] leading-relaxed">
-          Olemme vastaanottaneet tilauksesi ja lähetämme vahvistuksen osoitteeseen:{" "}
-          <span className="font-mono text-sm text-[var(--ink)]">{formData.email}</span>
-        </p>
+        <p className="text-[var(--ink-soft)] leading-relaxed">{COPY.checkout.thanksBody[lang]}</p>
+        {formData.paymentMethod && formData.paymentMethod !== "cash" && (
+          <p className="mt-3 font-serif italic text-[var(--ink)]">{COPY.checkout.payNow[lang]}</p>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6">
-          <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">Tilauksesi sisältö</p>
+          <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">{COPY.checkout.contents[lang]}</p>
           {(["white", "green", "red"] as JarColor[]).map((color) => {
             if (colorCounts[color] === 0) return null;
             return (
@@ -760,141 +696,166 @@ function ThankyouStep({ formData, orderSnapshot, finalPrice }: {
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${JAR_DOT[color]}`} />
                   <p className="font-serif italic text-sm text-[var(--ink)]">
-                    {JAR_LABELS[color].fi}, {colorCounts[color]} kpl
+                    {JAR_LABELS[color][lang]}, {colorCounts[color]} {COPY.cart.pcs[lang]}
                   </p>
                 </div>
                 {SCENTS.filter((s) => (colorScents[color][s.id] ?? 0) > 0).map((s) => (
                   <p key={s.id} className="tag-mono text-[8px] text-[var(--ink-mute)] ml-5 leading-relaxed">
-                    {s.name} ×{colorScents[color][s.id]}
+                    {lang === "fi" ? s.name : s.nameEn} ×{colorScents[color][s.id]}
                   </p>
                 ))}
               </div>
             );
           })}
           <div className="border-t border-[var(--line)] pt-4 mt-4 flex justify-between items-baseline">
-            <span className="tag-mono text-[9px] text-[var(--ink-mute)]">
-              {formData.wantsDelivery ? "Hinta (sis. toimitus)" : "Hinta yhteensä"}
-            </span>
+            <span className="tag-mono text-[9px] text-[var(--ink-mute)]">{COPY.cart.total[lang]}</span>
             <span className="font-serif text-2xl italic text-[var(--ink)]">{finalPrice}€</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] p-6">
-            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">Maksutavat</p>
-            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
-              <p>💵 Käteinen (toimituksen yhteydessä)</p>
-              <p>📱 MobilePay: <span className="font-mono text-[var(--ink)]">+358505418295</span></p>
-              <p>📲 Siirto-sovellus: <span className="font-mono text-[var(--ink)]">+358505418295</span></p>
-            </div>
-            <div className="mt-4 p-3 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--line)]">
-              <p className="tag-mono text-[8px] text-[var(--ink-mute)] leading-relaxed">
-                📌 Mainitse maksussa oma nimesi, jotta voimme yhdistää sen tilaukseesi.
-              </p>
-            </div>
+            <p className="tag-mono text-[9px] text-[var(--ink-mute)] mb-4">{COPY.checkout.payment[lang]}</p>
+            <PaymentDetails lang={lang} method={formData.paymentMethod} />
           </div>
           <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-5 space-y-2">
             <p className="text-sm text-[var(--ink-soft)]">
-              📦 <strong className="text-[var(--ink)]">Toimitusaika:</strong>{" "}
-              Toimitus Oulun alueella henkilökohtaisesti tai postitse 5-7 arkipäivän kuluessa.
+              {formData.delivery === "post"
+                ? (lang === "fi" ? "Postitus 5–7 arkipäivässä." : "Posted in 5–7 working days.")
+                : COPY.checkout.pickupHint[lang]}
             </p>
             <p className="text-sm text-[var(--ink-soft)]">
-              💬 <strong className="text-[var(--ink)]">Kysyttävää?</strong>{" "}
-              <a href="mailto:leimucandles@gmail.com"
-                className="text-[var(--accent)] hover:text-[var(--ink)] transition-colors">
-                leimucandles@gmail.com
+              <a href={`mailto:${CONTACTS.email}`} className="text-[var(--accent)] hover:text-[var(--ink)]">
+                {CONTACTS.email}
               </a>
             </p>
           </div>
-          <p className="text-center font-serif italic text-[var(--ink-mute)] text-sm px-2">
-            Tuoksuisia hetkiä ja kiitos kun tuet LEIMU Candlesia! ✦
-          </p>
         </div>
       </div>
     </motion.div>
   );
 }
 
-/* ─── Page ──────────────────────────────────────── */
+function ProcessVideo() {
+  const { lang } = useStore();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const toggle = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (playing) { v.pause(); setPlaying(false); }
+    else { void v.play(); setPlaying(true); }
+  };
+
+  return (
+    <div className="border-t border-[var(--line)] py-24 px-6 md:px-10 max-w-7xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+        <div
+          className="relative rounded-2xl overflow-hidden border border-[var(--line)] shadow-e4 mx-auto md:mx-0"
+          style={{ aspectRatio: "9 / 16", maxWidth: 340 }}
+        >
+          <video
+            ref={videoRef}
+            src="/images/Valmistus.mp4"
+            playsInline
+            preload="metadata"
+            controls={playing}
+            className="absolute inset-0 w-full h-full object-cover"
+            onPause={() => setPlaying(false)}
+            onPlay={() => setPlaying(true)}
+          />
+          {!playing && (
+            <button
+              type="button"
+              onClick={toggle}
+              className="absolute inset-0 flex items-center justify-center bg-black/25"
+              aria-label={lang === "fi" ? "Toista video" : "Play video"}
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-black/35 text-white backdrop-blur-md">
+                <svg width="18" height="18" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+                  <path d="M1 1.2v11.6L11 7z" />
+                </svg>
+              </span>
+            </button>
+          )}
+        </div>
+        <div className="flex flex-col gap-7">
+          <h2 className="font-serif text-4xl md:text-5xl italic leading-[1.1] text-[var(--ink)]">
+            {lang === "fi" ? <>Käsityötä,<br /><em>hetki kerrallaan.</em></> : <>Craft,<br /><em>one moment at a time.</em></>}
+          </h2>
+          <p className="text-[var(--ink-soft)] leading-relaxed">
+            {lang === "fi"
+              ? "Jokainen LEIMU syntyy käsin, yksi purkki kerrallaan. Vaha, tuoksu ja sydän saavat rauhassa asettua."
+              : "Every LEIMU is made by hand, one jar at a time. Wax, scent and wick are given time to settle."}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TuotteetClient() {
-  const { cart, clearCart } = useStore();
-  const [step, setStep] = useState<"configure" | "checkout" | "summary" | "thankyou">("configure");
-  const [formData, setFormData] = useState<CheckoutData>({
-    firstName: "", lastName: "", email: "",
-    address: "", zip: "", city: "",
-    wantsDelivery: false, wantsPersonalMessage: false, personalMessage: "",
-  });
+  const searchParams = useSearchParams();
+  const {
+    cart, clearCart, lang, openModal, setQuantity, totalQty,
+    checkoutStep, setCheckoutStep, lastOrder, setLastOrder, hydrated,
+  } = useStore();
+  const [formData, setFormData] = useState<CheckoutData>(emptyForm);
   const [discountCode, setDiscountCode] = useState("");
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountError, setDiscountError] = useState(false);
-  const [confirmedPrice, setConfirmedPrice] = useState(0);
-  const [orderSnapshot, setOrderSnapshot] = useState(cart);
+  const [pricedPreview, setPricedPreview] = useState<{ total: number; basePrice: number; discountAmount: number; deliveryFee: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
-
-  /* Fluid ambient background, driven by product-card hover */
   const [hoveredWaxColor, setHoveredWaxColor] = useState<string | null>(null);
+  const scentHandled = useRef(false);
 
-  const handleConfirm = async (price: number) => {
-    if (isSubmitting) return;
+  useEffect(() => {
+    if (!hydrated) return;
+    if ((checkoutStep === "checkout" || checkoutStep === "summary") && cart.length === 0) {
+      setCheckoutStep("configure");
+    }
+  }, [hydrated, checkoutStep, cart.length, setCheckoutStep]);
+
+  useEffect(() => {
+    if (scentHandled.current) return;
+    const id = searchParams.get("scent");
+    if (!id) return;
+    const scent = scentById(id);
+    if (!scent) return;
+    scentHandled.current = true;
+    if (totalQty() === 0) setQuantity(id, 1);
+    openModal(scent);
+    window.setTimeout(() => {
+      document.getElementById("configurator")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 280);
+  }, [searchParams, openModal, setQuantity, totalQty]);
+
+  const handleConfirm = async () => {
+    if (isSubmitting || !formData.paymentMethod) return;
     setIsSubmitting(true);
     setSubmitError(false);
-
-    // Per-scent and per-jar-colour breakdown across the whole cart
-    const scentQty: Record<string, number> = {};
-    const jarQty: Record<JarColor, number> = { white: 0, green: 0, red: 0 };
-    let totalCandles = 0;
-    for (const item of cart) {
-      for (const s of SCENTS) {
-        const q = item.quantities[s.id] ?? 0;
-        if (q > 0) {
-          scentQty[s.id] = (scentQty[s.id] ?? 0) + q;
-          jarQty[item.jarColor] += q;
-          totalCandles += q;
-        }
-      }
-    }
-
-    // Human-readable per-jar breakdown (e.g. "Valkoinen: Havu x2 | Vihreä: Mustikka x1")
-    const items = cart
-      .map((item) => {
-        const scents = SCENTS.filter((s) => (item.quantities[s.id] ?? 0) > 0)
-          .map((s) => `${s.name} x${item.quantities[s.id]}`)
-          .join(", ");
-        return `${JAR_LABELS[item.jarColor].fi}: ${scents}`;
-      })
-      .join(" | ");
-
     try {
-      await submitForm({
+      const result = await submitForm({
         formType: "leimu-order",
         tilaaja: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         address: formData.address,
         zip: formData.zip,
         city: formData.city,
-        delivery: formData.wantsDelivery ? "Posti (+8 €)" : "Nouto",
-        totalCandles,
-        price,
-        havu: scentQty["havu"] ?? 0,
-        havuVanilja: scentQty["havu-vanilja"] ?? 0,
-        vanilja: scentQty["vanilja"] ?? 0,
-        mustikka: scentQty["mustikka"] ?? 0,
-        mustikkaVanilja: scentQty["mustikka-vanilja"] ?? 0,
-        white: jarQty.white,
-        green: jarQty.green,
-        red: jarQty.red,
-        items,
+        delivery: formData.delivery,
+        items: flattenCart(cart),
         personalMessage: formData.wantsPersonalMessage ? formData.personalMessage : "",
+        paymentMethod: formData.paymentMethod,
+        code: discountApplied ? discountCode : undefined,
+        website: "",
       });
-
-      // success, run the existing reset/advance logic
-      setConfirmedPrice(price);
-      setOrderSnapshot([...cart]);
+      const total = result.total ?? pricedPreview?.total ?? 0;
+      setLastOrder({ formData, items: [...cart], total });
       clearCart();
-      setStep("thankyou");
-    } catch (error) {
-      console.error("Tilauksen lähetys epäonnistui:", error);
+      setCheckoutStep("thankyou");
+    } catch {
       setSubmitError(true);
     } finally {
       setIsSubmitting(false);
@@ -902,26 +863,24 @@ export function TuotteetClient() {
   };
 
   const resetOrder = () => {
-    setStep("configure");
-    setFormData({ firstName: "", lastName: "", email: "", address: "", zip: "", city: "", wantsDelivery: false, wantsPersonalMessage: false, personalMessage: "" });
+    setCheckoutStep("configure");
+    setFormData(emptyForm());
     setDiscountCode("");
     setDiscountApplied(false);
     setDiscountError(false);
+    setLastOrder(null);
   };
 
+  const step = checkoutStep;
+  const thankyouData = lastOrder;
+
   return (
-    <div className="calm-headings">
-      {/* ── Fluid ambient background (behind everything) ── */}
+    <div className="calm-headings pb-24 md:pb-0">
       <FluidBackground waxColor={hoveredWaxColor} />
-
       <ScentModal />
-
-      {/* ── Sticky "Living Still Life" hero (z-0) ── */}
       <ProductsHero />
 
-      {/* ── Content shell, glides up and over the sticky hero (opaque, higher z) ── */}
       <div className="relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]">
-        {/* warm hairline seam where the content rises over the hero */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-px inset-x-0 h-px"
@@ -930,215 +889,61 @@ export function TuotteetClient() {
 
         <div className="px-6 md:px-10"><div className="divider" /></div>
 
-      <div className="px-6 md:px-10 max-w-7xl mx-auto pt-16 pb-24">
-        <AnimatePresence mode="wait">
-          {step === "configure" && (
-            <motion.div key="configure" exit={{ opacity: 0, x: -32 }}>
-              <ConfigureStep
-                onProceed={() => setStep("checkout")}
-                onScentHover={setHoveredWaxColor}
-                onScentLeave={() => setHoveredWaxColor(null)}
-              />
-            </motion.div>
-          )}
-          {step === "checkout" && (
-            <motion.div key="checkout">
-              <CheckoutStep formData={formData} setFormData={setFormData}
-                onBack={() => setStep("configure")} onNext={() => setStep("summary")} />
-            </motion.div>
-          )}
-          {step === "summary" && (
-            <motion.div key="summary">
-              <SummaryStep cart={cart} formData={formData}
-                discountCode={discountCode} setDiscountCode={setDiscountCode}
-                discountApplied={discountApplied} setDiscountApplied={setDiscountApplied}
-                discountError={discountError} setDiscountError={setDiscountError}
-                onBack={() => setStep("checkout")} onConfirm={handleConfirm}
-                isSubmitting={isSubmitting} submitError={submitError} />
-            </motion.div>
-          )}
-          {step === "thankyou" && (
-            <motion.div key="thankyou">
-              <ThankyouStep formData={formData} orderSnapshot={orderSnapshot} finalPrice={confirmedPrice} />
-              <div className="mt-12 text-center">
-                <button onClick={resetOrder}
-                  className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] underline underline-offset-4 transition-colors">
-                  Tee uusi tilaus
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ── Process video ───────────────────────────── */}
-      <div className="border-t border-[var(--line)] py-24 px-6 md:px-10 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-          <motion.div
-            className="relative rounded-2xl overflow-hidden border border-[var(--line)] shadow-e4 mx-auto md:mx-0"
-            style={{ aspectRatio: "9 / 16", maxWidth: 340 }}
-            initial={{ opacity: 0, scale: 1.05, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            viewport={VIEWPORT_NEAR}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <video src="/images/Valmistus.mp4" autoPlay muted loop playsInline preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,24,20,0.35)] via-transparent to-transparent pointer-events-none" />
-            <div className="absolute bottom-5 left-5">
-              <span className="font-mono text-[8px] tracking-[0.18em] uppercase text-white/60">
-                Oulu · Studio
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="flex flex-col gap-7"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VIEWPORT_NEAR}
-          >
-            <h2 className="font-serif text-4xl md:text-5xl italic leading-[1.1] text-[var(--ink)]">
-              Käsityötä,<br />
-              <em style={{ color: "var(--accent-2)" }}>hetki kerrallaan.</em>
-            </h2>
-            <div className="space-y-4 text-[var(--ink-soft)] leading-relaxed">
-              <p>
-                Jokainen LEIMU syntyy käsin, ei linjastolla, ei erissä,
-                vaan yksi purkki kerrallaan. Vaha sulatetaan oikeassa
-                lämpötilassa, tuoksuöljyt sekoitetaan huolella ja sydän
-                asetetaan tarkalleen keskelle.
-              </p>
-              <p>
-                Sen jälkeen alkaa hiljaisin vaihe:{" "}
-                <span className="text-[var(--ink)] font-medium">cure</span>.
-                Viikko pimeässä, rauhassa, jonka aikana tuoksu kypsyy
-                ja vaha löytää lopullisen muotonsa.
-              </p>
-              <p>
-                Tämä on hidas tapa tehdä kynttilöitä.{" "}
-                <em className="not-italic font-medium text-[var(--ink)]">
-                  Ainoa tapa, jolla LEIMU haluaa ne tehdä.
-                </em>
-              </p>
-            </div>
-            <div className="flex gap-8 pt-4 border-t border-[var(--line)]">
-              {[
-                { val: "1", label: "kerrallaan" },
-                { val: "7 pv", label: "cure-vaihe" },
-                { val: "100%", label: "käsityö" },
-              ].map(({ val, label }) => (
-                <div key={label}>
-                  <p className="font-serif text-2xl italic text-[var(--ink)] leading-none">{val}</p>
-                  <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--ink-mute)] mt-1">{label}</p>
+        <div className="px-6 md:px-10 max-w-7xl mx-auto pt-16 pb-24">
+          <AnimatePresence mode="wait">
+            {step === "configure" && (
+              <motion.div key="configure" exit={{ opacity: 0, x: -32 }}>
+                <ConfigureStep
+                  onProceed={() => setCheckoutStep("checkout")}
+                  onScentHover={setHoveredWaxColor}
+                  onScentLeave={() => setHoveredWaxColor(null)}
+                />
+              </motion.div>
+            )}
+            {step === "checkout" && (
+              <motion.div key="checkout">
+                <CheckoutStep formData={formData} setFormData={setFormData}
+                  onBack={() => setCheckoutStep("configure")} onNext={() => setCheckoutStep("summary")} />
+              </motion.div>
+            )}
+            {step === "summary" && (
+              <motion.div key="summary">
+                <SummaryStep
+                  cart={cart} formData={formData} setFormData={setFormData}
+                  discountCode={discountCode} setDiscountCode={setDiscountCode}
+                  discountApplied={discountApplied} setDiscountApplied={setDiscountApplied}
+                  discountError={discountError} setDiscountError={setDiscountError}
+                  pricedPreview={pricedPreview} setPricedPreview={setPricedPreview}
+                  onBack={() => setCheckoutStep("checkout")}
+                  onConfirm={handleConfirm}
+                  isSubmitting={isSubmitting} submitError={submitError}
+                />
+              </motion.div>
+            )}
+            {step === "thankyou" && thankyouData && (
+              <motion.div key="thankyou">
+                <ThankyouStep formData={thankyouData.formData} orderSnapshot={thankyouData.items} finalPrice={thankyouData.total} />
+                <div className="mt-12 text-center">
+                  <button type="button" onClick={resetOrder}
+                    className="tag-mono text-[9px] text-[var(--ink-mute)] hover:text-[var(--ink)] underline underline-offset-4 transition-colors">
+                    {COPY.checkout.newOrder[lang]}
+                  </button>
                 </div>
-              ))}
-            </div>
-          </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
 
-      {/* ── Sealed message (kortti) ──────────────────── */}
-      <div className="border-t border-[var(--line)]">
-        <GiftCeremony ctaHref="#configurator" />
-      </div>
-
-      {/* ── Luxury gift section ──────────────────────── */}
-      <div className="px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-[var(--line)]">
-        <motion.div
-          className="grid md:grid-cols-3 gap-5 mb-24"
-          initial={{ opacity: 0, y: 24, filter: "blur(5px)" }}
-          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          viewport={VIEWPORT_NEAR}
-          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {[
-            { src: "/images/3-kynttilaata.png", alt: "LEIMU kynttilät", offset: "md:mt-0" },
-            { src: "/images/process-5.jpg", alt: "Kynttilät valmiina", offset: "md:mt-10" },
-            { src: "/images/launch-kuva.png", alt: "LEIMU launch", offset: "md:mt-4" },
-          ].map(({ src, alt, offset }, i) => (
-            <motion.div key={src}
-              className={`relative rounded-2xl overflow-hidden border border-[var(--line)] ${offset}`}
-              style={{ aspectRatio: "3/4" }}
-              whileHover={{ scale: 1.02, boxShadow: "0 28px 72px -20px rgba(26,24,20,0.18)" }}
-              initial={{ opacity: 0, y: 28, filter: "blur(5px)" }}
-              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              viewport={VIEWPORT_NEAR}
-              transition={{ duration: 0.75, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              custom={i}
-            >
-              <Image src={src} alt={alt} fill
-                className="object-cover transition-transform duration-700 hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 33vw" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 gap-16 items-center">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VIEWPORT_NEAR}
-          >
-            <motion.p variants={fadeUpItem} className="tag-mono text-[var(--accent)] mb-3">Luksusta arjen keskelle</motion.p>
-            <motion.h2 variants={headingReveal} className="heading-display text-4xl md:text-5xl mb-8 text-[var(--ink)]">
-              Enemmän kuin<br /><em>pelkkä kynttilä.</em>
-            </motion.h2>
-            <div className="space-y-5 text-[var(--ink-soft)] leading-relaxed">
-              <p className="text-lg">
-                LEIMU on pala luksusta arjen keskelle, hetki, joka kuuluu vain sinulle.
-                Jokainen kynttilä saapuu <span className="text-[var(--ink)] font-medium">tyylikkäässä lahjapussissa</span>,
-                joka on viimeistelty viimeistä yksityiskohtaa myöten.
-              </p>
-              <p>
-                Kiitoskortti on kuoressa, jonka sulkee
-                {" "}<span className="text-[var(--ink)] font-medium">käsinleimattu vahasinetti</span>, LEIMU-logolla koristeltu,
-                aito leima, joka tekee jokaisesta tilauksesta pienen seremonian.
-              </p>
-              <p>
-                Sopii täydellisesti lahjaksi rakkaalle tai itsensä hemmotteluun.
-                Koska jokainen ansaitsee hetken, joka tuntuu erityiseltä.
-              </p>
+        {step === "configure" && (
+          <>
+            <ProcessVideo />
+            <div className="border-t border-[var(--line)]">
+              <GiftCeremony ctaHref="#configurator" />
             </div>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <a href="#configurator"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[10px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent)] transition-colors duration-200">
-                Tee tilaus
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-              <span className="flex items-center gap-2 tag-mono text-[9px] text-[var(--ink-mute)]">
-                ✦ Ilmainen lahjapussi jokaiseen tilaukseen
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="relative rounded-3xl overflow-hidden border border-[var(--line)]"
-            style={{ aspectRatio: "1 / 1.1" }}
-            initial={{ opacity: 0, x: 36, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            viewport={VIEWPORT_NEAR}
-            transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ scale: 1.02, boxShadow: "0 32px 80px -22px rgba(26,24,20,0.16)" }}
-          >
-            <Image src="/images/Lahjasetti mainos.png" alt="LEIMU lahjasetti" fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw" />
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/15" />
-            <div className="absolute bottom-5 left-5 right-5">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-md border border-white/20">
-                <span className="tag-mono text-[8px] text-white">✦ Tyylikäs lahjapussi + vahasinetti</span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+          </>
+        )}
       </div>
-      </div>
+      <StickyCartBar onProceed={() => setCheckoutStep("checkout")} />
     </div>
   );
 }

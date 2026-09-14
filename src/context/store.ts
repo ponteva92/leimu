@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { StoreState, JarColor, Scent } from "@/types";
+import type { StoreState, JarColor, Scent, CheckoutStep, LastOrder, Lang } from "@/types";
 import { calcPrice } from "@/lib/scents";
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -8,6 +8,10 @@ export const useStore = create<StoreState>((set, get) => ({
   modalScent: null,
   contactOpen: false,
   lang: "fi",
+  checkoutStep: "configure",
+  lastOrder: null,
+  navMenuOpen: false,
+  hydrated: false,
 
   setJar: (jar: JarColor) =>
     set((state) => ({ config: { ...state.config, jar } })),
@@ -31,6 +35,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   toggleLang: () =>
     set((state) => ({ lang: state.lang === "fi" ? "en" : "fi" })),
+  setLang: (lang: Lang) => set({ lang }),
 
   totalQty: () => {
     const { quantities } = get().config;
@@ -58,9 +63,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
   cartTotalPrice: () => calcPrice(get().cartTotalQty()),
 
-  /* ─── Cursor & Audio ─── */
-  cursorType: "default" as "default" | "pointer" | "magnetic",
+  cursorType: "default" as const,
   setCursorType: (type: "default" | "pointer" | "magnetic") => set({ cursorType: type }),
-  isMuted: false,
+  isMuted: true,
   toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+
+  setCheckoutStep: (checkoutStep: CheckoutStep) => set({ checkoutStep }),
+  setLastOrder: (lastOrder: LastOrder | null) => set({ lastOrder }),
+  setNavMenuOpen: (navMenuOpen: boolean) => set({ navMenuOpen }),
+  setHydrated: (hydrated: boolean) => set({ hydrated }),
 }));

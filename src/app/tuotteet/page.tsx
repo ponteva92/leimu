@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { TuotteetClient } from "./TuotteetClient";
 
 export const metadata: Metadata = {
@@ -32,5 +33,9 @@ export const metadata: Metadata = {
 };
 
 export default function TuotteetPage() {
-  return <TuotteetClient />;
+  return (
+    <Suspense fallback={null}>
+      <TuotteetClient />
+    </Suspense>
+  );
 }

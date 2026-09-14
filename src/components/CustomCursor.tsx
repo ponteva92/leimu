@@ -82,6 +82,7 @@ export function CustomCursor() {
 
   /* ── Triple-harmonic RAF flicker ── */
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let rafId: number;
     const t0 = performance.now();
     const tick = () => {

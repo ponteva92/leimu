@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useMotionValue, useTransform as useTf, useSpring, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useStore } from "@/context/store";
-import { SCENTS } from "@/lib/scents";
 import { ScentModal } from "@/components/ScentModal";
+import { ScentCarousel } from "@/components/ScentCarousel";
 import {
   headingReveal, headingCinematic, fadeUpItem, fadeUpCinematic,
   staggerCinematic, VIEWPORT_NEAR,
@@ -149,96 +149,7 @@ function StoryTeaser() {
   );
 }
 
-/* ─── Bento Card (3-D tilt + shimmer) ──────────────── */
-function BentoCard({ scent, isLarge, index, lang, onOpen }: {
-  scent: import("@/types").Scent;
-  isLarge: boolean;
-  index: number;
-  lang: "fi" | "en";
-  onOpen: () => void;
-}) {
-  const cardRef = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const smx = useSpring(mx, { stiffness: 200, damping: 20 });
-  const smy = useSpring(my, { stiffness: 200, damping: 20 });
-  const rotateX = useTf(smy, v => `${(v - 0.5) * 14}deg`);
-  const rotateY = useTf(smx, v => `${(0.5 - v) * 14}deg`);
-  const shimmerX = useTf(smx, v => `${v * 100}%`);
-  const shimmerY = useTf(smy, v => `${v * 100}%`);
-
-  return (
-    <motion.button
-      ref={cardRef}
-      className={[
-        "group relative rounded-2xl border border-[var(--line)] overflow-hidden cursor-pointer text-left",
-        isLarge ? "row-span-2" : "",
-      ].join(" ")}
-      style={{ transformStyle: "preserve-3d", perspective: "800px", rotateX, rotateY }}
-      onMouseMove={(e) => {
-        const r = cardRef.current?.getBoundingClientRect();
-        if (!r) return;
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => { mx.set(0.5); my.set(0.5); }}
-      onClick={onOpen}
-      whileHover={{ scale: 1.02, boxShadow: "0 24px 64px -16px rgba(26,24,20,0.22)" }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 280, damping: 30 }}
-      custom={index}
-      variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: { opacity: 1, y: 0, transition: { delay: index * 0.09, duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
-      }}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px 0px" }}
-    >
-      {/* Background image */}
-      <Image
-        src={scent.image}
-        alt={lang === "fi" ? scent.name : scent.nameEn}
-        fill
-        className="object-cover transition-transform duration-700 group-hover:scale-106"
-        sizes="(max-width: 768px) 50vw, 33vw"
-      />
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-      {/* Samsung shimmer — light radial following mouse */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none rounded-2xl"
-        style={{
-          background: `radial-gradient(circle at ${shimmerX} ${shimmerY}, rgba(255,255,255,0.13) 0%, transparent 55%)`,
-        }}
-      />
-      {/* Glow border */}
-      <motion.div
-        className="absolute inset-0 rounded-2xl pointer-events-none"
-        style={{ border: "1px solid rgba(212,169,106,0)" }}
-        whileHover={{ border: "1px solid rgba(212,169,106,0.55)", boxShadow: "inset 0 0 20px rgba(212,169,106,0.08)" }}
-        transition={{ duration: 0.25 }}
-      />
-      {/* Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4" style={{ transform: "translateZ(20px)" }}>
-        <p className={`font-serif italic text-white drop-shadow-md ${isLarge ? "text-2xl" : "text-base"}`}>
-          {lang === "fi" ? scent.name : scent.nameEn}
-        </p>
-        <p className="tag-mono text-[8px] !text-white/90 mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
-          {lang === "fi" ? scent.profile : scent.profileEn}
-        </p>
-      </div>
-      {/* Hover pill */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <span className="tag-mono text-[8px] px-2.5 py-1.5 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/25">
-          {lang === "fi" ? "Avaa" : "Open"}
-        </span>
-      </div>
-    </motion.button>
-  );
-}
-
-/* ─── Featured Scents (Bento) ───────────────────── */
+/* ─── Featured Scents ───────────────────────────── */
 function FeaturedScents() {
   const { lang, openModal } = useStore();
 
@@ -254,7 +165,7 @@ function FeaturedScents() {
         <motion.p variants={fadeUpCinematic} className="tag-mono mb-2">
           {lang === "fi" ? "Tuoksuvalikoima" : "Scent collection"}
         </motion.p>
-        <motion.h2 variants={headingReveal} className="heading-display text-4xl md:text-5xl text-[var(--ink)]">
+        <motion.h2 id="home-scent-heading" variants={headingReveal} className="heading-display text-4xl md:text-5xl text-[var(--ink)]">
           {lang === "fi" ? (
             <>
               Viisi tapaa <em>tuoksua.</em>
@@ -266,30 +177,7 @@ function FeaturedScents() {
           )}
         </motion.h2>
       </motion.div>
-
-      {/* Bento grid — Mustikka first (large), then others */}
-      {(() => {
-        const display = [...SCENTS];
-        // Swap Havu (index 0) and Mustikka (index 3)
-        [display[0], display[3]] = [display[3], display[0]];
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px]">
-            {display.map((scent, i) => {
-              const isLarge = i === 0;
-              return (
-                <BentoCard
-                  key={scent.id}
-                  scent={scent}
-                  isLarge={isLarge}
-                  index={i}
-                  lang={lang}
-                  onOpen={() => openModal(scent)}
-                />
-              );
-            })}
-          </div>
-        );
-      })()}
+      <ScentCarousel labelledBy="home-scent-heading" onSelect={openModal} />
     </section>
   );
 }
@@ -395,14 +283,28 @@ function CustomerReviews() {
   );
 }
 
-/* ─── Instagram Feed (Behold widget) ────────────── */
+/* ─── Instagram Feed (Behold widget, lazy) ──────── */
 function InstagramFeed() {
   const { lang } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !containerRef.current) return;
-    if (!document.querySelector('script[data-behold]')) {
+    const node = containerRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setReady(true);
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !containerRef.current) return;
+    if (!document.querySelector("script[data-behold]")) {
       const s = document.createElement("script");
       s.type = "module";
       s.src = "https://w.behold.so/widget.js";
@@ -414,7 +316,7 @@ function InstagramFeed() {
       w.setAttribute("feed-id", "Z0vXK9Le7HnNNay5tri8");
       containerRef.current.appendChild(w);
     }
-  }, []);
+  }, [ready]);
 
   return (
     <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">

@@ -13,6 +13,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useStore } from "@/context/store";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
@@ -138,11 +139,22 @@ export function ProductsHero() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
         >
-          <HeroImageCanvas
-            scrollProgress={scrollProgress}
-            reducedMotion={reducedMotion}
-            isMobile={isMobile}
-          />
+          {mounted && !isMobile && !reducedMotion ? (
+            <HeroImageCanvas
+              scrollProgress={scrollProgress}
+              reducedMotion={reducedMotion}
+              isMobile={isMobile}
+            />
+          ) : (
+            <Image
+              src="/images/tuotteet-hero.png"
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          )}
         </motion.div>
       </motion.div>
     </section>
