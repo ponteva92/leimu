@@ -88,7 +88,7 @@ export function ScentModal() {
           >
             <button
               onClick={onClose}
-              className="absolute top-5 right-5 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/20 text-white/70 hover:text-white hover:bg-black/30 backdrop-blur-md transition-colors"
+              className="absolute top-5 right-5 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-white/40 bg-black/20 text-white hover:bg-black/40 backdrop-blur-md transition-colors"
               aria-label={COPY.scent.close[lang]}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -115,43 +115,43 @@ export function ScentModal() {
                   <p id="scent-modal-title" className="font-serif text-3xl italic text-white leading-none">
                     {name}
                   </p>
-                  <p className="tag-mono text-[9px] text-white/60 mt-1">
+                  <p className="tag-mono mt-1 text-[9px] !text-white">
                     {lang === "fi" ? modalScent.profile : modalScent.profileEn}
                   </p>
                 </div>
               </div>
 
-              <div className="p-8 flex flex-col gap-5">
+              <div className="flex flex-col gap-5 p-8 text-white">
                 <div>
-                  <p className="tag-mono text-[9px] mb-2 text-white/55">
+                  <p className="tag-mono mb-2 text-[9px] !text-white">
                     {lang === "fi" ? "Tuoksu" : "Scent"}
                   </p>
-                  <p className="text-sm text-white/80 leading-relaxed">
+                  <p className="text-sm leading-relaxed text-white">
                     {lang === "fi" ? modalScent.description : modalScent.descriptionEn}
                   </p>
                 </div>
 
                 <div>
-                  <p className="tag-mono text-[9px] mb-2 text-white/55">
+                  <p className="tag-mono mb-2 text-[9px] !text-white">
                     {lang === "fi" ? "Materiaalit" : "Materials"}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {modalScent.tags.map((tag) => (
                       <span key={tag.en}
-                        className="tag-mono text-[9px] px-2.5 py-1 rounded-full border border-white/15 text-white/75">
+                        className="tag-mono rounded-full border border-white/45 px-2.5 py-1 text-[9px] !text-white">
                         {tag[lang]}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
+                <div className="grid grid-cols-2 gap-3 border-t border-white/25 pt-4">
                   {[
                     { label: lang === "fi" ? "Paloaika" : "Burn time", value: modalScent.burnTime },
                     { label: lang === "fi" ? "Hinta / kpl" : "Price / ea", value: modalScent.price },
                   ].map(({ label, value }) => (
                     <div key={label}>
-                      <p className="tag-mono text-[8px] mb-0.5 text-white/55">{label}</p>
+                      <p className="tag-mono mb-0.5 text-[8px] !text-white">{label}</p>
                       <p className="font-serif text-xl italic text-white">{value}</p>
                     </div>
                   ))}
