@@ -6,14 +6,9 @@ export const DEFAULT_MAKE_WEBHOOK =
 
 export const LEIMU_INBOX = CONTACTS.email;
 
-const STALE_MAKE_WEBHOOKS = new Set([
-  "https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke",
-  "https://hook.eu2.make.com/9e7iu5zi3pby7cb4px9enjxacs39aetl",
-]);
-
 export function makeWebhookUrl(): string {
-  const fromEnv = process.env.MAKE_WEBHOOK_URL?.trim();
-  if (fromEnv && !STALE_MAKE_WEBHOOKS.has(fromEnv)) return fromEnv;
+  // Always use the live hook. Vercel production still has MAKE_WEBHOOK_URL set to
+  // an older URL from 4a6de4e; honoring that env would skip the listening scenario.
   return DEFAULT_MAKE_WEBHOOK;
 }
 

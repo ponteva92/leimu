@@ -19,11 +19,11 @@ test("contact plan emails LEIMU only", () => {
   assert.equal(plan.customer, null);
 });
 
-test("makeWebhookUrl ignores the retired 410 hook", () => {
+test("makeWebhookUrl always uses the live Make hook", () => {
   const prev = process.env.MAKE_WEBHOOK_URL;
   process.env.MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke";
   assert.equal(makeWebhookUrl(), DEFAULT_MAKE_WEBHOOK);
-  process.env.MAKE_WEBHOOK_URL = DEFAULT_MAKE_WEBHOOK;
+  process.env.MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/some-other-hook";
   assert.equal(makeWebhookUrl(), DEFAULT_MAKE_WEBHOOK);
   if (prev === undefined) delete process.env.MAKE_WEBHOOK_URL;
   else process.env.MAKE_WEBHOOK_URL = prev;
