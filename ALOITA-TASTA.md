@@ -20,15 +20,18 @@ Open http://localhost:3000
 The browser posts contact and order forms to `/api/submit`. The server recomputes price (`calcPrice` + optional env discount + 8€ postage) and forwards every submission to Make.com:
 
 ```
-https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke
+https://hook.eu2.make.com/iu9qhalsmhgi5ymkcivgwu0u4jw22qpq
 ```
 
-That covers the global contact modal (every page) and the `/tuotteet` order checkout.
+`formType` is `leimu-contact` (global contact modal) or `leimu-order` (`/tuotteet` checkout). Make.com sends mail: order confirmation to the customer, and notifications to `leimucandles@gmail.com`. If the webhook fails, `/api/submit` can also send mail via Resend or Gmail SMTP when those env vars are set.
 
 Optional env:
 
 ```
+MAKE_WEBHOOK_URL=https://hook.eu2.make.com/iu9qhalsmhgi5ymkcivgwu0u4jw22qpq
 MAKE_API_KEY=optional
+RESEND_API_KEY=optional
+GMAIL_APP_PASSWORD=optional
 DISCOUNT_CODE=LEIMU29
 DISCOUNT_PERCENT=15
 ```

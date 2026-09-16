@@ -3,6 +3,7 @@ import { EMAIL_RE } from "@/lib/contacts";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
 import { priceOrder, SCENTS } from "@/lib/scents";
 import { discountFromEnv } from "@/lib/discountEnv";
+import { makeWebhookUrl, sendSubmissionEmails } from "@/lib/notifyEmail";
 import type { DeliveryMode, JarColor, OrderLineInput, PaymentMethod } from "@/types";
 
 export const runtime = "nodejs";
@@ -28,10 +29,6 @@ function parseItems(raw: unknown): OrderLineInput[] | null {
   }
   return items;
 }
-
-/** Make.com scenario that receives every LEIMU contact + order form. */
-const MAKE_WEBHOOK =
-  "https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke";
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req.headers);
@@ -140,22 +137,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Tuntematon formType." }, { status: 400 });
   }
 
+  let makeOk = false;
+  let makeStatus = 0;
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
-    const res = await fetch(MAKE_WEBHOOK, {
+    const res = await fetch(makeWebhookUrl(), {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
     });
+    makeStatus = res.status;
+    makeOk = res.ok;
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error("[submit] Make webhook responded", res.status, detail.slice(0, 300));
-      return NextResponse.json({ ok: false, error: `Webhook ${res.status}` }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, total: orderTotal });
   } catch (err) {
     console.error("[submit] Failed to reach Make webhook:", err);
-    return NextResponse.json({ ok: false, error: "Upstream request failed." }, { status: 502 });
   }
+
+  const emailResult = await sendSubmissionEmails(payload, {
+    includeCustomer: payload.formType === "leimu-order" && !makeOk,
+  });
+  if (emailResult.attempted && emailResult.sent < emailResult.attempted) {
+    console.error("[submit] Email backup partial", emailResult);
+  }
+
+  if (makeOk || emailResult.sent > 0) {
+    return NextResponse.json({ ok: true, total: orderTotal });
+  }
+  return NextResponse.json(
+    { ok: false, error: makeStatus ? `Webhook ${makeStatus}` : "Upstream request failed." },
+    { status: 502 },
+  );
 }
