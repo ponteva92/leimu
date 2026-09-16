@@ -17,17 +17,20 @@ Open http://localhost:3000
 
 ## Orders
 
-The browser posts cart lines to `/api/submit`. The server recomputes price (`calcPrice` + optional env discount + 8€ postage) and forwards to Make.com.
-
-Required env:
+The browser posts contact and order forms to `/api/submit`. The server recomputes price (`calcPrice` + optional env discount + 8€ postage) and forwards every submission to Make.com:
 
 ```
-MAKE_WEBHOOK_URL=https://hook.eu2.make.com/your-rotated-hook
+https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke
+```
+
+That covers the global contact modal (every page) and the `/tuotteet` order checkout.
+
+Optional env:
+
+```
 MAKE_API_KEY=optional
 DISCOUNT_CODE=LEIMU29
 DISCOUNT_PERCENT=15
 ```
-
-Rotate the Make webhook if the old URL was ever committed. The app no longer ships a fallback URL.
 
 Scents live in `src/lib/scents.ts`. Display order (Mustikka first) is `featuredScents()`.

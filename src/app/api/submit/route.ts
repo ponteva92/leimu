@@ -29,15 +29,11 @@ function parseItems(raw: unknown): OrderLineInput[] | null {
   return items;
 }
 
-export async function POST(req: NextRequest) {
-  const WEBHOOK = process.env.MAKE_WEBHOOK_URL;
-  if (!WEBHOOK) {
-    return NextResponse.json(
-      { ok: false, error: "Server is missing MAKE_WEBHOOK_URL." },
-      { status: 500 },
-    );
-  }
+/** Make.com scenario that receives every LEIMU contact + order form. */
+const MAKE_WEBHOOK =
+  "https://hook.eu2.make.com/5spqx7tbh2xnjujp6af9agg5dj4pohke";
 
+export async function POST(req: NextRequest) {
   const ip = clientIp(req.headers);
   if (!rateLimit(ip)) {
     return NextResponse.json({ ok: false, error: "Too many requests." }, { status: 429 });
@@ -147,7 +143,7 @@ export async function POST(req: NextRequest) {
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
-    const res = await fetch(WEBHOOK, {
+    const res = await fetch(MAKE_WEBHOOK, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
