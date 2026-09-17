@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
   }
 
   const emailResult = await sendSubmissionEmails(payload, {
-    includeCustomer: payload.formType === "leimu-order" && !makeOk,
+    includeCustomer: payload.formType === "leimu-order",
   });
   if (emailResult.attempted && emailResult.sent < emailResult.attempted) {
     console.error("[submit] Email backup partial", emailResult);

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { DEFAULT_MAKE_WEBHOOK, emailPlan, LEIMU_INBOX, makeWebhookUrl } from "./notifyEmail";
+import {
+  DEFAULT_MAKE_WEBHOOK,
+  emailPlan,
+  LEIMU_INBOX,
+  makeWebhookUrl,
+  shouldEmailCustomer,
+} from "./notifyEmail";
 
 test("contact plan emails LEIMU only", () => {
   const plan = emailPlan({
@@ -47,4 +53,6 @@ test("order plan emails customer and LEIMU", () => {
   assert.equal(plan.customer.to, "matti@example.com");
   assert.match(plan.customer.subject, /Tilausvahvistus/);
   assert.match(plan.customer.text, /Mustikka/);
+  assert.equal(shouldEmailCustomer({ formType: "leimu-order" }), true);
+  assert.equal(shouldEmailCustomer({ formType: "leimu-contact" }), false);
 });

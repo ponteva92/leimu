@@ -107,6 +107,14 @@ export function hasEmailTransport(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim() || process.env.GMAIL_APP_PASSWORD?.trim());
 }
 
+/**
+ * Outlook/Make mail is on a daily cap (ErrorExceededMessageLimit). The site is
+ * the mailer: LEIMU always, customer only for orders. Make is Airtable only.
+ */
+export function shouldEmailCustomer(payload: SubmissionPayload): boolean {
+  return str(payload, "formType") === "leimu-order";
+}
+
 async function deliver(email: OutboundEmail): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
   if (resendKey) {
@@ -159,18 +167,19 @@ export type EmailSendResult = { attempted: number; sent: number };
 
 /**
  * Sends LEIMU a copy of every submission when a transport is configured.
- * Customer order mail is only sent when `includeCustomer` is true (Make failed),
- * so we do not double-send the Make.com tilausvahvistus.
+ * Customer mail is sent for orders (Make/Outlook is quota-blocked and a 200
+ * webhook does not mean the Outlook step succeeded).
  */
 export async function sendSubmissionEmails(
   payload: SubmissionPayload,
-  opts: { includeCustomer: boolean },
+  opts?: { includeCustomer?: boolean },
 ): Promise<EmailSendResult> {
   const plan = emailPlan(payload);
   if (!plan || !hasEmailTransport()) return { attempted: 0, sent: 0 };
 
+  const includeCustomer = opts?.includeCustomer ?? shouldEmailCustomer(payload);
   const queue: OutboundEmail[] = [plan.leimu];
-  if (opts.includeCustomer && plan.customer) queue.push(plan.customer);
+  if (includeCustomer && plan.customer) queue.push(plan.customer);
 
   let sent = 0;
   for (const email of queue) {
