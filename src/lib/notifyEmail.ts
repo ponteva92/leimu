@@ -5,6 +5,16 @@ export const DEFAULT_MAKE_WEBHOOK =
   "https://hook.eu2.make.com/iu9qhalsmhgi5ymkcivgwu0u4jw22qpq";
 
 export const LEIMU_INBOX = CONTACTS.email;
+export const SHOP_OWNER_EMAIL = "heikki.niemimaki@gmail.com";
+
+/** Same To list Make/Outlook used for shop order notices (owner first). */
+export const SHOP_NOTIFY_EMAILS = [SHOP_OWNER_EMAIL, LEIMU_INBOX] as const;
+
+/** Same To list Make/Outlook used for contact notices (LEIMU first). */
+export const CONTACT_NOTIFY_EMAILS = [LEIMU_INBOX, SHOP_OWNER_EMAIL] as const;
+
+export const AIRTABLE_BASE_ID = "appAfcOd4tYQYsH6G";
+export const AIRTABLE_ORDERS_TABLE_ID = "tbl8YDbIST3cTK4TO";
 
 export function makeWebhookUrl(): string {
   // Always use the live hook. Vercel production still has MAKE_WEBHOOK_URL set to
@@ -15,7 +25,7 @@ export function makeWebhookUrl(): string {
 export type SubmissionPayload = Record<string, unknown>;
 
 export type OutboundEmail = {
-  to: string;
+  to: string | string[];
   subject: string;
   text: string;
 };
@@ -27,75 +37,149 @@ export type EmailPlan = {
 
 const str = (payload: SubmissionPayload, key: string) => String(payload[key] ?? "").trim();
 
-function lines(rows: Array<[string, string]>): string {
-  return rows
-    .filter(([, v]) => v.length > 0)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join("\n");
+function kpl(payload: SubmissionPayload): string {
+  const raw = payload["Kpl yhteensä"];
+  const n = typeof raw === "number" ? raw : parseFloat(String(raw ?? "").replace(",", "."));
+  if (Number.isFinite(n)) return `${n} kpl`;
+  const fallback = str(payload, "Kpl yhteensä");
+  return fallback ? `${fallback} kpl` : "";
 }
 
-export function emailPlan(payload: SubmissionPayload): EmailPlan | null {
+function euro(payload: SubmissionPayload): string {
+  const raw = payload["Hinta"];
+  const n = typeof raw === "number" ? raw : parseFloat(String(raw ?? "").replace(",", "."));
+  if (Number.isFinite(n)) return `${n}€`;
+  const fallback = str(payload, "Hinta");
+  return fallback ? `${fallback}€` : "";
+}
+
+/**
+ * Make/Outlook customer template:
+ * pickup → `, Oulu`
+ * post   → `Testikatu 1, 90100 Oulu`
+ */
+export function formatDeliveryAddress(payload: SubmissionPayload): string {
+  const address = str(payload, "Osoite");
+  const zip = str(payload, "Postinumero");
+  const city = str(payload, "Kaupunki") || "Oulu";
+  if (address && zip) return `${address}, ${zip} ${city}`;
+  if (address) return `${address}, ${city}`;
+  return `, ${city}`;
+}
+
+export function customerOrderSubject(recordId?: string): string {
+  return recordId
+    ? `Tilausvahvistus LEIMU Candles, ${recordId}`
+    : "Tilausvahvistus LEIMU Candles";
+}
+
+function customerOrderBody(payload: SubmissionPayload): string {
+  const tilaaja = str(payload, "Tilaaja");
+  return [
+    `Hei ${tilaaja},`,
+    "",
+    "Kiitos paljon tilauksestasi – arvostamme sitä suuresti! Tässä on vahvistus tilauksesi tiedoista:",
+    "",
+    "Toimitustiedot:",
+    `Nimi: ${tilaaja}`,
+    `Sähköposti: ${str(payload, "Sähköposti")}`,
+    `Toimitusosoite: ${formatDeliveryAddress(payload)}`,
+    `Toimitustapa: ${str(payload, "Toimitus")}`,
+    "",
+    "Tilauksen yhteenveto:",
+    `Kynttilöitä yhteensä: ${kpl(payload)}`,
+    `Yhteishinta: ${euro(payload)}`,
+    "",
+    "Tilauksen erittely:",
+    str(payload, "Tuotteet (erittely)"),
+    "",
+    "Personoidut viestit:",
+    str(payload, "Viesti kuoreen"),
+    "",
+    `Jos jokin yllä olevista tiedoista kaipaa korjausta tai haluat lisätä jotakin, voit lähettää sähköpostia osoitteeseen: ${LEIMU_INBOX}.`,
+    "",
+    "Lämpimin terveisin,",
+    "LEIMU Candles",
+  ].join("\n");
+}
+
+function labeled(label: string, value: string): string {
+  return value ? `${label}: ${value}` : `${label}:`;
+}
+
+function shopOrderBody(payload: SubmissionPayload): string {
+  return [
+    "Uusi tilaus vastaanotettu. Tässä tilauksen tiedot jäsenneltynä:",
+    "",
+    "Tilaajan tiedot:",
+    labeled("Nimi", str(payload, "Tilaaja")),
+    labeled("Sähköposti", str(payload, "Sähköposti")),
+    labeled("Osoite", str(payload, "Osoite")),
+    labeled("Postinumero", str(payload, "Postinumero")),
+    labeled("Kaupunki", str(payload, "Kaupunki")),
+    "",
+    "Tilauksen tiedot:",
+    labeled("Toimitus", str(payload, "Toimitus")),
+    labeled("Kynttilöitä yhteensä", kpl(payload)),
+    labeled("Hinta", euro(payload)),
+    "",
+    "Erittely:",
+    str(payload, "Tuotteet (erittely)"),
+    "",
+    "Personoidut viestit:",
+    str(payload, "Viesti kuoreen"),
+  ].join("\n");
+}
+
+function contactBody(payload: SubmissionPayload): string {
+  const nimi = str(payload, "Nimi");
+  const aihe = str(payload, "Aihe");
+  return [
+    "Hei!",
+    "",
+    `${nimi} on lähettänyt sinulle yhteydenottopyynnön ${str(payload, "Saapunut")}!`,
+    "",
+    aihe ? `Aihe: : ${aihe}` : "Aihe: :",
+    labeled("Viesti", str(payload, "Viesti")),
+    labeled("Lähettäjä", nimi),
+    labeled("Sähköposti", str(payload, "Sähköposti")),
+  ].join("\n");
+}
+
+export type EmailPlanOptions = {
+  /** Airtable record id Make/Outlook appended after creating the Tilaukset row. */
+  recordId?: string;
+};
+
+export function emailPlan(
+  payload: SubmissionPayload,
+  opts?: EmailPlanOptions,
+): EmailPlan | null {
   const formType = str(payload, "formType");
   if (formType === "leimu-contact") {
-    const aihe = str(payload, "Aihe") || "Ei aihetta";
     return {
       leimu: {
-        to: LEIMU_INBOX,
-        subject: `LEIMU-yhteydenotto: ${aihe}`,
-        text: [
-          "Uusi yhteydenotto leimucandles.fi-sivustolta.",
-          "",
-          lines([
-            ["Nimi", str(payload, "Nimi")],
-            ["Sähköposti", str(payload, "Sähköposti")],
-            ["Aihe", str(payload, "Aihe")],
-            ["Viesti", str(payload, "Viesti")],
-            ["Saapunut", str(payload, "Saapunut")],
-          ]),
-        ].join("\n"),
+        to: [...CONTACT_NOTIFY_EMAILS],
+        subject: "Uusi yhteydenottopyyntö!",
+        text: contactBody(payload),
       },
       customer: null,
     };
   }
   if (formType === "leimu-order") {
-    const tilaaja = str(payload, "Tilaaja") || "Tilaus";
     const customerTo = str(payload, "Sähköposti");
-    const summary = lines([
-      ["Tilaaja", tilaaja],
-      ["Sähköposti", customerTo],
-      ["Toimitus", str(payload, "Toimitus")],
-      ["Osoite", str(payload, "Osoite")],
-      ["Postinumero", str(payload, "Postinumero")],
-      ["Kaupunki", str(payload, "Kaupunki")],
-      ["Maksutapa", str(payload, "Maksutapa")],
-      ["Kpl yhteensä", str(payload, "Kpl yhteensä")],
-      ["Hinta", str(payload, "Hinta") ? `${str(payload, "Hinta")}€` : ""],
-      ["Tuotteet", str(payload, "Tuotteet (erittely)")],
-      ["Viesti kuoreen", str(payload, "Viesti kuoreen")],
-      ["Saapunut", str(payload, "Saapunut")],
-    ]);
+    const tilaaja = str(payload, "Tilaaja") || "Tilaus";
     return {
       leimu: {
-        to: LEIMU_INBOX,
-        subject: `LEIMU-tilaus: ${tilaaja}`,
-        text: ["Uusi tilaus leimucandles.fi-sivustolta.", "", summary].join("\n"),
+        to: [...SHOP_NOTIFY_EMAILS],
+        subject: `Uusi tilaus vastaanotettu asiakkalta ${tilaaja}`,
+        text: shopOrderBody(payload),
       },
       customer: customerTo
         ? {
             to: customerTo,
-            subject: "Tilausvahvistus LEIMU Candles",
-            text: [
-              `Hei ${tilaaja},`,
-              "",
-              "Kiitos paljon tilauksestasi – arvostamme sitä suuresti! Tässä on vahvistus tilauksesi tiedoista:",
-              "",
-              summary,
-              "",
-              `Jos jokin yllä olevista tiedoista kaipaa korjausta tai haluat lisätä jotakin, voit lähettää sähköpostia osoitteeseen: ${LEIMU_INBOX}.`,
-              "",
-              "Lämpimin terveisin,",
-              "LEIMU Candles",
-            ].join("\n"),
+            subject: customerOrderSubject(opts?.recordId),
+            text: customerOrderBody(payload),
           }
         : null,
     };
@@ -115,7 +199,75 @@ export function shouldEmailCustomer(payload: SubmissionPayload): boolean {
   return str(payload, "formType") === "leimu-order";
 }
 
+function airtableToken(): string {
+  return (
+    process.env.AIRTABLE_PAT?.trim() ||
+    process.env.AIRTABLE_API_KEY?.trim() ||
+    process.env.AIRTABLE_TOKEN?.trim() ||
+    ""
+  );
+}
+
+function formulaString(value: string): string {
+  return `'${value.replace(/'/g, "\\'")}'`;
+}
+
+/**
+ * Make appends the Airtable row id to the customer subject. After the webhook
+ * returns we look up the newest matching Tilaukset row when a PAT is set.
+ */
+export async function lookupAirtableOrderId(
+  payload: SubmissionPayload,
+): Promise<string | undefined> {
+  const token = airtableToken();
+  if (!token) return undefined;
+  const email = str(payload, "Sähköposti");
+  const tilaaja = str(payload, "Tilaaja");
+  if (!email) return undefined;
+
+  const formula = tilaaja
+    ? `AND({Sähköposti}=${formulaString(email)},{Tilaaja}=${formulaString(tilaaja)})`
+    : `{Sähköposti}=${formulaString(email)}`;
+  const params = new URLSearchParams({
+    filterByFormula: formula,
+    maxRecords: "1",
+    "sort[0][field]": "Saapunut",
+    "sort[0][direction]": "desc",
+  });
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_ORDERS_TABLE_ID}?${params}`;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+    }
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        console.error("[email] Airtable lookup", res.status, detail.slice(0, 200));
+        return undefined;
+      }
+      const data = (await res.json()) as { records?: Array<{ id?: string }> };
+      const id = data.records?.[0]?.id;
+      if (id) return id;
+    } catch (err) {
+      console.error("[email] Airtable lookup failed", err);
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+function toList(to: string | string[]): string[] {
+  return (Array.isArray(to) ? to : [to]).map((addr) => addr.trim()).filter(Boolean);
+}
+
 async function deliver(email: OutboundEmail): Promise<boolean> {
+  const recipients = toList(email.to);
+  if (!recipients.length) return false;
+
   const resendKey = process.env.RESEND_API_KEY?.trim();
   if (resendKey) {
     const from =
@@ -128,7 +280,7 @@ async function deliver(email: OutboundEmail): Promise<boolean> {
       },
       body: JSON.stringify({
         from,
-        to: [email.to],
+        to: recipients,
         subject: email.subject,
         text: email.text,
       }),
@@ -153,7 +305,7 @@ async function deliver(email: OutboundEmail): Promise<boolean> {
     });
     await transporter.sendMail({
       from: process.env.EMAIL_FROM?.trim() || `LEIMU Candles <${user}>`,
-      to: email.to,
+      to: recipients.join(", "),
       subject: email.subject,
       text: email.text,
     });
@@ -172,12 +324,19 @@ export type EmailSendResult = { attempted: number; sent: number };
  */
 export async function sendSubmissionEmails(
   payload: SubmissionPayload,
-  opts?: { includeCustomer?: boolean },
+  opts?: { includeCustomer?: boolean; recordId?: string },
 ): Promise<EmailSendResult> {
-  const plan = emailPlan(payload);
-  if (!plan || !hasEmailTransport()) return { attempted: 0, sent: 0 };
+  if (!hasEmailTransport()) return { attempted: 0, sent: 0 };
 
   const includeCustomer = opts?.includeCustomer ?? shouldEmailCustomer(payload);
+  let recordId = opts?.recordId;
+  if (!recordId && includeCustomer && str(payload, "formType") === "leimu-order") {
+    recordId = await lookupAirtableOrderId(payload);
+  }
+
+  const plan = emailPlan(payload, { recordId });
+  if (!plan) return { attempted: 0, sent: 0 };
+
   const queue: OutboundEmail[] = [plan.leimu];
   if (includeCustomer && plan.customer) queue.push(plan.customer);
 
