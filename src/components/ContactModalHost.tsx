@@ -7,7 +7,7 @@ import { useStore } from "@/context/store";
 import { ContactModal } from "@/components/ContactModal";
 
 export function ContactModalHost() {
-  const { contactOpen, closeContact } = useStore();
-  if (!contactOpen) return null;
-  return <ContactModal onClose={closeContact} />;
+  const contactOpen = useStore((s) => s.contactOpen);
+  const closeContact = useStore((s) => s.closeContact);
+  return <ContactModal open={contactOpen} onClose={closeContact} />;
 }

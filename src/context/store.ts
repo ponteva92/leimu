@@ -58,9 +58,17 @@ export const useStore = create<StoreState>((set, get) => ({
 
   cartTotalPrice: () => calcPrice(get().cartTotalQty()),
 
-  /* ─── Cursor & Audio ─── */
+  /* ─── Home hero ─── true while the dark hero sits under the fixed bar ─── */
+  heroUnderBar: true,
+  setHeroUnderBar: (heroUnderBar: boolean) => set({ heroUnderBar }),
+  /* true while the hero stage is still on screen, so its canvases draw */
+  heroActive: true,
+  setHeroActive: (heroActive: boolean) => set({ heroActive }),
+  /* true while a later dark stage (the gift ceremony) sits under the bar */
+  darkStageUnderBar: false,
+  setDarkStageUnderBar: (darkStageUnderBar: boolean) => set({ darkStageUnderBar }),
+
+  /* ─── Cursor ─── */
   cursorType: "default" as "default" | "pointer" | "magnetic",
   setCursorType: (type: "default" | "pointer" | "magnetic") => set({ cursorType: type }),
-  isMuted: false,
-  toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 }));

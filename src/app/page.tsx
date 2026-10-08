@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { HomeClient } from "./HomeClient";
 
 export const metadata: Metadata = {
-  title: "LEIMU — Käsintehtyjä soijavahakynttilöitä Suomesta",
+  title: "LEIMU · Käsintehtyjä soijavahakynttilöitä Suomesta",
   description:
-    "LEIMU valmistaa käsintehtyjä, pieneräisiä soijavahakynttilöitä sheabutterilla Oulussa. Raikas havu, lämmin vanilja, suomalainen mustikka — tilaa omasi jo 9 €.",
+    "LEIMU valmistaa käsintehtyjä, pieneräisiä soijavahakynttilöitä sheabutterilla Oulussa. Raikas havu, lämmin vanilja ja suomalainen mustikka. Tilaa omasi alkaen 9 €.",
   keywords: [
     "soijavahakynttilä",
     "käsintehtyjä kynttilöitä",
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
     "suomalainen kynttilä",
   ],
   openGraph: {
-    title: "LEIMU — Käsintehtyjä soijavahakynttilöitä",
+    title: "LEIMU · Käsintehtyjä soijavahakynttilöitä",
     description:
-      "Havu, vanilja, mustikka. Jokainen LEIMU on käsityö — 100% soijavahaa ja sheabutteria, valmistettu Oulussa.",
+      "Havu, vanilja, mustikka. Jokainen LEIMU on käsityö: 100% soijavahaa ja sheabutteria, valmistettu Oulussa.",
     images: ["/images/launch-kuva.png"],
   },
 };

@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Instrument_Sans, Space_Mono } from "next/font/google";
-import { FacebookLogo, InstagramLogo } from "@phosphor-icons/react/dist/ssr";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StoreProvider } from "@/context/StoreProvider";
-import { PrivacyLink } from "@/components/PrivacyModal";
 import { CustomCursor } from "@/components/CustomCursor";
-import { Preloader } from "@/components/Preloader";
+import { Footer } from "@/components/Footer";
 import { GrainOverlay } from "@/components/GrainOverlay";
-import { SmoothScroll } from "@/components/SmoothScroll";
 import { ContactModalHost } from "@/components/ContactModalHost";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { MotionProvider } from "@/components/MotionProvider";
+import { SkipLink } from "@/components/SkipLink";
 
 /* Display — Cormorant Garamond (high-contrast garamond with true italics;
    one serif family carries roman, italic, and accent words alike).
@@ -39,11 +39,11 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — LEIMU",
-    default: "LEIMU — Käsintehtyjä soijavahakynttilöitä Suomesta",
+    template: "%s · LEIMU",
+    default: "LEIMU · Käsintehtyjä soijavahakynttilöitä Suomesta",
   },
   description:
-    "LEIMU valmistaa käsintehtyjä, pieneräisiä soijavahakynttilöitä sheabutterilla Oulussa. Valitse tuoksu — havu, vanilja tai mustikka — ja lisää henkilökohtainen viesti. Alkaen 9 €.",
+    "LEIMU valmistaa käsintehtyjä, pieneräisiä soijavahakynttilöitä sheabutterilla Oulussa. Valitse tuoksu (havu, vanilja tai mustikka) ja lisää henkilökohtainen viesti. Alkaen 9 €.",
   keywords: [
     "kynttilä",
     "soijavaha",
@@ -70,13 +70,13 @@ export const metadata: Metadata = {
         url: "/images/launch-kuva.png",
         width: 1200,
         height: 630,
-        alt: "LEIMU — Käsintehtyjä soijavahakynttilöitä",
+        alt: "Palava LEIMU-kynttilä mustikoiden, vaniljan ja havun keskellä",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LEIMU — Käsintehtyjä soijavahakynttilöitä",
+    title: "LEIMU · Käsintehtyjä soijavahakynttilöitä",
     description:
       "Havu, vanilja, mustikka. 100% soijavahaa ja sheabutteria, valmistettu Oulussa.",
   },
@@ -124,7 +124,7 @@ const jsonLd = {
           "@type": "Product",
           name: "LEIMU Soijavahakynttilä",
           description:
-            "Käsintehtyjä soijavahakynttilöitä sheabutterilla — havu, vanilja, mustikka",
+            "Käsintehtyjä soijavahakynttilöitä sheabutterilla: havu, vanilja, mustikka",
           offers: {
             "@type": "Offer",
             priceCurrency: "EUR",
@@ -154,86 +154,18 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[var(--ink)] focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:tracking-[0.15em] focus:text-[var(--bg)]"
-        >
-          Siirry sisältöön
-        </a>
+        <SkipLink />
         <StoreProvider>
-          <SmoothScroll />
-          <Preloader />
-          <CustomCursor />
-          <SiteHeader />
-          <main id="main">{children}</main>
-          <footer className="border-t border-[var(--line)] bg-[var(--bg-2)] py-16 px-8 mt-24">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div>
-                <p className="font-serif text-2xl italic mb-3 text-[var(--ink)]">LEIMU</p>
-                <p className="tag-mono mb-6">Käsintehtyjä kynttilöitä</p>
-                <p className="text-sm text-[var(--ink-soft)] leading-relaxed max-w-xs">
-                  Jokainen LEIMU-kynttilä on pieneräinen käsityö, valmistettu
-                  100% soijavahasta ja sheabutterista Suomessa.
-                </p>
-              </div>
-              <div>
-                <p className="tag-mono mb-6">Navigaatio</p>
-                <nav className="flex flex-col gap-3">
-                  {[
-                    { href: "/", label: "Etusivu" },
-                    { href: "/tuotteet", label: "Tuotteet" },
-                    { href: "/tarina", label: "Tarina" },
-                  ].map((link) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      className="text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-                  <PrivacyLink className="text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors text-left">
-                    Tietosuojaseloste
-                  </PrivacyLink>
-                </nav>
-              </div>
-              <div>
-                <p className="tag-mono mb-6">Yhteystiedot</p>
-                <a
-                  href="mailto:leimucandles@gmail.com"
-                  className="text-sm text-[var(--ink-soft)] hover:text-[var(--accent-2)] transition-colors"
-                >
-                  leimucandles@gmail.com
-                </a>
-                {/* Social icons */}
-                <div className="flex items-center gap-4 mt-6">
-                  <a
-                    href="https://www.instagram.com/leimucandles/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LEIMU Instagramissa"
-                    className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
-                  >
-                    <InstagramLogo size={20} weight="light" aria-hidden="true" />
-                  </a>
-                  <a
-                    href="https://www.facebook.com/LEIMUcandles/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LEIMU Facebookissa"
-                    className="text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors"
-                  >
-                    <FacebookLogo size={20} weight="light" aria-hidden="true" />
-                  </a>
-                </div>
-                <p className="text-sm text-[var(--ink-mute)] mt-8">
-                  © {new Date().getFullYear()} LEIMU. Kaikki oikeudet pidätetään.
-                </p>
-              </div>
-            </div>
-          </footer>
-          <ContactModalHost />
-          <GrainOverlay />
+          <MotionProvider>
+            <CustomCursor />
+            <SiteHeader />
+            <main id="main">{children}</main>
+            <Footer />
+            {/* After <main>: its route-change layout effect runs after Next's own scroll. */}
+            <SmoothScroll />
+            <ContactModalHost />
+            <GrainOverlay />
+          </MotionProvider>
         </StoreProvider>
       </body>
     </html>

@@ -1,19 +1,24 @@
 /* ════════════════════════════════════════════════════════════════════════
    LEIMU — Tuotteet hero "Living Still Life" shaders
    ------------------------------------------------------------------------
-   A flat image plane displaying the products photo, driven by three fragment
+   A flat image plane displaying the products photo, driven by two fragment
    effects (the geometry stays perfectly flat — no vertex displacement):
 
      A · Molten reveal     — on mount the image emerges from a dark liquid-wax
                              veil that organically melts away (uReveal 0→1.3).
      B · Scroll fade-dark  — uScroll dims the whole image, but the golden seals
                              stay emissive and glow brighter as it darkens.
-     C · Text symbiosis    — uTextHovered blooms the golden seals when the big
-                             "täysin sinun" headline is hovered.
+
+   The seals keep a faint living shimmer throughout. Once the melt is done the
+   noise is skipped, so the shimmer is all that still runs per pixel.
 
    GLSL ES 1.00 (three injects position/uv/matrices). WYSIWYG colour: the
    texture is sampled raw and composited in gamma space — no encode dance.
    ════════════════════════════════════════════════════════════════════════ */
+
+/** Where uReveal settles. The veil is gone from about 1.12, so the melt ends
+    while uReveal is still easing in. */
+export const REVEAL_END = 1.3;
 
 const NOISE = /* glsl */ `
 vec4 permute(vec4 x){ return mod(((x*34.0)+1.0)*x, 289.0); }
@@ -100,11 +105,19 @@ export const heroImgFrag = /* glsl */ `
 
   void main() {
     // ── A. molten reveal — image emerges from a dark liquid-wax veil (centre first) ──
-    float fb    = fbm(vUv * 2.6 + vec2(uTime * 0.02, 0.0));
-    float front = fb * 0.72 + distance(vUv, vec2(0.5, 0.55)) * 0.42;
-    float revealed = 1.0 - smoothstep(uReveal - 0.10, uReveal + 0.06, front);
-    float band  = revealed * (1.0 - revealed) * 4.0;          // hot melt edge
-    vec2  distort = vec2(fbm(vUv * 6.0 + 1.3) - 0.5, fbm(vUv * 6.0 + 7.7) - 0.5) * band * 0.05;
+    // The front never exceeds about 1.02 (fbm ≤ 0.985, distance ≤ 0.743), so
+    // from uReveal 1.15 every pixel is revealed and the noise is skipped.
+    // uReveal is a uniform, so every pixel takes the same branch.
+    float revealed = 1.0;
+    float band     = 0.0;
+    vec2  distort  = vec2(0.0);
+    if (uReveal < 1.15) {
+      float fb    = fbm(vUv * 2.6 + vec2(uTime * 0.02, 0.0));
+      float front = fb * 0.72 + distance(vUv, vec2(0.5, 0.55)) * 0.42;
+      revealed = 1.0 - smoothstep(uReveal - 0.10, uReveal + 0.06, front);
+      band     = revealed * (1.0 - revealed) * 4.0;          // hot melt edge
+      distort  = vec2(fbm(vUv * 6.0 + 1.3) - 0.5, fbm(vUv * 6.0 + 7.7) - 0.5) * band * 0.05;
+    }
 
     vec3  img  = texture2D(uTex, vUv + distort).rgb;
     float gold = goldenMask(img);
@@ -127,10 +140,11 @@ export const heroImgFrag = /* glsl */ `
     col = mix(wax, col, revealed);
     col += vec3(0.95, 0.5, 0.16) * band * 0.65;
 
-    // cinematic vignette
-    float vig = smoothstep(1.15, 0.32, distance(vUv, vec2(0.5)));
-    col *= mix(0.80, 1.0, vig);
+    // No vignette: revealed pixels must match the photograph beneath, or
+    // the melt would uncover a darker copy of it.
 
-    gl_FragColor = vec4(col, 1.0);
+    // Unrevealed pixels stay transparent so the photograph underneath is the
+    // first paint — never a black void if the melt hasn't run yet.
+    gl_FragColor = vec4(col, clamp(revealed + band, 0.0, 1.0));
   }
 `;

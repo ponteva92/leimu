@@ -5,15 +5,19 @@
    ------------------------------------------------------------------------
    A single fullscreen quad running heroBgShaders. Lazy-loaded (ssr:false) by
    HeroBackground so Three.js never ships in the initial bundle and never runs
-   on the server. Capped DPR + a cheap shader keep it inside a 16 ms frame.
-   uOpacity is damped 0→1 so it fades in over the CSS gradient underneath —
-   no flash/blink on load.
+   on the server. It renders at a fixed 0.6 pixel ratio: the field is soft, so
+   the browser's upscale is invisible under the grain, and the GPU shades about
+   a sixth of the pixels it would at 1.5. uOpacity is damped 0→1 so it fades in
+   over the CSS gradient underneath — no flash/blink on load.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { ShaderWarmup } from "@/components/ShaderWarmup";
 import { bgVert, bgFrag } from "./heroBgShaders";
+
+const DPR = 0.6;
 
 function MeshPlane() {
   const uniforms = useMemo(
@@ -53,15 +57,21 @@ function MeshPlane() {
   );
 }
 
-export default function HeroBackgroundGL() {
+export default function HeroBackgroundGL({ active = true }: { active?: boolean }) {
+  // The loop waits until the shader is built (ShaderWarmup).
+  const [compiled, setCompiled] = useState(false);
+  // The canvas re-measures only when its box resizes, never on scroll, and
+  // by offset size, which CSS transforms leave alone.
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={DPR}
       gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}
-      frameloop="always"
+      frameloop={active && compiled ? "always" : "never"}
+      resize={{ scroll: false, offsetSize: true }}
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
     >
       <MeshPlane />
+      <ShaderWarmup onReady={setCompiled} />
     </Canvas>
   );
 }

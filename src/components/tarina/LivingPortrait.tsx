@@ -5,32 +5,42 @@
    ------------------------------------------------------------------------
    The founder photo as a WebGL texture: a subtle mouse depth-parallax + a
    gentle whole-plane tilt make it feel slightly 3-D, with floating amber
-   embers (dust) drifting in front of and behind it. The render loop pauses
-   when scrolled offscreen. Lazy-loaded (ssr:false).
+   embers (dust) drifting in front of and behind it. The chapter
+   server-renders the plain photo (PortraitPhoto) under this canvas, so the
+   frame is never empty while the chunk loads, and the canvas fades in over
+   it. The render loop runs only while the portrait can be seen and its
+   chapter holds it (`active`); under reduced motion it draws one still
+   frame. Lazy-loaded (ssr:false).
    ════════════════════════════════════════════════════════════════════════ */
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useInView } from "framer-motion";
 import * as THREE from "three";
 import { portraitVert, portraitFrag, dustVert, dustFrag } from "./portraitShaders";
+import { SafeWebGL } from "@/components/SafeWebGL";
+import { ShaderWarmup } from "@/components/ShaderWarmup";
+import { REDUCE_QUERY } from "@/lib/pin";
+import { useBitmapTexture } from "@/lib/useBitmapTexture";
+import { PORTRAIT_OVERSCAN as OVERSCAN, PORTRAIT_SRC as IMG_SRC } from "./PortraitPhoto";
 
-const IMG_SRC = "/images/ivs-portrait-web.jpg";
 const IMG_ASPECT = 820 / 1232; // 0.665
 const DUST_COUNT = 120;
 const damp = THREE.MathUtils.damp;
 
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia(REDUCE_QUERY).matches;
+}
+
 function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
-  const tex = useLoader(THREE.TextureLoader, IMG_SRC);
-  const { viewport } = useThree();
+  // The shader grades in gamma space, so the photo is sampled as stored.
+  const tex = useBitmapTexture(IMG_SRC, { anisotropy: 8, colorSpace: THREE.NoColorSpace });
+  // Numbers, so only a real resize re-renders the scene.
+  const vw = useThree((s) => s.viewport.width);
+  const vh = useThree((s) => s.viewport.height);
   const group = useRef<THREE.Group>(null);
 
-  useEffect(() => {
-    tex.anisotropy = 8;
-    tex.needsUpdate = true;
-  }, [tex]);
-
-  const planeAspect = viewport.width / viewport.height;
+  const planeAspect = vw / vh;
 
   const uniforms = useMemo(
     () => ({
@@ -41,7 +51,7 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
       uPlaneAspect: { value: planeAspect },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [tex],
   );
   uniforms.uPlaneAspect.value = planeAspect;
 
@@ -49,8 +59,8 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
     const pos = new Float32Array(DUST_COUNT * 3);
     const seed = new Float32Array(DUST_COUNT);
     for (let i = 0; i < DUST_COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * viewport.width * 1.2;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * viewport.height * 1.2;
+      pos[i * 3] = (Math.random() - 0.5) * vw * OVERSCAN;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * vh * OVERSCAN;
       pos[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
       seed[i] = Math.random();
     }
@@ -58,7 +68,7 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     g.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
     return g;
-  }, [viewport.width, viewport.height]);
+  }, [vw, vh]);
   useEffect(() => () => dustGeo.dispose(), [dustGeo]);
 
   const dustU = useMemo(
@@ -73,17 +83,25 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
   );
 
   useFrame((state, delta) => {
+    dustU.uPixelRatio.value = Math.min(state.gl.getPixelRatio(), 2);
+    // Reduced motion renders on demand: one still frame, already faded in.
+    if (reducedMotion) {
+      uniforms.uOpacity.value = 1;
+      uniforms.uMouse.value.set(0, 0);
+      dustU.uOpacity.value = 0.25;
+      group.current?.rotation.set(0, 0, 0);
+      return;
+    }
     const dt = Math.min(delta, 0.05);
-    const px = reducedMotion ? 0 : state.pointer.x;
-    const py = reducedMotion ? 0 : state.pointer.y;
+    const px = state.pointer.x;
+    const py = state.pointer.y;
 
     uniforms.uMouse.value.x = damp(uniforms.uMouse.value.x, px, 5, dt);
     uniforms.uMouse.value.y = damp(uniforms.uMouse.value.y, py, 5, dt);
     uniforms.uOpacity.value = damp(uniforms.uOpacity.value, 1, 2.5, dt);
 
     dustU.uTime.value += dt;
-    dustU.uPixelRatio.value = Math.min(state.gl.getPixelRatio(), 2);
-    dustU.uOpacity.value = damp(dustU.uOpacity.value, reducedMotion ? 0.25 : 0.6, 2.0, dt);
+    dustU.uOpacity.value = damp(dustU.uOpacity.value, 0.6, 2.0, dt);
 
     if (group.current) {
       group.current.rotation.y = damp(group.current.rotation.y, px * 0.06, 5, dt);
@@ -93,8 +111,7 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <group ref={group}>
-      {/* portrait plane — overscanned so the gentle tilt never reveals an edge */}
-      <mesh scale={[viewport.width * 1.2, viewport.height * 1.2, 1]}>
+      <mesh scale={[vw * OVERSCAN, vh * OVERSCAN, 1]}>
         <planeGeometry args={[1, 1, 1, 1]} />
         <shaderMaterial
           vertexShader={portraitVert}
@@ -122,32 +139,52 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
   );
 }
 
-export default function LivingPortrait() {
+type LivingPortraitProps = {
+  /** False while the chapter has the portrait covered; the loop parks. */
+  active?: boolean;
+};
+
+/* dpr stops at 1.5 and MSAA stays off: the plane is a textured quad and the
+   embers are soft sprites, so neither gains from either. The pointer reads
+   offsetX/Y, so the canvas needs no bounds tracked on scroll; it measures
+   only on resize, and by offset size, so a scaled stage never reads as a
+   resize (which would re-render the scene and re-seed the dust). */
+export default function LivingPortrait({ active = true }: LivingPortraitProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { margin: "200px" });
-  const [reducedMotion, setReducedMotion] = useState(false);
+  // Client only (ssr:false), so the first render already knows the
+  // motion preference.
+  const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
+  // The loop waits until the shaders are built (ShaderWarmup).
+  const [compiled, setCompiled] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mq = window.matchMedia(REDUCE_QUERY);
     const sync = () => setReducedMotion(mq.matches);
-    sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
 
+  let frameloop: "always" | "demand" | "never" = "never";
+  if (compiled && inView && active) frameloop = reducedMotion ? "demand" : "always";
+
   return (
     <div ref={wrapRef} className="absolute inset-0">
-      <Canvas
-        frameloop={inView ? "always" : "never"}
-        dpr={[1, 1.8]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        camera={{ fov: 35, position: [0, 0, 4], near: 0.1, far: 20 }}
-        style={{ width: "100%", height: "100%", display: "block" }}
-      >
-        <Suspense fallback={null}>
-          <Portrait reducedMotion={reducedMotion} />
-        </Suspense>
-      </Canvas>
+      <SafeWebGL fallback={null}>
+        <Canvas
+          frameloop={frameloop}
+          dpr={[1, 1.5]}
+          gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+          camera={{ fov: 35, position: [0, 0, 4], near: 0.1, far: 20 }}
+          resize={{ scroll: false, offsetSize: true }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <Suspense fallback={null}>
+            <Portrait reducedMotion={reducedMotion} />
+            <ShaderWarmup onReady={setCompiled} />
+          </Suspense>
+        </Canvas>
+      </SafeWebGL>
     </div>
   );
 }

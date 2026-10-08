@@ -21,7 +21,9 @@ export function ContactCTA({
   variant?: "navbar" | "hero";
   label?: string;
 }) {
-  const { lang, openContact, setCursorType } = useStore();
+  const lang = useStore((s) => s.lang);
+  const openContact = useStore((s) => s.openContact);
+  const setCursorType = useStore((s) => s.setCursorType);
   const text = label ?? (lang === "fi" ? "Ota yhteyttä" : "Contact");
 
   if (variant === "hero") {
@@ -59,8 +61,13 @@ export function ContactCTA({
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       transition={EASE_SPRING_MAGNETIC}
-      className="inline-flex items-center justify-center rounded-full border border-[var(--field-border)] px-5 py-2 font-sans font-medium text-[13px] uppercase tracking-[0.08em] text-[var(--ink)] transition-[border-color,box-shadow] duration-300 hover:border-[var(--accent-2)] hover:shadow-glow"
+      className="group relative inline-flex items-center justify-center rounded-full border border-[var(--field-border)] px-5 py-2 font-sans font-medium text-[13px] uppercase tracking-[0.08em] text-[var(--ink)] transition-colors duration-300 hover:border-[var(--accent-2)]"
     >
+      {/* The amber glow is its own layer and only fades in. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-px rounded-full opacity-0 shadow-glow transition-opacity duration-300 group-hover:opacity-100"
+      />
       {text}
     </motion.button>
   );

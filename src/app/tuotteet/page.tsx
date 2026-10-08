@@ -4,7 +4,7 @@ import { TuotteetClient } from "./TuotteetClient";
 export const metadata: Metadata = {
   title: "Tuotteet",
   description:
-    "Kokoa oma LEIMU-tilauksesi: valitse purkki, tuoksut ja käsinkirjoitettu viesti. Jokaiseen tilaukseen kuuluu musta kiitoskortti kultaisella vahasinetillä — täydellinen lahja tai oma hetki. Käsintehtyä Oulussa, alkaen 9 €.",
+    "Kokoa oma LEIMU-tilauksesi: valitse purkki, tuoksut ja käsinkirjoitettu viesti. Jokaiseen tilaukseen kuuluu musta kiitoskortti kultaisella vahasinetillä. Täydellinen lahja tai oma hetki. Käsintehtyä Oulussa, alkaen 9 €.",
   keywords: [
     "kynttilä lahja",
     "yrityslahja kynttilä",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/tuotteet" },
   openGraph: {
-    title: "Tuotteet — Kokoa oma LEIMU-tilauksesi",
+    title: "Tuotteet · Kokoa oma LEIMU-tilauksesi",
     description:
       "Valitse purkki, tuoksut ja käsinkirjoitettu viesti. Mukana musta kiitoskortti kultaisella LEIMU-vahasinetillä.",
     images: [

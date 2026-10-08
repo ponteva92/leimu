@@ -14,14 +14,18 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useBitmapTexture } from "@/lib/useBitmapTexture";
 import { baseVert, flameFrag, candleFrag } from "./shaders";
 import { HeatMirage } from "./HeatMirage";
 
-// hero-candle-black.png has a fully transparent background; "kynttilä musta.png"
-// (candle-black.png) had a checkerboard baked into opaque pixels → checker artifact.
-const candleUrl = "/images/hero-candle-black.png";
+// hero-candle-black.png as WebP. The PNG has a fully transparent background;
+// "kynttilä musta.png" (candle-black.png) had a checkerboard baked into opaque
+// pixels → checker artifact. The WebP is encoded with libwebp's `exact` flag,
+// which keeps the RGB under transparent pixels as the PNG has it: filtering
+// pulls those texels into the silhouette, so the edge would change without it.
+const candleUrl = "/images/hero-candle-black.webp";
 
 /* candle 864×1184 → 0.7297 aspect */
 const CANDLE_H = 2.9; // smaller → whole lid clears the bottom, headroom above for logo + smoke
@@ -58,17 +62,11 @@ export function CandleScene({
   reducedMotion: boolean;
   onReady?: () => void;
 }) {
-  const candleTex = useLoader(THREE.TextureLoader, candleUrl);
+  const candleTex = useBitmapTexture(candleUrl, { anisotropy: 8 });
 
   useEffect(() => {
     onReady?.();
   }, [onReady]);
-
-  useEffect(() => {
-    candleTex.colorSpace = THREE.SRGBColorSpace;
-    candleTex.anisotropy = 8;
-    candleTex.needsUpdate = true;
-  }, [candleTex]);
 
   const candleGroup = useRef<THREE.Group>(null);
   const flameGroup = useRef<THREE.Group>(null);

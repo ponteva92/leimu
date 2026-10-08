@@ -7,47 +7,76 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
-import { ContactCTA } from "@/components/ContactCTA";
 
-/* The inner nav bar. Positioning + scroll-reveal live in SiteHeader; this just
-   reacts to `scrolled` for its frosted-glass background. */
-export function Navbar({ scrolled }: { scrolled: boolean }) {
+export function Navbar({
+  scrolled,
+  tone = "paper",
+}: {
+  scrolled: boolean;
+  tone?: "paper" | "dark";
+}) {
   const pathname = usePathname();
-  const { lang, toggleLang } = useStore();
+  const lang = useStore((s) => s.lang);
+  const toggleLang = useStore((s) => s.toggleLang);
+  const dark = tone === "dark";
 
   const links = [
-    { href: "/",         label: { fi: "Etusivu",  en: "Home"     } },
+    { href: "/", label: { fi: "Etusivu", en: "Home" } },
     { href: "/tuotteet", label: { fi: "Tuotteet", en: "Products" } },
-    { href: "/tarina",   label: { fi: "Tarina",   en: "Story"    } },
+    { href: "/tarina", label: { fi: "Tarina", en: "Story" } },
   ];
 
-  /* Mobile hamburger menu (md:hidden). Labels per spec: Etusivu / Tuotteet / Tarinamme. */
   const [menuOpen, setMenuOpen] = useState(false);
   const mobileLinks = [
-    { href: "/",         label: { fi: "Etusivu",   en: "Home"      } },
-    { href: "/tuotteet", label: { fi: "Tuotteet",  en: "Products"  } },
-    { href: "/tarina",   label: { fi: "Tarinamme", en: "Our story" } },
+    { href: "/", label: { fi: "Etusivu", en: "Home" } },
+    { href: "/tuotteet", label: { fi: "Tuotteet", en: "Products" } },
+    { href: "/tarina", label: { fi: "Tarinamme", en: "Our story" } },
   ];
-  // Close the menu whenever the route changes.
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
+  const ink = dark ? "var(--on-dark)" : "var(--ink)";
+  const mute = dark ? "rgba(247,242,234,0.78)" : "var(--ink-mute)";
+
+  // The bar re-blurs whatever scrolls under it on every frame, and the cost
+  // grows with the blur radius, so the glass stays at 16px with no saturate.
+  // At 16px, detail under the bar stays sharper, so denser tints keep the
+  // links legible.
   return (
     <div
       className={["relative z-30", scrolled ? "border-b border-[rgba(26,24,20,0.07)]" : ""].join(" ")}
       style={{
-        backdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(40px) saturate(1.6)" : "none",
-        backgroundColor: scrolled ? "rgba(247, 242, 234, 0.55)" : "transparent",
-        boxShadow: scrolled
-          ? "inset 0 1px 0 rgba(255,255,255,0.55), 0 10px 36px rgba(26,24,20,0.07)"
-          : "none",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        backgroundColor: dark
+          ? "rgba(20, 17, 13, 0.6)"
+          : scrolled
+            ? "rgba(247, 242, 234, 0.7)"
+            : "rgba(247, 242, 234, 0.3)",
         transition:
-          "background-color 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.5s cubic-bezier(0.22,1,0.36,1), backdrop-filter 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s cubic-bezier(0.22,1,0.36,1)",
+          "background-color 0.5s cubic-bezier(0.22,1,0.36,1), border-color 0.5s cubic-bezier(0.22,1,0.36,1)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center group" aria-label="LEIMU etusivu">
+      {/* The glass edge light and the drop shadow are layers of their own
+          that fade by opacity, so the bar never animates box-shadow. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 shadow-[0_10px_36px_rgba(26,24,20,0.07)] transition-opacity duration-500 ease-[var(--ease-out)]"
+        style={{ opacity: scrolled && !dark ? 1 : 0 }}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[rgba(255,255,255,0.55)] transition-opacity duration-500 ease-[var(--ease-out)]"
+        style={{ opacity: scrolled && !dark ? 1 : 0 }}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[rgba(255,255,255,0.08)] transition-opacity duration-500 ease-[var(--ease-out)]"
+        style={{ opacity: dark ? 1 : 0 }}
+      />
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-10">
+        <Link href="/" className="group flex items-center" aria-label={lang === "fi" ? "LEIMU etusivu" : "LEIMU home"}>
           <motion.div
             className="relative overflow-hidden rounded-md"
             initial="rest"
@@ -57,7 +86,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             <Image
-              src="/images/logo.png"
+              src={dark ? "/images/leimu-logo-white.png" : "/images/logo.png"}
               alt="LEIMU"
               width={90}
               height={36}
@@ -67,82 +96,51 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           </motion.div>
         </Link>
 
-        {/* Nav links */}
-        <nav className="hidden md:flex items-center gap-10" role="navigation">
+        <nav className="hidden items-center gap-10 md:flex" role="navigation">
           {links.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative font-sans font-medium text-[13px] tracking-[0.08em] uppercase group outline-none"
+                aria-current={isActive ? "page" : undefined}
+                className="group relative font-sans text-[13px] font-medium uppercase tracking-[0.08em] outline-none"
               >
-                <motion.span
-                  className={[
-                    "transition-colors duration-200",
-                    isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)]",
-                  ].join(" ")}
-                  whileHover={{ color: "var(--ink)" }}
-                  transition={{ duration: 0.15 }}
+                <span
+                  className="transition-colors duration-200"
+                  style={{ color: isActive ? ink : mute }}
                 >
                   {link.label[lang]}
-                </motion.span>
-
-                {/* Animated underline */}
-                <AnimatePresence>
-                  {isActive ? (
-                    <motion.span
-                      key="active"
-                      layoutId="nav-underline"
-                      className="absolute -bottom-0.5 left-0 right-0 h-px bg-[var(--ink)]"
-                      initial={{ scaleX: 0, opacity: 0 }}
-                      animate={{ scaleX: 1, opacity: 1 }}
-                      exit={{ scaleX: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ transformOrigin: "left" }}
-                    />
-                  ) : (
-                    <motion.span
-                      className="absolute -bottom-0.5 left-0 right-0 h-px bg-[var(--ink-mute)]"
-                      initial={{ scaleX: 0 }}
-                      whileHover={{ scaleX: 1, opacity: 0.4 }}
-                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ transformOrigin: "left" }}
-                    />
-                  )}
-                </AnimatePresence>
+                </span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Right: lang toggle + CTAs */}
-        <div className="flex items-center gap-5">
-          {/* Language toggle */}
+        <div className="flex items-center gap-3 md:gap-5">
           <motion.button
             onClick={toggleLang}
-            className="font-sans font-medium text-[13px] tracking-[0.06em] text-[var(--ink-mute)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="cursor-pointer font-sans text-[13px] font-medium tracking-[0.06em] transition-colors"
+            style={{ color: mute }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            aria-label={`Vaihda kieli — ${lang === "fi" ? "EN" : "FI"}`}
+            aria-label={lang === "fi" ? "Vaihda kieli: EN" : "Change language: FI"}
           >
-            <span className={lang === "fi" ? "text-[var(--ink)]" : ""}>FI</span>
+            <span style={{ color: lang === "fi" ? ink : undefined }}>FI</span>
             <span className="mx-1.5 opacity-40">/</span>
-            <span className={lang === "en" ? "text-[var(--ink)]" : ""}>EN</span>
+            <span style={{ color: lang === "en" ? ink : undefined }}>EN</span>
           </motion.button>
 
-          {/* Contact CTA — magnetic liquid glow */}
-          <div className="hidden md:block">
-            <ContactCTA variant="navbar" />
-          </div>
-
-          {/* Order CTA — filled */}
           <Link href="/tuotteet" passHref legacyBehavior>
             <motion.a
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-[13px] font-sans font-medium tracking-[0.08em] uppercase rounded-full bg-[var(--ink)] text-[var(--bg)] overflow-hidden relative"
-              style={{ boxShadow: "0 2px 16px rgba(26,24,20,0.14)" }}
-              whileHover={{ scale: 1.04, boxShadow: "0 6px 28px rgba(26,24,20,0.22)" }}
+              className="inline-flex min-h-11 items-center gap-2 overflow-hidden rounded-full px-4 py-2 font-sans text-[13px] font-medium uppercase tracking-[0.08em] md:px-5"
+              style={{
+                backgroundColor: dark ? "var(--on-dark)" : "var(--ink)",
+                color: dark ? "var(--ink)" : "var(--bg)",
+                boxShadow: "0 2px 16px rgba(26,24,20,0.14)",
+              }}
+              whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 380, damping: 22 }}
             >
@@ -153,12 +151,24 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
             </motion.a>
           </Link>
 
-          {/* Hamburger — mobile only */}
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg)]/70 text-[var(--ink)] shadow-sm backdrop-blur-sm transition-colors md:hidden"
-            aria-label={menuOpen ? "Sulje valikko" : "Avaa valikko"}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-colors md:hidden"
+            style={{
+              borderColor: dark ? "rgba(247,242,234,0.28)" : "var(--line)",
+              backgroundColor: dark ? "rgba(20,17,13,0.45)" : "rgba(247,242,234,0.7)",
+              color: ink,
+            }}
+            aria-label={
+              lang === "fi"
+                ? menuOpen
+                  ? "Sulje valikko"
+                  : "Avaa valikko"
+                : menuOpen
+                  ? "Close menu"
+                  : "Open menu"
+            }
             aria-expanded={menuOpen}
           >
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -170,7 +180,6 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
         </div>
       </div>
 
-      {/* Mobile dropdown menu — md:hidden */}
       <AnimatePresence>
         {menuOpen && (
           <motion.nav
@@ -190,8 +199,9 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
+                    aria-current={isActive ? "page" : undefined}
                     className={[
-                      "border-b border-[var(--line)] py-4 font-sans font-medium text-[14px] uppercase tracking-[0.08em] transition-colors last:border-0",
+                      "border-b border-[var(--line)] py-4 font-sans text-[14px] font-medium uppercase tracking-[0.08em] transition-colors last:border-0",
                       isActive ? "text-[var(--ink)]" : "text-[var(--ink-mute)] hover:text-[var(--ink)]",
                     ].join(" ")}
                   >

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { TarinaClient } from "./TarinaClient";
 
 export const metadata: Metadata = {
-  title: "Tarinamme — LEIMU by Shane",
+  // absolute: the brand is already in the title, so skip the "%s · LEIMU" template.
+  title: { absolute: "Tarinamme · LEIMU by Shane" },
   description:
     "LEIMUn tarina: filippiiniläinen sairaanhoitaja Shane muutti Suomeen 2024 ja loi käsintehtyjä soijavahakynttilöitä sheabutterilla Oulussa. Ekologinen, eettinen, yksinkertaisesti kaunis.",
   keywords: [
@@ -16,9 +17,9 @@ export const metadata: Metadata = {
     "Shane LEIMU",
   ],
   openGraph: {
-    title: "Tarinamme — LEIMU by Shane",
+    title: "Tarinamme · LEIMU by Shane",
     description:
-      "Filippiiineiltä Suomeen — kuinka LEIMU-kynttilät syntyivät. Käsityötä, soijavahaa ja sydäntä.",
+      "Filippiineiltä Suomeen: kuinka LEIMU-kynttilät syntyivät. Käsityötä, soijavahaa ja sydäntä.",
   },
 };
 

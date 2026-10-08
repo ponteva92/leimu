@@ -11,6 +11,9 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useStore } from "@/context/store";
+import { isCoarseViewport, webglAvailable } from "@/lib/webgl";
+import { SafeWebGL } from "@/components/SafeWebGL";
 
 const HeroBackgroundGL = dynamic(() => import("./HeroBackgroundGL"), {
   ssr: false,
@@ -25,23 +28,15 @@ const FALLBACK_GRADIENT = `
 `;
 
 export function HeroBackground() {
+  // False once the hero is covered: the shader parks on its last frame.
+  const active = useStore((s) => s.heroActive);
   // Stays false during SSR + first paint (only the gradient shows → no flash).
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    let webglOK = false;
-    try {
-      const c = document.createElement("canvas");
-      webglOK = !!(
-        window.WebGLRenderingContext &&
-        (c.getContext("webgl") || c.getContext("experimental-webgl"))
-      );
-    } catch {
-      webglOK = false;
-    }
-
+    const webglOK = webglAvailable() && !isCoarseViewport();
     const sync = () => setAnimate(webglOK && !mq.matches);
     sync();
     mq.addEventListener("change", sync);
@@ -51,7 +46,11 @@ export function HeroBackground() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: FALLBACK_GRADIENT }} />
-      {animate && <HeroBackgroundGL />}
+      {animate && (
+        <SafeWebGL fallback={null}>
+          <HeroBackgroundGL active={active} />
+        </SafeWebGL>
+      )}
     </div>
   );
 }

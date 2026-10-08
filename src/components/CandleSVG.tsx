@@ -142,8 +142,7 @@ export function CandleSVG({
       viewBox="0 0 120 200"
       xmlns="http://www.w3.org/2000/svg"
       className={`w-full h-full ${className}`}
-      role="img"
-      aria-label={`LEIMU kynttilaä — ${jar} purkki`}
+      aria-hidden="true"
     >
       <defs>
         <linearGradient id={`lid-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">

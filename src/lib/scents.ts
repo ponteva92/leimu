@@ -23,8 +23,9 @@ export const SCENTS: Scent[] = [
     ambientColor: "#5C7A48",
     image: "/images/scent-havu.jpg",
     burnTime: "~36h",
-    price: "9€",
+    price: "9\u00a0€",
     tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tagsEn: ["Glass jar", "Bamboo lid", "100% soy wax", "10% shea butter", "Cotton wick"],
   },
   {
     id: "havu-vanilja",
@@ -39,8 +40,9 @@ export const SCENTS: Scent[] = [
     ambientColor: "#C8A96E",
     image: "/images/scent-havu-vanilja.jpg",
     burnTime: "~36h",
-    price: "9€",
+    price: "9\u00a0€",
     tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tagsEn: ["Glass jar", "Bamboo lid", "100% soy wax", "10% shea butter", "Cotton wick"],
   },
   {
     id: "vanilja",
@@ -55,8 +57,9 @@ export const SCENTS: Scent[] = [
     ambientColor: "#D4A96A",
     image: "/images/scent-vanilja.jpg",
     burnTime: "~36h",
-    price: "9€",
+    price: "9\u00a0€",
     tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tagsEn: ["Glass jar", "Bamboo lid", "100% soy wax", "10% shea butter", "Cotton wick"],
   },
   {
     id: "mustikka",
@@ -71,8 +74,9 @@ export const SCENTS: Scent[] = [
     ambientColor: "#6B4A8C",
     image: "/images/scent-mustikka.jpg",
     burnTime: "~36h",
-    price: "9€",
+    price: "9\u00a0€",
     tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tagsEn: ["Glass jar", "Bamboo lid", "100% soy wax", "10% shea butter", "Cotton wick"],
   },
   {
     id: "mustikka-vanilja",
@@ -87,10 +91,19 @@ export const SCENTS: Scent[] = [
     ambientColor: "#8B5A6A",
     image: "/images/scent-mustikka-vanilja.jpg",
     burnTime: "~36h",
-    price: "9€",
+    price: "9\u00a0€",
     tags: ["Lasipurkki", "Bambukansi", "100% Soijavaha", "10% Sheabutter", "Puuvillasydän"],
+    tagsEn: ["Glass jar", "Bamboo lid", "100% soy wax", "10% shea butter", "Cotton wick"],
   },
 ];
+
+/** Finnish typographic euro: figure, no-break space, symbol. */
+export function formatEuro(n: number): string {
+  return `${n}\u00a0€`;
+}
+
+export const FEATURED_SCENT_ID = "mustikka-vanilja";
+export const HOME_FEATURED_SCENT_ID = "havu";
 
 export const PRICE_TABLE: Record<number, number> = {
   1: 9, 2: 18, 3: 25, 4: 34, 5: 40, 6: 47,

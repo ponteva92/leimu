@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+// Relative on purpose: the config loader does not know the @/ alias.
+import { STAGE_QUERY } from "./src/lib/screens";
 
 const config: Config = {
   content: [
@@ -8,6 +10,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        // Where scroll stages pin (see src/lib/screens.ts).
+        stage: { raw: STAGE_QUERY },
+      },
       colors: {
         bg: "var(--bg)",
         "bg-2": "var(--bg-2)",
@@ -20,6 +26,9 @@ const config: Config = {
         "accent-2": "var(--accent-2)",
         "accent-3": "var(--accent-3)",
         "accent-2-strong": "var(--accent-2-strong)",
+        "accent-2-text": "var(--accent-2-text)",
+        "on-dark": "var(--on-dark)",
+        plaque: "var(--plaque)",
         "field-border": "var(--field-border)",
         destructive: "var(--destructive)",
       },
@@ -41,7 +50,7 @@ const config: Config = {
         "5xl": ["3rem",     { lineHeight: "1.2",  letterSpacing: "-0.02em" }],
         "6xl": ["3.75rem",  { lineHeight: "1.2",  letterSpacing: "-0.022em" }],
         "7xl": ["4.5rem",   { lineHeight: "1.2",  letterSpacing: "-0.025em" }],
-        label: ["0.6875rem",{ lineHeight: "1",    letterSpacing: "0.16em" }],
+        label: ["0.75rem",  { lineHeight: "1",    letterSpacing: "0.16em" }],
       },
       spacing: {
         "section-lg": "120px",

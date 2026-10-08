@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useStore } from "@/context/store";
+import { EASE_PREMIUM } from "@/lib/motionVariants";
 
 /* ── Flame-path builder (same physics as CandleSVG) ──────────────────── */
 function buildFlameD(lean: number): string {
@@ -37,10 +38,15 @@ function clamp(v: number, lo: number, hi: number) {
        = totalLean
        → flamePath  (SVG cubic-bezier d string)
        → flameSkewX (secondary tilt)
-       → glowX      (glow ellipse follows lean)
+       → glowX      (glow ellipse and bloom follow lean)
 
    Particle trail: a fixed pool of DOM nodes animated imperatively via
    WAAPI on emission — zero React re-renders in the pointer path.
+
+   No CSS filters. The flame path changes every frame, so a filter would
+   re-run over the whole candle on every frame. The candle's orange glow
+   is a baked image plus a gradient bloom, and the particles are soft
+   gradients. Each is fitted to the equivalent drop-shadow or blur.
 
    prefers-reduced-motion: renders nothing; the system cursor stays.
 ══════════════════════════════════════════════════════════════════════ */
@@ -48,13 +54,13 @@ function clamp(v: number, lo: number, hi: number) {
 const POOL_SIZE = 10;
 
 export function CustomCursor() {
-  const { cursorType } = useStore();
+  const cursorType = useStore((s) => s.cursorType);
   const isMagnetic = cursorType === "magnetic";
 
   /* ── Reduced motion — the whole flame collapses to the OS cursor ── */
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse), (max-width: 767px)");
     const sync = () => setReduced(mq.matches);
     sync();
     mq.addEventListener("change", sync);
@@ -163,16 +169,16 @@ export function CustomCursor() {
         <div
           key={i}
           ref={(el) => { poolRef.current[i] = el; }}
-          className="fixed pointer-events-none rounded-full"
+          className="fixed pointer-events-none"
           style={{
             left: -400,
             top: -400,
-            width: 7,
-            height: 9,
+            width: 18,
+            height: 22,
             opacity: 0,
+            /* A 7×9 gradient under blur(2.5px), baked into the stops */
             background:
-              "radial-gradient(ellipse at 50% 80%, rgba(255,180,40,0.38) 0%, transparent 80%)",
-            filter: "blur(2.5px)",
+              "radial-gradient(9px 10px at 50% 54.5%, rgba(255,180,40,0.14) 0%, rgba(255,180,40,0.113) 20%, rgba(255,180,40,0.062) 40%, rgba(255,180,40,0.022) 60%, rgba(255,180,40,0.005) 80%, transparent 100%)",
           }}
         />
       ))}
@@ -187,27 +193,40 @@ export function CustomCursor() {
           translateY: "-50%",
         }}
       >
-        {/* Ambient glow halo */}
+        {/* Ambient glow halo. It keeps the magnetic size (64px) and scales
+            down for the resting look, while the two tints cross-fade, so
+            only transform and opacity animate. The resting layer's glow is
+            drawn at 64px scale: 24px here reads as 14px once scaled. */}
         <motion.div
-          className="absolute rounded-full"
+          className="absolute h-16 w-16 rounded-full"
           style={{
             translateX: "-50%",
             translateY: "-50%",
             x: glowX,
             opacity: glowOpacity,
           }}
-          animate={{
-            width:      isMagnetic ? 64 : 38,
-            height:     isMagnetic ? 64 : 38,
-            background: isMagnetic
-              ? "radial-gradient(circle, rgba(212,169,106,0.28) 0%, transparent 68%)"
-              : "radial-gradient(circle, rgba(255,165,30,0.18) 0%, transparent 70%)",
-            boxShadow: isMagnetic
-              ? "0 0 28px rgba(212,169,106,0.38)"
-              : "0 0 14px rgba(255,150,20,0.22)",
-          }}
+          animate={{ scale: isMagnetic ? 1 : 38 / 64 }}
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        />
+        >
+          <motion.span
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: "radial-gradient(circle, rgba(212,169,106,0.28) 0%, transparent 68%)",
+              boxShadow: "0 0 28px rgba(212,169,106,0.38)",
+            }}
+            animate={{ opacity: isMagnetic ? 1 : 0 }}
+            transition={{ duration: 0.3, ease: EASE_PREMIUM }}
+          />
+          <motion.span
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: "radial-gradient(circle, rgba(255,165,30,0.18) 0%, transparent 70%)",
+              boxShadow: "0 0 24px rgba(255,150,20,0.22)",
+            }}
+            animate={{ opacity: isMagnetic ? 0 : 1 }}
+            transition={{ duration: 0.3, ease: EASE_PREMIUM }}
+          />
+        </motion.div>
 
         {/*
           Candle + Flame SVG — viewBox 0 0 18 56
@@ -215,9 +234,13 @@ export function CustomCursor() {
           Flame tip ≈ y=2  →  2/56 ≈ 3.57%
           transformOrigin "50% 3.57%" + translateY "-3.57%" keeps tip at cursor hotspot
           rotate "-22deg" gives the natural cursor lean
+          The candle keeps its magnetic size and scales about the tip, so
+          the hotspot never moves and only transform animates.
         */}
         <motion.svg
           viewBox="0 0 18 56"
+          width={15}
+          height={47}
           xmlns="http://www.w3.org/2000/svg"
           style={{
             skewX: flameSkewX,
@@ -227,15 +250,40 @@ export function CustomCursor() {
             position: "absolute",
             translateX: "-50%",
             translateY: "-3.57%",
-            filter: "drop-shadow(0 0 5px rgba(255,145,10,0.50))",
             overflow: "visible",
           }}
-          animate={{
-            width:  isMagnetic ? 15 : 11,
-            height: isMagnetic ? 47 : 34,
-          }}
+          animate={{ scale: isMagnetic ? 1 : 11 / 15 }}
           transition={{ type: "spring", stiffness: 380, damping: 24 }}
         >
+          {/* -- GLOW -- drop-shadow(0 0 5px rgba(255,145,10,0.5)) in two
+              parts. The image is that shadow of the wick, wax and body,
+              pre-rendered (1 texel per unit). The bloom is fitted to the
+              flame's share of it and follows the lean with the flame. */}
+          <defs>
+            <radialGradient id="cursor-flame-bloom">
+              <stop offset="0%" stopColor="rgb(255,145,10)" stopOpacity={0.064} />
+              <stop offset="10%" stopColor="rgb(255,145,10)" stopOpacity={0.06} />
+              <stop offset="20%" stopColor="rgb(255,145,10)" stopOpacity={0.051} />
+              <stop offset="30%" stopColor="rgb(255,145,10)" stopOpacity={0.039} />
+              <stop offset="40%" stopColor="rgb(255,145,10)" stopOpacity={0.026} />
+              <stop offset="50%" stopColor="rgb(255,145,10)" stopOpacity={0.016} />
+              <stop offset="60%" stopColor="rgb(255,145,10)" stopOpacity={0.009} />
+              <stop offset="70%" stopColor="rgb(255,145,10)" stopOpacity={0.004} />
+              <stop offset="80%" stopColor="rgb(255,145,10)" stopOpacity={0.002} />
+              <stop offset="100%" stopColor="rgb(255,145,10)" stopOpacity={0} />
+            </radialGradient>
+          </defs>
+          <image
+            href="/images/cursor-glow.webp"
+            x="-14" y="-4" width="46" height="76"
+            preserveAspectRatio="none"
+          />
+          <motion.ellipse
+            cx="9" cy="10.5" rx="21" ry="23"
+            fill="url(#cursor-flame-bloom)"
+            style={{ x: glowX }}
+          />
+
           {/* -- FLAME -- */}
           {/* Wide outer glow ellipse */}
           <motion.ellipse

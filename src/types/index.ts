@@ -14,6 +14,7 @@ export interface Scent {
   burnTime: string;
   price: string;
   tags: string[];
+  tagsEn: string[];
   /** Ambient page tint colour for fluid background gradient */
   ambientColor?: string;
 }
@@ -63,9 +64,14 @@ export interface StoreState {
   clearCart: () => void;
   cartTotalQty: () => number;
   cartTotalPrice: () => number;
-  /* ─── Cursor & Audio ─── */
+  /* ─── Home hero ─── */
+  heroUnderBar: boolean;
+  setHeroUnderBar: (value: boolean) => void;
+  heroActive: boolean;
+  setHeroActive: (value: boolean) => void;
+  darkStageUnderBar: boolean;
+  setDarkStageUnderBar: (value: boolean) => void;
+  /* ─── Cursor ─── */
   cursorType: "default" | "pointer" | "magnetic";
   setCursorType: (type: "default" | "pointer" | "magnetic") => void;
-  isMuted: boolean;
-  toggleMute: () => void;
 }

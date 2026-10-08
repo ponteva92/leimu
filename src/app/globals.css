@@ -12,13 +12,18 @@
   --bg-2: #EDE7DB;
   --bg-3: #E3DBCB;
   --ink: #1A1814;
-  --ink-soft: #4A463D;
-  --ink-mute: #655F4F; /* WCAG AA: 5.7:1 on --bg, 5.2:1 on --bg-2, 4.6:1 on --bg-3 (was #8C8577 ≈ 3.0:1, failed) */
+  --ink-soft: #322F28; /* AAA ≥7:1 on --bg */
+  --ink-mute: #3A362E; /* AAA ≥7:1 on --bg (was #655F4F, AA-only) */
   --line: #D8D0BF;
   --accent: #2E3D2A;   /* reserved: semantic success + deep foliage surfaces only — amber is THE brand accent */
   --accent-2: #C47A3A;
   --accent-3: #8B6F47;
   --accent-warm: #C47A3A;
+  --accent-2-text: #5A3512; /* AAA accent words on paper — never #C47A3A as long text */
+  --accent-2-on-dark: #D89456; /* AAA amber on the ink stage (7.3:1 on #16130f) */
+  --on-dark: #F7F2EA;
+  --on-dark-soft: #D6CFC2; /* AAA body copy on the ink stage (12:1 on #16130f) */
+  --plaque: #1A1814;
 
   /* ── Radius scale: none / sm / md / lg / xl (no random values) ── */
   --radius-none: 0px;
@@ -28,7 +33,7 @@
   --radius-xl: 24px;
 
   /* ── State & semantic tokens ── */
-  --accent-2-strong: #9E5C22;          /* AA text variant of --accent-2 (4.70:1 on --bg) */
+  --accent-2-strong: #5A3512;          /* AAA text variant of --accent-2 on --bg */
   --accent-2-hover:  #B86E2F;
   --accent-2-press:  #A35F26;
   --accent-2-tint:   rgba(196, 122, 58, 0.08);
@@ -65,11 +70,11 @@
   --maxw-content: 1200px;
 
   /* ── Z-scale — systemic layers only; components never invent values ── */
+  --z-rail: 40;
   --z-header: 50;
   --z-modal: 100;
   --z-grain: 110;
   --z-cursor: 120;
-  --z-preloader: 130;
 }
 
 /* ── Dark tokens — defined and ready, but OPT-IN ──────────────────────────
@@ -104,27 +109,16 @@
 
 html {
   font-size: 16px;
-  scroll-behavior: smooth;
-  scroll-padding-top: 88px; /* anchor jumps (#configurator) clear the fixed header */
+  scroll-padding-top: 88px; /* anchor jumps clear the fixed header; = HEADER_OFFSET in lib/scroll.ts */
+  scrollbar-gutter: stable; /* the modal scroll lock never shifts the layout sideways */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* Lenis smooth scroll (components/SmoothScroll.tsx). When active it adds .lenis
-   classes to <html> and drives native scroll — sticky + framer useScroll keep
-   working. The !important rule supersedes scroll-behavior:smooth above. */
-html.lenis,
-html.lenis body {
-  height: auto;
+@media (min-width: 768px) {
+  html { font-size: 17px; }
 }
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-.lenis.lenis-stopped {
-  overflow: hidden;
+@media (min-width: 1024px) {
+  html { font-size: 18px; }
 }
 
 body {
@@ -132,8 +126,8 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   font-weight: 400;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.65;
   overflow-x: hidden;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
@@ -145,10 +139,26 @@ body {
 
 .tag-mono {
   font-family: var(--font-mono);
-  font-size: 0.6875rem; /* 11px floor — labels stay legible */
-  letter-spacing: 0.18em;
+  font-size: 0.75rem; /* 12px floor — AAA labels, never faded to 0.55 */
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+/* Default label ink. This file loads after the Tailwind utilities, so a
+   plain .tag-mono colour would beat a text-[...] colour on the same
+   element. :where() drops it to zero specificity, and the a/button forms
+   (one element, as preflight's colour reset) keep links and buttons on
+   mute ink until a utility says otherwise. */
+:where(.tag-mono),
+a:where(.tag-mono),
+button:where(.tag-mono) {
   color: var(--ink-mute);
+}
+
+/* Dark glass inherits mute ink from .tag-mono. Force paper so ledger
+   labels (Tuoksu, Materiaalit, Paloaika, Hinta) stay readable. */
+.glass .tag-mono {
+  color: var(--on-dark);
 }
 
 /* Display serif — Cormorant Garamond carries both roman and true italic.
@@ -164,12 +174,18 @@ body {
 .heading-display em {
   font-style: italic;
   font-weight: 500;
-  color: var(--accent-2);
+  color: inherit; /* One italic word; amber is a seal, not a sentence */
+}
+
+.accent-word {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent-2-text);
 }
 
 /* ─── Global type hierarchy & layout rhythm ─────────────────────────────── */
 .heading-display,
-h1, h2 { text-wrap: balance; }                                /* no orphan words on headlines */
+h1, h2 { text-wrap: pretty; overflow-wrap: break-word; }
 p { text-wrap: pretty; }                                       /* nicer ragging, fewer orphans */
 .tag-mono, .font-mono { font-variant-numeric: tabular-nums; }  /* figures line up */
 
@@ -208,35 +224,83 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
   );
 }
 
+/* Sheet seam — a warm hairline along the top edge of a paper sheet that
+   rises over a pinned stage (the home hero, the craft film, the gift
+   ceremony). No display value here, so a `hidden` utility can switch it
+   off. */
+.sheet-seam {
+  position: absolute;
+  inset-inline: 0;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(26, 24, 20, 0.12) 25%,
+    rgba(196, 122, 58, 0.28) 50%,
+    rgba(26, 24, 20, 0.12) 75%,
+    transparent
+  );
+}
+
 /* ─── Ultra-premium glass ───────────────────────────────────────────
    One canonical recipe. Used on floating panels and modals that sit over
    imagery or a dark scrim, so white/90 text stays legible. blur = 40px.  */
 .glass {
-  background: rgba(0, 0, 0, 0.10);
-  backdrop-filter: blur(40px) saturate(1.4);
-  -webkit-backdrop-filter: blur(40px) saturate(1.4);
-  color: rgba(255, 255, 255, 0.90);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.04),
+  background: rgba(20, 17, 13, 0.88);
+  backdrop-filter: blur(40px) saturate(1.2);
+  -webkit-backdrop-filter: blur(40px) saturate(1.2);
+  color: var(--on-dark);
+  border: 1px solid rgba(247, 242, 234, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
               0 24px 80px rgba(0, 0, 0, 0.45);
 }
 
+/* Opaque caption — type never sits on pixels. Layered as a component so a
+   call site's padding utilities win over the default padding. */
+@layer components {
+  .caption-plaque {
+    background: var(--plaque);
+    color: var(--on-dark);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1.1rem;
+  }
+}
+
+.paper-well {
+  background: var(--bg-2);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
 /* ─── Organic grain (whole-site, fixed) ─────────────────────────────
-   A seamless fractal-noise tile via mix-blend-overlay at a whisper of
-   opacity — reads as paper/linen tooth, never as a digital artefact.    */
+   A seamless fractal-noise tile of black and white specks. A speck's
+   alpha grows with the noise's distance from mid-grey, so black specks
+   show on paper and white ones on the ink stage. At under one 8-bit
+   level of spread it reads as paper/linen tooth, never as a digital
+   artefact. Normal blending keeps it a plain composited layer; an
+   overlay blend would make the compositor copy the whole backdrop every
+   frame. */
 .grain-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-grain);
   pointer-events: none;
-  mix-blend-mode: overlay;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' filterUnits='userSpaceOnUse' x='0' y='0' width='200' height='200' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3CfeFuncG type='discrete' tableValues='0 1'/%3E%3CfeFuncB type='discrete' tableValues='0 1'/%3E%3CfeFuncA type='table' tableValues='1 0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .grain-overlay { opacity: 0.04; }
-}
+
+/* ─── Smooth scroll (Lenis, see lib/scroll.ts) ─────────────────────
+   Lenis writes native scrollTop every frame, so CSS smooth scrolling
+   would fight it. There is deliberately no `.lenis-stopped { overflow:
+   hidden }`: an overflow value on <html> unpins every sticky stage, so
+   lockScroll() locks <body> instead. */
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-scrolling iframe { pointer-events: none; }
 
 /* ─── Scrollbar ─────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
@@ -268,6 +332,13 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
   border-radius: 2px;
 }
 
+/* A section an in-page link landed on (landOn in lib/scroll.ts) holds focus
+   only as the starting point for the next Tab. It is not a control, so it
+   draws no ring around a whole chapter. */
+[data-landing]:focus {
+  outline: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    MOTION LAYER — one grammar (var(--ease-out) = EASE_PREMIUM).
    Each rule earns its place: feedback, hierarchy, or state change.
@@ -276,19 +347,11 @@ p { text-wrap: pretty; }                                       /* nicer ragging,
 /* Interactive elements share the house curve by default. */
 a, button { transition-timing-function: var(--ease-out); }
 
-/* Index rows (ScentIndex, tarina lists): hover slide = "this row is live". */
-.material-row {
-  transition: padding-left 0.35s var(--ease-out);
-}
-.material-row:hover {
-  padding-left: 2rem;
-}
-
-/* Input focus: state change made visible. */
+/* Input focus: state change made visible. The border colour eases; the
+   focus ring snaps on, since box-shadow is not a property we animate. */
 input,
 textarea {
-  transition: border-color 0.3s ease,
-              box-shadow   0.3s var(--ease-out);
+  transition: border-color 0.3s var(--ease-out);
 }
 input:focus-visible,
 textarea:focus-visible {
@@ -297,27 +360,30 @@ textarea:focus-visible {
   box-shadow: 0 0 0 3.5px rgba(196, 122, 58, 0.18);
 }
 
-/* Footer link underline: slide-in feedback. */
-footer a {
+/* Footer link underline: slide-in feedback. Scoped so wordmark/social stay clean. */
+footer .footer-link {
   position: relative;
   display: inline-block;
   text-decoration: none;
-  transition: color 0.28s ease;
+  transition: color 0.28s var(--ease-out);
 }
-footer a::after {
+footer .footer-link::after {
   content: '';
   position: absolute;
   bottom: -1px;
   left: 0;
-  width: 0%;
+  width: 100%;
   height: 1px;
   background: currentColor;
-  opacity: 0.55;
-  transition: width 0.38s var(--ease-out);
+  opacity: 0.7;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.38s var(--ease-out);
 }
-footer a:hover::after { width: 100%; }
+footer .footer-link:hover::after,
+footer .footer-link:focus-visible::after { transform: scaleX(1); }
 
-/* Header nav link underline. */
+/* Header nav link underline — drawn with transform, never width. */
 header nav a {
   position: relative;
 }
@@ -326,16 +392,19 @@ header nav a::after {
   position: absolute;
   bottom: -3px;
   left: 0;
-  width: 0%;
+  width: 100%;
   height: 1px;
-  background: var(--ink);
-  transition: width 0.32s var(--ease-out);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s var(--ease-out);
 }
-header nav a:hover::after { width: 100%; }
+header nav a:hover::after,
+header nav a:focus-visible::after { transform: scaleX(1); }
 
 /* ═══════════════════════════════════════════════════════
    TARINA HERO ROTATE-REVEAL — .t1 / .t2 heading lines
-   (used by app/tarina/TarinaClient.tsx; house curve, not linear)
+   (used by components/tarina/OriginChapter.tsx; house curve, not linear)
 ═══════════════════════════════════════════════════════ */
 @keyframes hero-fadein {
   from { opacity: 0; }
@@ -369,8 +438,6 @@ header nav a:hover::after { width: 100%; }
 
 /* ── Reduced motion — movement collapses, comprehension stays ── */
 @media (prefers-reduced-motion: reduce) {
-  .material-row,
-  .material-row:hover { padding-left: 0; transition: none; }
   .t1, .t2 {
     animation-name: hero-fadein;
     animation-duration: 0.5s;

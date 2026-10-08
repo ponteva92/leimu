@@ -11,9 +11,28 @@
    canvas lets the warm hero background show through.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useState } from "react";
+import Image from "next/image";
 import { Canvas } from "@react-three/fiber";
 import { CandleScene } from "./CandleScene";
+import { SafeWebGL } from "@/components/SafeWebGL";
+import { ShaderWarmup } from "@/components/ShaderWarmup";
+import { useStore } from "@/context/store";
+
+function CandleFallback() {
+  return (
+    <div className="absolute inset-0 flex items-end justify-center pb-[6%]">
+      <Image
+        src="/images/hero-candle-black.png"
+        alt=""
+        width={720}
+        height={960}
+        className="h-[88%] w-auto object-contain"
+        priority
+      />
+    </div>
+  );
+}
 
 export default function CandleCanvas({
   isMobile,
@@ -24,31 +43,32 @@ export default function CandleCanvas({
   reducedMotion: boolean;
   onReady?: () => void;
 }) {
-  // Ensure the canvas measures its container after the dynamic chunk mounts.
-  useEffect(() => {
-    const fire = () => window.dispatchEvent(new Event("resize"));
-    const raf = requestAnimationFrame(fire);
-    const timer = setTimeout(fire, 150);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(timer);
-    };
-  }, []);
+  // False once the hero is covered: the render loop parks on its last frame.
+  const active = useStore((s) => s.heroActive);
+  // The loop waits until the shaders are built (ShaderWarmup).
+  const [compiled, setCompiled] = useState(false);
 
+  // Textured quads gain nothing from MSAA, and dpr stops at 1.5 to bound
+  // the per-pixel cost of the flame and heat-haze shaders. The canvas
+  // re-measures only when its box resizes, never on scroll, and by offset
+  // size, which CSS transforms leave alone.
   return (
     <div className="absolute inset-0">
-      <Canvas
-        dpr={[1, 1.75]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        camera={{ fov: 32, position: [0, 0, 8], near: 0.1, far: 50 }}
-        frameloop="always"
-        resize={{ offsetSize: true }}
-        style={{ width: "100%", height: "100%", display: "block" }}
-      >
-        <Suspense fallback={null}>
-          <CandleScene isMobile={isMobile} reducedMotion={reducedMotion} onReady={onReady} />
-        </Suspense>
-      </Canvas>
+      <SafeWebGL fallback={<CandleFallback />}>
+        <Canvas
+          dpr={[1.25, 1.5]}
+          gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+          camera={{ fov: 32, position: [0, 0, 8], near: 0.1, far: 50 }}
+          frameloop={active && compiled ? "always" : "never"}
+          resize={{ scroll: false, offsetSize: true }}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          <Suspense fallback={null}>
+            <CandleScene isMobile={isMobile} reducedMotion={reducedMotion} onReady={onReady} />
+            <ShaderWarmup onReady={setCompiled} />
+          </Suspense>
+        </Canvas>
+      </SafeWebGL>
     </div>
   );
 }
