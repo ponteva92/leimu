@@ -33,3 +33,5 @@ next-env.d.ts
 
 # local agent / editor state
 .claude/
+/artifacts/mobile-parity/
+/artifacts/redesign/

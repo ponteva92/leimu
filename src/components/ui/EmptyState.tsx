@@ -4,17 +4,21 @@
    candle shop) plus a message. Looping, but only while the empty state is on
    screen; static under reduced motion. */
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 
 export function EmptyState({ message, className = "" }: { message: string; className?: string }) {
   const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const visible = useInView(ref);
+  const still = reduced || !visible;
 
   return (
-    <div className={`flex flex-col items-center justify-center gap-4 py-8 text-center ${className}`}>
+    <div ref={ref} className={`flex flex-col items-center justify-center gap-4 py-8 text-center ${className}`}>
       <motion.svg
         width="30" height="42" viewBox="0 0 30 42" fill="none" aria-hidden="true"
-        animate={reduced ? undefined : { y: [0, -1.5, 0] }}
-        transition={reduced ? undefined : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        animate={still ? { y: 0 } : { y: [0, -1.5, 0] }}
+        transition={still ? { duration: 0 } : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
       >
         {/* candle body */}
         <rect x="10" y="17" width="10" height="23" rx="2" fill="var(--bg-3)" stroke="var(--line)" strokeWidth="1" />
@@ -24,9 +28,9 @@ export function EmptyState({ message, className = "" }: { message: string; class
         <motion.path
           d="M15 4c2.4 2.6 3.6 4.7 3.6 6.8a3.6 3.6 0 0 1-7.2 0C11.4 8.7 12.6 6.6 15 4z"
           fill="var(--accent-2)"
-          style={{ transformBox: "fill-box", transformOrigin: "center bottom" }}
-          animate={reduced ? undefined : { scaleY: [1, 1.12, 0.95, 1], opacity: [0.85, 1, 0.8, 0.85] }}
-          transition={reduced ? undefined : { duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformBox: "fill-box", transformOrigin: "center bottom", opacity: 1 }}
+          animate={still ? { scaleY: 1, opacity: 1 } : { scaleY: [1, 1.12, 0.95, 1], opacity: [0.85, 1, 0.8, 0.85] }}
+          transition={still ? { duration: 0 } : { duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
         />
       </motion.svg>
       <p className="font-serif italic text-sm text-[var(--ink-mute)]">{message}</p>

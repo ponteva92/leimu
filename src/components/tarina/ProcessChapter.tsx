@@ -17,8 +17,8 @@
    pulls up over the stage while it recedes. Short screens (under 720
    tall) get flatter photos and tighter gaps, so the cards still fit.
 
-   Smaller screens and reduced motion get the steps as a vertical
-   timeline whose thread fills as the list scrolls past.
+   Phones keep the horizontal journey with one complete step per screen.
+   Reduced motion gets a vertical timeline whose thread fills as read.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +29,8 @@ import {
 } from "framer-motion";
 import { useStore } from "@/context/store";
 import { PROCESS_STEPS, type ProcessStep } from "@/lib/process";
+import { useMediaQuery, useMotionLayout } from "@/lib/pin";
+import { COMPACT_STAGE_QUERY } from "@/lib/screens";
 import { coverStart, trackVars, type Span } from "@/lib/timeline";
 import { DrawnRule } from "@/components/DrawnRule";
 import { StepTitle } from "@/components/story/StepTitle";
@@ -148,7 +150,7 @@ function StageStep({ step, index, lang, travel, eager }: {
   const light = useTransform(travel, lit(index), [0, 1]);
 
   return (
-    <li className="flex w-[var(--card)] shrink-0 flex-col">
+    <li className="tarina-process-step flex w-[var(--card)] shrink-0 flex-col">
       {/* The paper behind the numeral hides the thread where it passes. */}
       <div aria-hidden="true" className="flex h-10 items-center">
         <span className="relative bg-[var(--bg)] pr-4 font-serif text-4xl italic leading-none text-[var(--line)]">
@@ -164,13 +166,13 @@ function StageStep({ step, index, lang, travel, eager }: {
       <StepPhoto
         step={step}
         eager={eager}
-        className="mt-4 aspect-[3/2] [@media(max-height:719px)]:aspect-[16/9]"
+        className="tarina-process-photo mt-4 aspect-[3/2] [@media(max-height:719px)]:aspect-[16/9]"
       />
       <StepText
         step={step}
         lang={lang}
         title="text-2xl"
-        className="mt-6 [@media(max-height:719px)]:mt-4"
+        className="tarina-process-text mt-6 [@media(max-height:719px)]:mt-4"
       />
     </li>
   );
@@ -197,6 +199,13 @@ function Stage({ lang }: { lang: Lang }) {
   const fillRef = useRef<HTMLDivElement>(null);
   const { p } = useTrackProgress(trackRef, TRACK_SVH);
   const travel = useTransform(p, TRAVEL, [0, 1]);
+  const compact = useMediaQuery(COMPACT_STAGE_QUERY);
+  // Mobile's introduction occupies exactly one card, so the active step
+  // starts counting only after it has passed. Each following card then
+  // reaches the same reading position at its numeral's lighting window.
+  const stepTravel = useTransform(travel, (t) => compact
+    ? Math.max(0, Math.min(1, (t * (LAST + 1) - 1) / LAST))
+    : t);
   // How far the row travels: its overhang past the stage's content box.
   const shift = useMotionValue(0);
   const x = useTransform([travel, shift], ([t, s]: number[]) => -t * s);
@@ -213,32 +222,40 @@ function Stage({ lang }: { lang: Lang }) {
     if (!view || !row) return;
     // Layout widths ignore transforms, so the travel and the recede don't
     // feed back. A hidden stage measures zero and never travels.
-    const measure = () => shift.set(Math.max(0, row.offsetWidth - view.clientWidth));
+    const measure = () => {
+      // A compact stage may also be a wide, short desktop window. Use the
+      // actual content width rather than 100vw, which can exceed max-w-7xl.
+      const width = `${view.clientWidth}px`;
+      if (view.style.getPropertyValue("--process-card-width") !== width) {
+        view.style.setProperty("--process-card-width", width);
+      }
+      shift.set(Math.max(0, row.offsetWidth - view.clientWidth));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(view);
     observer.observe(row);
     return () => observer.disconnect();
-  }, [shift]);
+  }, [shift, compact]);
 
   return (
     <div
       ref={trackRef}
       data-pin-rest={0}
-      className="relative hidden stage:block stage:h-[var(--track)]"
+      className="story-track tarina-process-track relative hidden stage:block stage:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
       {/* Clip, not hidden: a clipped box can't be scrolled sideways by a
           find-in-page or a focus jump. Hidden is the fallback. */}
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden overflow-clip pb-6 pt-20">
+      <div className="story-stage tarina-process-stage sticky top-0 flex h-[100svh] items-center overflow-hidden overflow-clip pb-6 pt-20">
         <motion.div
           ref={gridRef}
-          className="mx-auto w-full max-w-7xl origin-top px-10"
+          className="tarina-process-grid mx-auto w-full max-w-7xl origin-top px-10"
           style={{ scale: recede }}
         >
           <div ref={viewRef}>
-            <motion.div ref={rowRef} className="flex w-max items-center gap-24" style={{ x }}>
-              <header className="flex w-[26rem] shrink-0 flex-col gap-6">
+            <motion.div ref={rowRef} className="tarina-process-row flex w-max items-center gap-24" style={{ x }}>
+              <header className="tarina-process-intro flex w-[26rem] shrink-0 flex-col gap-6">
                 <h2 className="heading-display text-6xl text-[var(--ink)]">
                   <Heading lang={lang} />
                 </h2>
@@ -247,7 +264,7 @@ function Stage({ lang }: { lang: Lang }) {
                 </p>
               </header>
 
-              <div className="relative [--card:clamp(18rem,40svh,24rem)]">
+              <div className="tarina-process-cards relative [--card:clamp(18rem,40svh,24rem)]">
                 {/* Numeral to numeral: it ends where the last card begins. */}
                 <div
                   aria-hidden="true"
@@ -256,17 +273,17 @@ function Stage({ lang }: { lang: Lang }) {
                   <motion.div
                     ref={fillRef}
                     className="absolute inset-0 origin-left bg-[var(--accent-2)]"
-                    style={{ scaleX: travel }}
+                    style={{ scaleX: stepTravel }}
                   />
                 </div>
-                <ol className="relative flex gap-16">
+                <ol className="tarina-process-list relative flex gap-16">
                   {PROCESS_STEPS.map((step, i) => (
                     <StageStep
                       key={step.num}
                       step={step}
                       index={i}
                       lang={lang}
-                      travel={travel}
+                      travel={stepTravel}
                       eager={near}
                     />
                   ))}
@@ -274,7 +291,7 @@ function Stage({ lang }: { lang: Lang }) {
               </div>
             </motion.div>
           </div>
-          <StepCounter travel={travel} lang={lang} />
+          <StepCounter travel={stepTravel} lang={lang} />
         </motion.div>
       </div>
     </div>
@@ -335,11 +352,12 @@ function Flow({ lang }: { lang: Lang }) {
 
 export function ProcessChapter() {
   const lang = useStore((s) => s.lang);
+  const layout = useMotionLayout();
 
   return (
     <section id="polku" aria-label={COPY.label[lang]} data-tone="light">
-      <Stage lang={lang} />
-      <Flow lang={lang} />
+      {layout !== false && <Stage lang={lang} />}
+      {layout !== true && <Flow lang={lang} />}
     </section>
   );
 }

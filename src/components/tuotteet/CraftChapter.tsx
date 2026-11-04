@@ -10,8 +10,8 @@
    The film stays put on the left while the facts crossfade beside it,
    each with the paragraph it stands for, and an amber hairline keeps the
    place. Over the last 40svh the gift sheet pulls up over the stage while
-   it recedes. Smaller screens and reduced motion get the same content in
-   normal flow.
+   it recedes. Phones hold the film above the same fact beats; reduced
+   motion keeps the content in normal flow.
 
    The film loads a viewport ahead and plays only while it can be seen.
    Under reduced motion it holds its first frame until the reader presses
@@ -26,7 +26,8 @@ import {
 } from "framer-motion";
 import { Pause, Play } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
-import { REDUCE_QUERY, useMediaQuery } from "@/lib/pin";
+import { REDUCE_QUERY, useMediaQuery, useMotionLayout } from "@/lib/pin";
+import { COMPACT_STAGE_QUERY } from "@/lib/screens";
 import { beatWindows, coverStart, trackVars } from "@/lib/timeline";
 import {
   fadeUpItem, headingCinematic, staggerCinematic, VIEWPORT_NEAR,
@@ -236,7 +237,7 @@ function CraftFilm({
         />
       </motion.div>
 
-      <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3">
+      <div className="product-film-controls absolute inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3">
         <span className="caption-plaque px-3 py-2 font-mono text-[12px] uppercase tracking-[0.16em]">
           Oulu · Studio
         </span>
@@ -262,6 +263,11 @@ function CraftFilm({
 function Stage({ lang, playback }: { lang: Lang; playback: Playback }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const compact = useMediaQuery(COMPACT_STAGE_QUERY);
+  // Compact copy participates directly in the layout grid through
+  // display:contents. Its own box cannot be observed, so the real grid
+  // starts its children's entrance while desktop keeps its original trigger.
+  const gridInView = useInView(gridRef, VIEWPORT_NEAR);
   const settleRef = useRef<HTMLDivElement>(null);
   const { approach, p, leave } = useTrackProgress(trackRef, TRACK_SVH);
   // The stage's approach, before it pins: the film settles in.
@@ -284,22 +290,22 @@ function Stage({ lang, playback }: { lang: Lang; playback: Playback }) {
     <div
       ref={trackRef}
       data-pin-rest={0}
-      className="relative hidden stage:block stage:h-[var(--track)]"
+      className="story-track product-craft-track relative hidden stage:block stage:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
-      <div className="sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
+      <div className="story-stage product-craft-stage sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
         <motion.div
           ref={gridRef}
-          className="mx-auto grid w-full max-w-7xl origin-top grid-cols-[auto_minmax(0,36rem)] items-center justify-center gap-16 px-10 xl:gap-28"
+          className="product-craft-layout mx-auto grid w-full max-w-7xl origin-top grid-cols-[auto_minmax(0,36rem)] items-center justify-center gap-16 px-10 xl:gap-28"
           style={{ scale: recede }}
         >
           {/* The frame's height sets its width through the film's ratio. */}
-          <div className="paper-well">
+          <div className="product-craft-well paper-well">
             <CraftFilm
               lang={lang}
               playback={playback}
               sizes="44vh"
-              className="h-[min(78svh,calc(100svh-11rem))]"
+              className="product-craft-visual h-[min(78svh,calc(100svh-11rem))]"
               active={active}
               parked={parked}
               settle={settle}
@@ -308,10 +314,11 @@ function Stage({ lang, playback }: { lang: Lang; playback: Playback }) {
           </div>
 
           <motion.div
-            className="flex flex-col gap-8"
+            className="product-craft-copy flex flex-col gap-8"
             variants={staggerCinematic}
             initial="hidden"
-            whileInView="visible"
+            animate={compact ? (gridInView ? "visible" : "hidden") : undefined}
+            whileInView={compact ? undefined : "visible"}
             viewport={VIEWPORT_NEAR}
           >
             <motion.p variants={fadeUpItem} className="tag-mono">
@@ -324,7 +331,7 @@ function Stage({ lang, playback }: { lang: Lang; playback: Playback }) {
               <CraftHeading lang={lang} />
             </motion.h2>
 
-            <motion.div variants={fadeUpItem} className="grid">
+            <motion.div variants={fadeUpItem} className="product-craft-facts grid">
               {FACTS[lang].map((fact, k) => (
                 <Crossfade key={fact.value} p={p} arrive={wipe(k - 1)} leave={wipe(k)}>
                   <Figure fact={fact} />
@@ -358,9 +365,9 @@ function Flow({ lang, playback }: { lang: Lang; playback: Playback }) {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-24 md:px-10 stage:hidden">
-      <div className="grid items-center gap-12 md:grid-cols-2 md:gap-20">
-        <div className="paper-well mx-auto w-full max-w-[340px] md:mx-0">
-          <CraftFilm lang={lang} playback={playback} sizes="340px" />
+      <div className="product-craft-flow grid items-center gap-12 md:grid-cols-2 md:gap-20">
+        <div className="product-craft-flow-well paper-well mx-auto w-full max-w-[340px] md:mx-0">
+          <CraftFilm lang={lang} playback={playback} sizes="(max-width: 767px) 340px, 45vw" className="product-craft-flow-film" />
         </div>
 
         <motion.div
@@ -404,6 +411,7 @@ function Flow({ lang, playback }: { lang: Lang; playback: Playback }) {
 export function CraftChapter() {
   const lang = useStore((s) => s.lang);
   const reduce = useMediaQuery(REDUCE_QUERY);
+  const motionLayout = useMotionLayout();
   // Once the reader presses the control, their choice wins over the
   // motion preference.
   const [choice, setChoice] = useState<boolean | null>(null);
@@ -414,8 +422,8 @@ export function CraftChapter() {
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         <DrawnRule />
       </div>
-      <Stage lang={lang} playback={playback} />
-      <Flow lang={lang} playback={playback} />
+      {motionLayout !== false && <Stage lang={lang} playback={playback} />}
+      {motionLayout !== true && <Flow lang={lang} playback={playback} />}
     </section>
   );
 }

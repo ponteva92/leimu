@@ -2,11 +2,11 @@
    has no imports and no "use client", so tailwind.config.ts can load it
    with a plain relative import. */
 
-/** Where scroll stages pin: motion allowed, and a viewport wide and tall
-    enough to hold a stage's copy beside its picture. Tailwind's `stage:`
-    variant and `useStaged()` both read this one string, so the CSS layout
-    and the scroll choreography always agree. Elsewhere chapters run in
-    normal flow. */
-export const STAGE_QUERY =
-  "(prefers-reduced-motion: no-preference) and (min-width: 1024px) and (min-height: 720px), " +
-  "(prefers-reduced-motion: no-preference) and (min-width: 1280px) and (min-height: 640px)";
+/** CSS and React select the same storytelling layout. Compact geometry
+    changes composition; only reduced motion selects the flow version. */
+export const STAGE_QUERY = "(prefers-reduced-motion: no-preference)";
+
+/** The complement of the original desktop stage geometry, including a
+    phone rotated to landscape and wide but short browser windows. */
+export const COMPACT_STAGE_QUERY =
+  "(max-width: 1023px), (max-width: 1279px) and (max-height: 719px), (max-height: 639px)";

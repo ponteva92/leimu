@@ -4,23 +4,26 @@
    LEIMU — Tuotteet still life (chapter "Asetelma")
    ------------------------------------------------------------------------
    Left: the page's h1 and its promise. Right: the products photo. On
-   desktop it melts out of dark wax on load (R3F); the plain photograph
+   every WebGL-capable device it melts out of dark wax on load (R3F); the plain photograph
    beneath is always the first paint.
 
-   Pinned (md+, motion allowed): a 200svh track holds a 100svh sticky stage.
+   Pinned (motion allowed): a stable 200svh track holds a sticky stage.
    From 20 to 50svh of scroll the photo dims toward dusk, and the body turns
    from how to order to how each candle is made. On a desktop the canvas
    dims the photo while its wax seals keep glowing; a tablet has no canvas,
    so an ink veil dims it instead. Over the last 40svh the scents sheet
-   pulls up over the stage while it recedes. Phones and reduced motion get
-   the same content in normal flow.
+   pulls up over the stage while it recedes. Phone copy uses shorter beats
+   beneath the picture; reduced motion keeps the content in normal flow.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
+import Link from "next/link";
+import { ArrowRight } from "@phosphor-icons/react";
 import { motion, useTransform } from "framer-motion";
 import { useStore } from "@/context/store";
 import { EASE_PREMIUM } from "@/lib/motionVariants";
-import { FINE_QUERY, REDUCE_QUERY, useMediaQuery, usePinned } from "@/lib/pin";
+import { REDUCE_QUERY, useMediaQuery, usePinned } from "@/lib/pin";
+import { webglAvailable } from "@/lib/webgl";
 import { beatWindows, coverStart, trackVars } from "@/lib/timeline";
 import { LogoMark } from "@/components/LogoMark";
 import { SafeWebGL } from "@/components/SafeWebGL";
@@ -28,6 +31,7 @@ import { Crossfade } from "@/components/story/Crossfade";
 import { useCoverRecede, useStageShown, useTrackProgress, useWillChange } from "@/components/story/hooks";
 import type { HeroImageCanvasProps } from "./HeroImageCanvas";
 import { HeroPhoto } from "./HeroPhoto";
+import "./products-mobile.css";
 
 const TRACK_SVH = 200;
 /** How far the scents sheet pulls up over the stage. */
@@ -35,6 +39,7 @@ export const COVER_SVH = 40;
 const COVER_START = coverStart(TRACK_SVH, COVER_SVH);
 /* One wipe: the photo dims and the body turns over the same stretch. */
 const wipe = beatWindows(1, { head: 0.2, tail: 0.5, fill: 1 });
+const mobileWipe = beatWindows(3, { head: 0.08, tail: 0.28, fill: 0.65 });
 
 const BODY = "w-full max-w-md text-base leading-relaxed text-[var(--ink-soft)] [text-wrap:wrap]";
 
@@ -63,13 +68,14 @@ export function StillLifeChapter() {
   const lang = useStore((s) => s.lang);
   const t = COPY[lang] ?? COPY.fi;
 
-  // Three.js never ships on the server or to a phone: the canvas chunk
-  // loads only once a fine-pointer desktop is confirmed.
-  const desktop = useMediaQuery(FINE_QUERY);
+  // Input capability changes the interaction, never the availability of
+  // the living photograph. The server image remains beneath the canvas.
+  const [webgl, setWebgl] = useState(false);
   const still = useMediaQuery(REDUCE_QUERY);
   const [Canvas, setCanvas] = useState<ComponentType<HeroImageCanvasProps> | null>(null);
   useEffect(() => {
-    if (!desktop) return;
+    if (!webglAvailable()) return;
+    setWebgl(true);
     let cancelled = false;
     import("./HeroImageCanvas").then((mod) => {
       if (!cancelled) setCanvas(() => mod.default);
@@ -77,7 +83,7 @@ export function StillLifeChapter() {
     return () => {
       cancelled = true;
     };
-  }, [desktop]);
+  }, []);
 
   const pinned = usePinned();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -102,19 +108,19 @@ export function StillLifeChapter() {
     <div
       ref={trackRef}
       id="asetelma"
-      className="relative md:motion-safe:h-[var(--track)]"
+      className="story-track product-still-track relative motion-safe:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
       <section
         data-tone="light"
         aria-label={t.eyebrow}
-        className="relative z-0 flex min-h-[100svh] items-center overflow-hidden bg-[var(--bg)] md:motion-safe:sticky md:motion-safe:top-0 md:motion-safe:h-[100svh] md:motion-safe:min-h-0"
+        className="story-stage product-still-stage relative z-0 flex min-h-[100svh] items-center overflow-hidden bg-[var(--bg)] motion-safe:sticky motion-safe:top-0 motion-safe:h-[100svh] motion-safe:min-h-0"
       >
         <motion.div ref={recedeRef} className="relative z-10 w-full" style={{ scale: recede }}>
-          <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 items-center gap-10 px-6 pt-28 pb-16 md:grid-cols-2 md:gap-14 md:px-10 md:py-0">
+          <div className="product-still-layout mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 items-center gap-10 px-6 pt-28 pb-16 md:grid-cols-2 md:gap-14 md:px-10 md:py-0">
             <motion.div
-              className="order-2 flex min-w-0 flex-col gap-6 md:order-1"
-              initial={{ opacity: 0, y: 24 }}
+              className="product-still-copy order-2 flex min-w-0 flex-col gap-6 md:order-1"
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, ease: EASE_PREMIUM, delay: 0.15 }}
             >
@@ -127,7 +133,7 @@ export function StillLifeChapter() {
                 <span className="block overflow-hidden pb-[0.05em]">
                   <motion.span
                     className="block text-2xl font-light tracking-tight text-[var(--ink-soft)] md:text-3xl"
-                    initial={{ y: "115%", scale: 1.04 }}
+                    initial={false}
                     animate={{ y: "0%", scale: 1 }}
                     transition={{ duration: 1.0, ease: EASE_PREMIUM, delay: 0.25 }}
                   >
@@ -137,7 +143,7 @@ export function StillLifeChapter() {
                 <span className="mt-1 block overflow-hidden pb-[0.08em]">
                   <motion.span
                     className="block text-[clamp(2.4rem,12vw,6rem)] italic md:text-8xl"
-                    initial={{ y: "115%", scale: 1.04 }}
+                    initial={false}
                     animate={{ y: "0%", scale: 1 }}
                     transition={{ duration: 1.15, ease: EASE_PREMIUM, delay: 0.42 }}
                   >
@@ -146,9 +152,17 @@ export function StillLifeChapter() {
                 </span>
               </h1>
 
+              <div className="product-hero-actions" data-order-entry>
+                <p className="product-hero-offer">{lang === "fi" ? "Alkaen 9\u00a0€ · lahjapussi ja oma viesti mukana" : "From 9\u00a0€ · gift bag and your message included"}</p>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                  <Link href="#configurator" className="button-ink">{lang === "fi" ? "Kokoa oma LEIMU" : "Build your LEIMU"}<ArrowRight size={15} aria-hidden="true" /></Link>
+                  <a href="#tuoksut" className="text-link"><span className="product-scent-full">{lang === "fi" ? "Tutustu tuoksuihin" : "Explore the scents"}</span><span className="product-scent-short">{lang === "fi" ? "Tuoksut" : "Scents"}</span></a>
+                </div>
+              </div>
+
               {/* Pinned: how to order, then how each candle is made, in one
                   cell. In flow the two read as one paragraph. */}
-              <div className="hidden md:motion-safe:grid">
+              <div className="product-still-desktop-beats hidden motion-safe:grid">
                 <Crossfade p={p} arrive={wipe(-1)} leave={wipe(0)}>
                   <p className={BODY}>{t.lead}</p>
                 </Crossfade>
@@ -156,23 +170,30 @@ export function StillLifeChapter() {
                   <p className={BODY}>{t.craft}</p>
                 </Crossfade>
               </div>
-              <p className={`${BODY} md:motion-safe:hidden`}>
+              <div className="product-still-beats hidden">
+                {[t.lead, ...splitCraft(t.craft)].map((text, i) => (
+                  <Crossfade key={i} p={p} arrive={mobileWipe(i - 1)} leave={mobileWipe(i)}>
+                    <p className={BODY}>{text}</p>
+                  </Crossfade>
+                ))}
+              </div>
+              <p className={`${BODY} motion-safe:hidden`}>
                 {t.lead} {t.craft}
               </p>
             </motion.div>
 
             {/* The page's largest paint: it shows at once, with no entrance. */}
             <div
-              className="relative order-1 h-[46svh] min-h-[300px] w-full overflow-hidden rounded-3xl border border-[var(--line)] md:order-2 md:h-[min(78svh,calc(100svh-9.5rem))]"
+              className="product-still-visual relative order-1 h-[46svh] min-h-[300px] w-full overflow-hidden rounded-3xl border border-[var(--line)] md:order-2 md:h-[min(78svh,calc(100svh-9.5rem))]"
               style={{ boxShadow: "0 30px 80px -34px rgba(26,24,20,0.55)" }}
             >
               <HeroPhoto alt={t.alt} />
-              {Canvas && desktop && (
+              {Canvas && webgl && (
                 <SafeWebGL fallback={null}>
                   <Canvas dusk={dusk} active={active} still={still} />
                 </SafeWebGL>
               )}
-              {pinned && !desktop && (
+              {pinned && (!webgl || !Canvas) && (
                 <motion.div
                   ref={veilRef}
                   aria-hidden="true"
@@ -186,4 +207,20 @@ export function StillLifeChapter() {
       </section>
     </div>
   );
+}
+
+/** Preserve every word while balancing three short craft beats inside
+ * the phone stage. No sentence is hidden or ellipsized to make it fit. */
+function splitCraft(text: string) {
+  const target = Math.ceil(text.length / 3);
+  const beats: string[] = [];
+  let beat = "";
+  for (const word of text.split(/\s+/)) {
+    if (beat && beat.length + word.length + 1 > target && beats.length < 2) {
+      beats.push(beat);
+      beat = word;
+    } else beat += `${beat ? " " : ""}${word}`;
+  }
+  if (beat) beats.push(beat);
+  return beats;
 }

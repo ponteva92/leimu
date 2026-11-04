@@ -16,6 +16,16 @@ export type Span = [number, number];
 export const trackVars = (trackSvh: number) => ({ "--track": `${trackSvh}svh` }) as CSSProperties;
 export const coverVars = (coverSvh: number) => ({ "--cover": `${coverSvh}svh` }) as CSSProperties;
 
+/** Navigation and keyboard focus use the same stable scroll distance as
+    useTrackProgress, even while mobile browser chrome changes dvh. */
+export function trackScrollRange(track: HTMLElement) {
+  const units = parseFloat(getComputedStyle(track).getPropertyValue("--track"));
+  const height = track.offsetHeight;
+  const stage = units > 100 ? height * 100 / units :
+    track.querySelector<HTMLElement>(".story-stage")?.offsetHeight ?? window.innerHeight;
+  return Math.max(0, height - stage);
+}
+
 /** Progress at which the next sheet starts to cover the stage. */
 export function coverStart(trackSvh: number, coverSvh: number, stageSvh = 100) {
   return 1 - coverSvh / (trackSvh - stageSvh);

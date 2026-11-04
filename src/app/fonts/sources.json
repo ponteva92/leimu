@@ -1,0 +1,114 @@
+{
+  "retrieved": "2026-11-02",
+  "unicodeRanges": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0300-036F,U+2000-206F,U+20AC,U+2113,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD",
+  "fonts": [
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-Regular.woff2",
+      "sha": "a7336c86da3f9c5399e13bd4be0453452a756c1f",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-Regular.woff2",
+      "output": "cormorant-garamond-latin-400-normal.woff2",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-Medium.woff2",
+      "sha": "e5f5ba69a9c3223d65b7ae37f7a3b9f20c542121",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-Medium.woff2",
+      "output": "cormorant-garamond-latin-500-normal.woff2",
+      "weight": "500",
+      "style": "normal"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-SemiBold.woff2",
+      "sha": "6b0a5dc59885c0a42ccf9cd7c30fdf85093991e3",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-SemiBold.woff2",
+      "output": "cormorant-garamond-latin-600-normal.woff2",
+      "weight": "600",
+      "style": "normal"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-Bold.woff2",
+      "sha": "ddc3a17c3c4325269b4ef973caf0b6cc3b1172d0",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-Bold.woff2",
+      "output": "cormorant-garamond-latin-700-normal.woff2",
+      "weight": "700",
+      "style": "normal"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-Italic.woff2",
+      "sha": "f46c62d14edafa26c04e5e3efb64f28b1e1c07a9",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-Italic.woff2",
+      "output": "cormorant-garamond-latin-400-italic.woff2",
+      "weight": "400",
+      "style": "italic"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-MediumItalic.woff2",
+      "sha": "d72787fcbc5c3250b9c69e185ddba444506e624e",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-MediumItalic.woff2",
+      "output": "cormorant-garamond-latin-500-italic.woff2",
+      "weight": "500",
+      "style": "italic"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-SemiBoldItalic.woff2",
+      "sha": "8995dfe03e7fe2111708cbfa29709726d60a5d14",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-SemiBoldItalic.woff2",
+      "output": "cormorant-garamond-latin-600-italic.woff2",
+      "weight": "600",
+      "style": "italic"
+    },
+    {
+      "family": "Cormorant Garamond",
+      "source": "CormorantGaramond-BoldItalic.woff2",
+      "sha": "01f992ffad5b59c696c923fb6133e293bfce39fe",
+      "url": "https://github.com/CatharsisFonts/Cormorant/blob/master/fonts/webfonts/CormorantGaramond-BoldItalic.woff2",
+      "output": "cormorant-garamond-latin-700-italic.woff2",
+      "weight": "700",
+      "style": "italic"
+    },
+    {
+      "family": "Space Mono",
+      "source": "SpaceMono-Regular.ttf",
+      "sha": "1cfa3653dc8ddb7aa9f4ef1c9c581e9516137e6e",
+      "url": "https://github.com/google/fonts/blob/main/ofl/spacemono/SpaceMono-Regular.ttf",
+      "output": "space-mono-latin-400.woff2",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "family": "Instrument Sans",
+      "source": "InstrumentSans[wdth,wght].ttf",
+      "sha": "3589b81b22d3defc725dfdcdf16b5da7c9adc691",
+      "url": "https://github.com/google/fonts/blob/main/ofl/instrumentsans/InstrumentSans[wdth,wght].ttf",
+      "output": "instrument-sans-latin-normal.woff2",
+      "weight": "400 700",
+      "style": "normal"
+    },
+    {
+      "family": "Instrument Sans",
+      "source": "InstrumentSans-Italic[wdth,wght].ttf",
+      "sha": "72c12d6254b5151b3a31ba769d0a66433b85a87d",
+      "url": "https://github.com/google/fonts/blob/main/ofl/instrumentsans/InstrumentSans-Italic[wdth,wght].ttf",
+      "output": "instrument-sans-latin-italic.woff2",
+      "weight": "400 700",
+      "style": "italic"
+    },
+    {
+      "family": "Space Mono",
+      "source": "SpaceMono-Bold.ttf",
+      "sha": "2c4f2682f915d988e7314544ff7c9e38c8c733f5",
+      "url": "https://github.com/google/fonts/blob/main/ofl/spacemono/SpaceMono-Bold.ttf",
+      "output": "space-mono-latin-700.woff2",
+      "weight": "700",
+      "style": "normal"
+    }
+  ]
+}

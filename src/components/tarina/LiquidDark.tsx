@@ -12,12 +12,12 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useInView } from "framer-motion";
+import { useInView, type MotionValue } from "framer-motion";
 import * as THREE from "three";
 import { liquidVert, liquidFrag } from "./liquidDarkShaders";
 import { SafeWebGL } from "@/components/SafeWebGL";
 import { ShaderWarmup } from "@/components/ShaderWarmup";
-import { REDUCE_QUERY } from "@/lib/pin";
+import { REDUCE_QUERY, useMediaQuery } from "@/lib/pin";
 
 /* The field is soft and dim, so it upscales from a small buffer unseen, and
    three fbm stacks per pixel stay cheap at any window size. */
@@ -29,7 +29,11 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia(REDUCE_QUERY).matches;
 }
 
-function Caustics({ reducedMotion }: { reducedMotion: boolean }) {
+function Caustics({ reducedMotion, ambient, progress }: {
+  reducedMotion: boolean;
+  ambient: boolean;
+  progress?: MotionValue<number>;
+}) {
   // Numbers, so only a real resize re-renders the scene.
   const vw = useThree((s) => s.viewport.width);
   const vh = useThree((s) => s.viewport.height);
@@ -54,8 +58,12 @@ function Caustics({ reducedMotion }: { reducedMotion: boolean }) {
     const dt = Math.min(delta, 0.05);
     uniforms.uTime.value += dt;
     uniforms.uOpacity.value = damp(uniforms.uOpacity.value, GLOW, 1.5, dt);
-    uniforms.uMouse.value.x = damp(uniforms.uMouse.value.x, state.pointer.x, 3, dt);
-    uniforms.uMouse.value.y = damp(uniforms.uMouse.value.y, state.pointer.y, 3, dt);
+    const t = uniforms.uTime.value;
+    const reading = (progress?.get() ?? 0.5) - 0.5;
+    const px = ambient ? Math.sin(t * 0.2) * 0.25 + reading * 0.35 : state.pointer.x;
+    const py = ambient ? Math.cos(t * 0.16) * 0.2 - reading * 0.3 : state.pointer.y;
+    uniforms.uMouse.value.x = damp(uniforms.uMouse.value.x, px, 3, dt);
+    uniforms.uMouse.value.y = damp(uniforms.uMouse.value.y, py, 3, dt);
   });
 
   return (
@@ -69,7 +77,7 @@ function Caustics({ reducedMotion }: { reducedMotion: boolean }) {
 /* The pointer reads offsetX/Y, so the canvas needs no bounds tracked on
    scroll; it measures only on resize, and by offset size, so a scaled stage
    never reads as a resize. */
-export default function LiquidDark({ active = true }: { active?: boolean }) {
+export default function LiquidDark({ active = true, progress }: { active?: boolean; progress?: MotionValue<number> }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { margin: "200px" });
   // Client only (ssr:false), so the first render already knows the
@@ -77,6 +85,7 @@ export default function LiquidDark({ active = true }: { active?: boolean }) {
   const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
   // The loop waits until the shaders are built (ShaderWarmup).
   const [compiled, setCompiled] = useState(false);
+  const ambient = useMediaQuery("(hover: none), (pointer: coarse)");
 
   useEffect(() => {
     const mq = window.matchMedia(REDUCE_QUERY);
@@ -89,7 +98,7 @@ export default function LiquidDark({ active = true }: { active?: boolean }) {
   if (compiled && inView && active) frameloop = reducedMotion ? "demand" : "always";
 
   return (
-    <div ref={wrapRef} className="absolute inset-0" aria-hidden="true">
+    <div ref={wrapRef} className="tarina-webgl absolute inset-0" aria-hidden="true">
       <SafeWebGL fallback={null}>
         <Canvas
           frameloop={frameloop}
@@ -100,7 +109,7 @@ export default function LiquidDark({ active = true }: { active?: boolean }) {
           style={{ width: "100%", height: "100%", display: "block" }}
         >
           <Suspense fallback={null}>
-            <Caustics reducedMotion={reducedMotion} />
+            <Caustics reducedMotion={reducedMotion} ambient={ambient} progress={progress} />
             <ShaderWarmup onReady={setCompiled} />
           </Suspense>
         </Canvas>

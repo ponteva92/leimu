@@ -21,7 +21,7 @@ export function NotFoundClient() {
   const t = COPY[lang] ?? COPY.fi;
 
   return (
-    <div className="grid min-h-[70vh] place-items-center px-gutter text-center">
+    <div className="grid min-h-[70svh] place-items-center px-gutter text-center">
       <div className="max-w-md">
         <p className="tag-mono mb-3">404</p>
         <h1 className="heading-display mb-5 text-4xl text-[var(--ink)] md:text-5xl">{t.title}</h1>

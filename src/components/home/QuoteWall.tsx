@@ -63,11 +63,12 @@ export function QuoteWall() {
   /* The supporting column drifts where the chapters pin (md and up, motion
      allowed). Below md it stacks under the lead, and a drift would crowd it. */
   const drifting = useMediaQuery(PIN_QUERY);
+  const compact = useMediaQuery("(max-width: 767px)");
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });
-  const drift = useTransform(scrollYProgress, [0, 1], [56, -56]);
+  const drift = useTransform(scrollYProgress, [0, 1], compact ? [16, -16] : [56, -56]);
   // The column drifts the whole time the section is in view.
   useWillChange(scrollYProgress, drifting ? [[0, 1]] : [], [colRef]);
 
@@ -76,7 +77,7 @@ export function QuoteWall() {
       ref={sectionRef}
       id="aanet"
       aria-labelledby={HEADING_ID}
-      className="py-24 px-6 md:px-10 max-w-7xl mx-auto"
+      className="relative py-24 px-6 md:px-10 max-w-7xl mx-auto"
     >
       <motion.h2
         id={HEADING_ID}
@@ -117,7 +118,7 @@ export function QuoteWall() {
             <motion.figure
               key={r.quote}
               variants={fadeUpItem}
-              className={i === 0 ? "pb-8" : "border-t border-[var(--line)] py-8"}
+              className={i === 0 ? "relative pb-8" : "relative border-t border-[var(--line)] py-8"}
             >
               <blockquote className="font-serif italic text-xl leading-relaxed text-[var(--ink-soft)]">
                 {r.quote}

@@ -47,8 +47,10 @@ import {
 } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
+import { useMediaQuery, useMotionLayout } from "@/lib/pin";
+import { COMPACT_STAGE_QUERY } from "@/lib/screens";
 import { scrollToTarget } from "@/lib/scroll";
-import { coverStart, mid, trackVars, type Span } from "@/lib/timeline";
+import { coverStart, mid, trackScrollRange, trackVars, type Span } from "@/lib/timeline";
 import {
   headingReveal,
   fadeUpItem,
@@ -57,7 +59,8 @@ import {
 } from "@/lib/motionVariants";
 import { RULE_ON_DARK } from "@/components/DrawnRule";
 import { Arrive, useArrive } from "@/components/story/Arrive";
-import { useCoverRecede, useDarkStageSync, useWillChange } from "@/components/story/hooks";
+import { Crossfade } from "@/components/story/Crossfade";
+import { useCoverRecede, useDarkStageSync, useTrackProgress, useWillChange } from "@/components/story/hooks";
 
 type Lang = "fi" | "en";
 
@@ -73,19 +76,19 @@ const COPY = {
   chapter: { fi: "Sinetti", en: "Seal" },
   eyebrow: { fi: "Jokaiseen tilaukseen", en: "With every order" },
   // Heading is split so the accent word routes through the Cormorant italic.
-  headingLead: { fi: "Sinetöity viesti,", en: "A sealed message," },
-  headingAccent: { fi: "kultaisella musteella.", en: "in gold ink." },
-  // Verbatim brand copy, paragraphed at sentence boundaries for legibility.
+  headingLead: { fi: "Sinetöity viesti.", en: "A sealed message." },
+  headingAccent: { fi: "Sinun sanoillasi.", en: "In your own words." },
+  // One concise copy deck for the staged ceremony and the product page.
   body: {
     fi: [
-      "Jokaiseen LEIMU Candles -tilaukseen tulee mukaan musta kiitoskortti, joka sisältää sinun omavalintaisen viestin. Viesti on käsinkirjoitettu kultaisella musteella, ja se sinetöidään upealla LEIMUn logolla varustetulla kultaisella vahasinetillä.",
-      "Tämän ansiosta LEIMU Candles sopii täydellisesti esim. pikkujoulu- tai yrityslahjaksi. Voit myös hemmotella itseäsi ylellisellä kokemuksella, jolloin voimme kirjoittaa sinulle yllätysviestin!",
-      "LEIMU Candles on ylellinen elämys lahjansaajalle, jollaista muut kynttilät eivät tarjoa, oli saajana sitten läheinen tai sinä itse. Mieleenpainuva lahja, koska sinä olet sen ansainnut.",
+      "Jokaisen LEIMU-tilauksen mukana saat mustan kortin, johon kirjoitamme valitsemasi viestin käsin kultaisella musteella.",
+      "Kortti sujautetaan mustaan kirjekuoreen ja suljetaan kultaisella LEIMU-vahasinetillä. Pieni yksityiskohta, joka tekee lahjasta henkilökohtaisen.",
+      "Kirjoita tervehdyksesi tilauksen yhteydessä läheiselle tai itsellesi. Halutessasi kirjoitamme sinulle yllätysviestin.",
     ],
     en: [
-      "Every LEIMU Candles order arrives with a black thank-you card carrying a message of your choosing. It is handwritten in gold ink and closed with a golden wax seal pressed with the LEIMU mark.",
-      "That makes LEIMU Candles a flawless gift for a Christmas party or a corporate occasion. Or treat yourself to the indulgence, and let us write you a surprise message.",
-      "LEIMU Candles is a luxurious experience for whoever receives it, the kind ordinary candles never offer, whether that's someone close to you, or you. An unforgettable gift, because you have earned it.",
+      "Every LEIMU order includes a black card with your chosen message, handwritten in gold ink.",
+      "We slip the card into a black envelope and close it with a golden LEIMU wax seal. A small detail that makes your gift personal.",
+      "Add your words when you order, for someone dear or for yourself. If you prefer, let us write you a surprise message.",
     ],
   },
   details: [
@@ -174,17 +177,18 @@ function Flow({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
   useWillChange(scrollYProgress, reduce ? [] : [[0, 1]], [envRef]);
 
   return (
-    <div ref={ref} className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <div ref={ref} className="seal-flow relative grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
       {/* ── Envelope spotlight panel ─────────────────────────────── */}
       <motion.div
-        className="group relative order-1 md:order-none"
+        className="seal-flow-visual group relative order-1 md:order-none"
         initial="rest"
         whileHover="hover"
+        whileTap="hover"
         whileInView="sweep"
         viewport={{ once: true, margin: "-120px 0px" }}
       >
         <div
-          className="relative isolate overflow-hidden rounded-3xl border border-[var(--line)] shadow-e4"
+          className="seal-flow-panel relative isolate overflow-hidden rounded-3xl border border-[var(--line)] shadow-e4"
           style={{
             aspectRatio: "5 / 4",
             background:
@@ -206,7 +210,7 @@ function Flow({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
               markup already suits every reader. */}
           <motion.div
             ref={envRef}
-            className="absolute inset-0 flex items-center justify-center p-8 sm:p-12 [container-type:size] motion-reduce:!transform-none"
+            className="absolute inset-0 flex items-center justify-center p-4 sm:p-5 [container-type:size] motion-reduce:!transform-none"
             style={{ y: envY }}
           >
             {/* The envelope's own box, as large as the padding allows, so
@@ -367,15 +371,13 @@ function Shimmer({ p, near }: { p: MotionValue<number>; near: boolean }) {
 
 /* ── Pinned chapter (home) ─────────────────────────────────────────── */
 function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
+  const compact = useMediaQuery(COMPACT_STAGE_QUERY);
   const trackRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const colRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress: p } = useScroll({
-    target: trackRef,
-    offset: ["start start", "end end"],
-  });
+  const { p } = useTrackProgress(trackRef, TRACK_SVH);
   // Fetch the shimmer's mask as the track nears, like a lazy image.
   const near = useInView(trackRef, { once: true, margin: "100% 0px" });
 
@@ -383,7 +385,8 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
   const glow = useTransform(p, GLOW, [0, 1]);
   const tilt = useTransform(p, LIFT, [26, 0], { ease: easeInOut });
   const turn = useTransform(p, LIFT, [-4, 0], { ease: easeInOut });
-  const lift = useTransform(p, LIFT, [0.88, 1], { ease: easeInOut });
+  const lift = useTransform(p, LIFT, [compact ? 2.2 : 0.88, 1], { ease: easeInOut });
+  const floatY = useTransform(p, GLIDE, [compact ? 80 : 0, 0], { ease: easeInOut });
   const glide = useTransform(p, GLIDE, [0, 1], { ease: easeInOut });
   // How far the envelope's column sits from the stage's centre line.
   const shift = useMotionValue(0);
@@ -437,7 +440,7 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
       const track = trackRef.current;
       const stage = stageRef.current;
       if (!track || !stage) return;
-      scrollToTarget(track, { offset: CTA_REST * (track.offsetHeight - stage.offsetHeight) });
+      scrollToTarget(track, { offset: CTA_REST * trackScrollRange(track) });
     });
   };
 
@@ -445,14 +448,14 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
     <div
       ref={trackRef}
       data-pin-rest={CTA_REST}
-      className="relative hidden stage:block stage:h-[var(--track)]"
+      className="seal-track story-track relative hidden stage:block stage:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
       {/* The stage reports the room's tone to the chapter rail. */}
       <div
         ref={stageRef}
         data-tone="light"
-        className="sticky top-0 isolate flex h-[100svh] items-center overflow-hidden pb-6 pt-16"
+        className="seal-stage story-stage sticky top-0 isolate flex h-[100svh] items-center overflow-hidden pb-6 pt-16"
       >
         {/* The room. Everything under the copy stays at #16130f or darker,
             which keeps the amber eyebrow at AAA. */}
@@ -468,10 +471,10 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
 
         <motion.div
           ref={gridRef}
-          className="relative mx-auto grid w-full max-w-7xl origin-top grid-cols-[0.8fr_1.2fr] items-center gap-12 px-10 xl:grid-cols-[0.95fr_1.05fr] xl:gap-16"
+          className="seal-grid relative mx-auto grid w-full max-w-7xl origin-top grid-cols-[1.1fr_0.9fr] items-center gap-12 px-10 xl:gap-16"
           style={{ scale: recede }}
         >
-          <motion.div ref={colRef} className="relative" style={{ x }}>
+          <motion.div ref={colRef} className="seal-visual relative" style={{ x, y: floatY }}>
             <div className="relative">
               <motion.div
                 ref={glowRef}
@@ -504,7 +507,7 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
               </motion.div>
             </div>
 
-            <div className="relative mt-8">
+            <div className="seal-details relative mt-8 hidden lg:block">
               <motion.div
                 aria-hidden="true"
                 className={`h-px origin-left ${RULE_ON_DARK}`}
@@ -522,7 +525,7 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
             </div>
           </motion.div>
 
-          <div className="max-w-[40rem]">
+          <div className="seal-copy max-w-[40rem]">
             <Arrive p={p} at={EYEBROW}>
               <p className="tag-mono mb-3 text-[var(--accent-2-on-dark)]">{COPY.eyebrow[lang]}</p>
             </Arrive>
@@ -536,12 +539,28 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
               </motion.span>
             </h2>
 
-            <div className="space-y-[1.8svh] text-[clamp(0.875rem,2.2svh,1rem)] leading-relaxed text-[var(--on-dark-soft)]">
+            <div className="seal-desktop-body hidden space-y-[1.8svh] text-[clamp(0.875rem,2.2svh,1rem)] leading-relaxed text-[var(--on-dark-soft)] lg:block">
               {COPY.body[lang].map((para, i) => (
                 <Arrive key={i} p={p} at={BODY[i]}>
                   <p className={i === 0 ? "text-[var(--on-dark)]" : undefined}>{para}</p>
                 </Arrive>
               ))}
+            </div>
+
+            <div className="seal-mobile-body grid text-[var(--on-dark-soft)] lg:hidden">
+              {COPY.body[lang].map((para, i) => (
+                <Crossfade key={i} p={p}
+                  arrive={i === 0 ? [0.32, 0.36] : i === 1 ? [0.44, 0.47] : [0.56, 0.59]}
+                  leave={i === 0 ? [0.44, 0.47] : i === 1 ? [0.56, 0.59] : [0.68, 0.71]}>
+                  <p>{para}</p>
+                </Crossfade>
+              ))}
+              <Crossfade p={p} arrive={[0.68, 0.71]} leave={[2, 3]}>
+                <div className="h-px origin-left bg-[var(--accent-2-on-dark)]" />
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
+                  {COPY.details.map((detail) => <li key={detail.fi} className="tag-mono text-[var(--on-dark)]">{detail[lang]}</li>)}
+                </ul>
+              </Crossfade>
             </div>
 
             {ctaHref && (
@@ -563,6 +582,18 @@ function Stage({ lang, ctaHref }: { lang: Lang; ctaHref: string | null }) {
   );
 }
 
+function ChapterCeremony({ lang, ctaHref, className }: { lang: Lang; ctaHref: string | null; className: string }) {
+  const staged = useMotionLayout();
+  return (
+    <section id="sinetti" aria-label={COPY.chapter[lang]} className={className || undefined}>
+      {staged !== false && <Stage lang={lang} ctaHref={ctaHref} />}
+      {staged !== true && <div className="mx-auto max-w-7xl px-6 py-24 md:px-10 stage:hidden">
+        <Flow lang={lang} ctaHref={ctaHref} />
+      </div>}
+    </section>
+  );
+}
+
 export function GiftCeremony({
   ctaHref = "/tuotteet#configurator",
   className = "",
@@ -578,12 +609,5 @@ export function GiftCeremony({
     );
   }
 
-  return (
-    <section id="sinetti" aria-label={COPY.chapter[lang]} className={className || undefined}>
-      <Stage lang={lang} ctaHref={ctaHref} />
-      <div className="mx-auto max-w-7xl px-6 py-24 md:px-10 stage:hidden">
-        <Flow lang={lang} ctaHref={ctaHref} />
-      </div>
-    </section>
-  );
+  return <ChapterCeremony lang={lang} ctaHref={ctaHref} className={className} />;
 }

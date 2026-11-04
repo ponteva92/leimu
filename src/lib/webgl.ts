@@ -23,7 +23,8 @@ export function webglAvailable(): boolean {
   return webglProbe;
 }
 
-/** Phone / coarse pointer. Live canvases stay on fine-pointer desktop only. */
+/** Input capability only: coarse input uses ambient/scroll interaction.
+    It must never determine whether a supported device gets live effects. */
 export function isCoarseViewport(): boolean {
   if (typeof window === "undefined") return true;
   return window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;

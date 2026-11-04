@@ -1,0 +1,101 @@
+{
+  "fonts": [
+    {
+      "file": "cormorant-garamond-latin-400-normal.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "400",
+      "style": "normal",
+      "bytes": 39656,
+      "sha256": "75ccfb3c5e85387b66041184b7df03228adee65c86593bb84381b45657aa3b23"
+    },
+    {
+      "file": "cormorant-garamond-latin-500-normal.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "500",
+      "style": "normal",
+      "bytes": 39768,
+      "sha256": "bb7dbdbd889b4932d73450b9bbeac297304e0d38a231449087804b2f57b796ad"
+    },
+    {
+      "file": "cormorant-garamond-latin-600-normal.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "600",
+      "style": "normal",
+      "bytes": 39196,
+      "sha256": "b9aa83737db5451db2d71b37e568f6f894ac25d6c2d535982dfa899ae8c3eb45"
+    },
+    {
+      "file": "cormorant-garamond-latin-700-normal.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "700",
+      "style": "normal",
+      "bytes": 37460,
+      "sha256": "e01d543ea41c9712753137d441211913efeb40e49ffba29e2b66c25a265399bf"
+    },
+    {
+      "file": "cormorant-garamond-latin-400-italic.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "400",
+      "style": "italic",
+      "bytes": 42052,
+      "sha256": "484f5134001c9a6d65eccd5e36d0f0b58b49b6be4cfe24eb0c43a426f0b0397f"
+    },
+    {
+      "file": "cormorant-garamond-latin-500-italic.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "500",
+      "style": "italic",
+      "bytes": 42420,
+      "sha256": "e051aeaf3143c790e2901ae78f8c9822f6c86e0757b766eb9ef2047a930fcfe7"
+    },
+    {
+      "file": "cormorant-garamond-latin-600-italic.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "600",
+      "style": "italic",
+      "bytes": 42276,
+      "sha256": "1516ee0d5165008c4181f466ba2221da4979789d56493020dccdff61f2a58105"
+    },
+    {
+      "file": "cormorant-garamond-latin-700-italic.woff2",
+      "family": "Cormorant Garamond",
+      "weight": "700",
+      "style": "italic",
+      "bytes": 40504,
+      "sha256": "c0cbe3f5ab1741db379885c3efe481bb8c7db383d459ee55bc5c44d7a9cd007f"
+    },
+    {
+      "file": "space-mono-latin-400.woff2",
+      "family": "Space Mono",
+      "weight": "400",
+      "style": "normal",
+      "bytes": 16100,
+      "sha256": "1ef0337a255cd9dc2fd3b188a155b5b9eebf97760a6560e04cfdedce4db4bc79"
+    },
+    {
+      "file": "instrument-sans-latin-normal.woff2",
+      "family": "Instrument Sans",
+      "weight": "400 700",
+      "style": "normal",
+      "bytes": 29296,
+      "sha256": "5e8141f86ef254c70ec52f2f3378f8a1d7f2ee065f289a1f9e854bff1b3f9182"
+    },
+    {
+      "file": "instrument-sans-latin-italic.woff2",
+      "family": "Instrument Sans",
+      "weight": "400 700",
+      "style": "italic",
+      "bytes": 31168,
+      "sha256": "ee5402aa0c794a81e1aa0b78831ab32566616c7ded2708f97a0230b0609dbdef"
+    },
+    {
+      "file": "space-mono-latin-700.woff2",
+      "family": "Space Mono",
+      "weight": "700",
+      "style": "normal",
+      "bytes": 16280,
+      "sha256": "cf6646cc009f14292df479ff1fbdddc54588dcad33ceeb6ab5137727bec0c1ee"
+    }
+  ],
+  "totalBytes": 416176
+}

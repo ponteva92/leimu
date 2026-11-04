@@ -12,27 +12,13 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import { Suspense, useState } from "react";
-import Image from "next/image";
 import { Canvas } from "@react-three/fiber";
 import { CandleScene } from "./CandleScene";
 import { SafeWebGL } from "@/components/SafeWebGL";
 import { ShaderWarmup } from "@/components/ShaderWarmup";
 import { useStore } from "@/context/store";
-
-function CandleFallback() {
-  return (
-    <div className="absolute inset-0 flex items-end justify-center pb-[6%]">
-      <Image
-        src="/images/hero-candle-black.png"
-        alt=""
-        width={720}
-        height={960}
-        className="h-[88%] w-auto object-contain"
-        priority
-      />
-    </div>
-  );
-}
+import { CandleFallback } from "./CandleFallback";
+import { CANDLE_FRAMING } from "./candleFraming";
 
 export default function CandleCanvas({
   isMobile,
@@ -54,14 +40,17 @@ export default function CandleCanvas({
   // size, which CSS transforms leave alone.
   return (
     <div className="absolute inset-0">
-      <SafeWebGL fallback={<CandleFallback />}>
+      <div className="pointer-events-none absolute inset-0 transition-opacity duration-500" style={{ opacity: compiled ? 0 : 1 }}>
+        <CandleFallback />
+      </div>
+      <SafeWebGL fallback={compiled ? <CandleFallback /> : null}>
         <Canvas
-          dpr={[1.25, 1.5]}
+          dpr={isMobile ? [1, 1.5] : [1.25, 1.5]}
           gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
-          camera={{ fov: 32, position: [0, 0, 8], near: 0.1, far: 50 }}
-          frameloop={active && compiled ? "always" : "never"}
+          camera={{ fov: CANDLE_FRAMING.fov, position: [0, 0, CANDLE_FRAMING.cameraZ], near: 0.1, far: 50 }}
+          frameloop={active && compiled ? reducedMotion ? "demand" : "always" : "never"}
           resize={{ scroll: false, offsetSize: true }}
-          style={{ width: "100%", height: "100%", display: "block" }}
+          style={{ width: "100%", height: "100%", display: "block", touchAction: "pan-y pinch-zoom", opacity: compiled ? 1 : 0, transition: "opacity 500ms var(--ease-out)" }}
         >
           <Suspense fallback={null}>
             <CandleScene isMobile={isMobile} reducedMotion={reducedMotion} onReady={onReady} />

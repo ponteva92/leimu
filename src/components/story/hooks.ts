@@ -11,30 +11,52 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
-  useInView, useMotionValueEvent, useScroll, useTransform, type MotionValue,
+  useInView, useMotionValue, useMotionValueEvent, useScroll, useTransform, type MotionValue,
 } from "framer-motion";
 import { useStore } from "@/context/store";
 import { barHeight, measureBox, onRelayout, type Box } from "@/lib/layout";
 import type { Span } from "@/lib/timeline";
 
-/** One scroll listener per pinned track. q runs from the track's top
-    entering the screen to its foot leaving it, and the three phases are
-    slices of it:
+/** Cached geometry maps native scrolling to the track's three phases:
     - `approach`: the track's top rises from the screen's foot to its top;
     - `p`: the stage is pinned;
     - `leave`: the track's foot rises from the screen's foot to its top.
-    The cuts assume a track of `trackSvh` on a 100svh screen, which holds
-    wherever a stage pins (desktop-sized screens have no collapsing bars). */
+    Track and cover use stable svh while the visible stage may use dvh.
+    Browser chrome can resize that stage without moving these cuts. */
 export function useTrackProgress(trackRef: RefObject<HTMLElement>, trackSvh: number) {
-  const { scrollYProgress: q } = useScroll({ target: trackRef, offset: ["start end", "end start"] });
-  const total = trackSvh + 100;
-  const a = 100 / total;
-  const b = trackSvh / total;
-  return {
-    approach: useTransform(q, [0, a], [0, 1]),
-    p: useTransform(q, [a, b], [0, 1]),
-    leave: useTransform(q, [b, 1], [0, 1]),
-  };
+  const { scrollY } = useScroll();
+  const approach = useMotionValue(0);
+  const p = useMotionValue(0);
+  const leave = useMotionValue(0);
+  const geometry = useRef<{ top: number; height: number; stage: number; view: number } | null>(null);
+  const update = useCallback(() => {
+    const box = geometry.current;
+    if (!box) return;
+    const y = scrollY.get() - box.top;
+    const range = Math.max(1, box.height - box.stage);
+    const clamp = (v: number) => Math.max(0, Math.min(1, v));
+    approach.set(clamp((y + box.view) / box.view));
+    p.set(clamp(y / range));
+    leave.set(clamp((y - range) / box.stage));
+  }, [scrollY, approach, p, leave]);
+  useMotionValueEvent(scrollY, "change", update);
+  useEffect(() => onRelayout(() => {
+    const track = trackRef.current;
+    const box = track && measureBox(track);
+    const stage = track?.querySelector<HTMLElement>(".story-stage") ?? track?.firstElementChild;
+    geometry.current = box && box.height > 0 ? {
+      top: box.top,
+      height: box.height,
+      // Track and cover share stable svh. Derive that unit from the real
+      // track rather than the changing browser chrome height: a dvh-only
+      // resize must never change the narrative at the same scroll position.
+      stage: trackSvh > 100 ? box.height * 100 / trackSvh :
+        stage instanceof HTMLElement ? stage.offsetHeight : window.innerHeight,
+      view: window.innerHeight,
+    } : null;
+    update();
+  }), [trackRef, trackSvh, update]);
+  return { approach, p, leave };
 }
 
 /** The stage steps back a touch while the next sheet covers it. */
@@ -183,7 +205,10 @@ export function useDarkStageSync(
     const unsubscribe = onRelayout(() => {
       const track = trackRef.current;
       const box = track && measureBox(track);
-      cache.current = box ? { box, vh: window.innerHeight, bar: barHeight() } : null;
+      const pinnedTrack = track?.matches(".story-track") ? track : track?.querySelector<HTMLElement>(".story-track");
+      const units = pinnedTrack ? parseFloat(getComputedStyle(pinnedTrack).getPropertyValue("--track")) : 0;
+      const stageHeight = pinnedTrack && units > 100 ? pinnedTrack.offsetHeight * 100 / units : window.innerHeight;
+      cache.current = box ? { box, vh: stageHeight, bar: barHeight() } : null;
       update();
     });
     return () => {

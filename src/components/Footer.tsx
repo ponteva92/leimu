@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FacebookLogo, InstagramLogo } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, FacebookLogo, InstagramLogo } from "@phosphor-icons/react/dist/ssr";
 import { useStore } from "@/context/store";
 import { PrivacyLink } from "@/components/PrivacyModal";
 import { FooterWordmark } from "@/components/FooterWordmark";
@@ -55,10 +55,25 @@ const SOCIAL =
 
 export function Footer() {
   const lang = useStore((s) => s.lang);
+  const openContact = useStore((s) => s.openContact);
   const t = COPY[lang] ?? COPY.fi;
   const year = useYear();
 
   return (
+    <>
+    <section className="final-order" data-final-order>
+      <div className="final-order-inner">
+        <div>
+          <p className="tag-mono mb-4">{lang === "fi" ? "Sinulle. Tai jollekin tärkeälle." : "For you. Or someone who matters."}</p>
+          <h2 className="heading-display">{lang === "fi" ? <>Valitse tuoksu.<br />Lisää omat <em>sanasi.</em></> : <>Choose a scent.<br />Add your own <em>words.</em></>}</h2>
+          <p className="final-order-copy">{lang === "fi" ? "Oulussa käsintehty kynttilä, käsinkirjoitettu viesti ja kultainen vahasinetti. Pala luksusta, jonka olet ansainnut." : "A candle handmade in Oulu, a handwritten message, and a golden wax seal. A piece of luxury you have earned."}</p>
+        </div>
+        <div className="shrink-0">
+          <p className="mb-4 text-sm">{lang === "fi" ? "Alkaen 9\u00a0€ · lahjapussi mukana" : "From 9\u00a0€ · gift bag included"}</p>
+          <Link href="/tuotteet#configurator" className="button-ink">{lang === "fi" ? "Valitse oma LEIMU" : "Choose your LEIMU"}<ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
+      </div>
+    </section>
     <footer className="relative mt-0 overflow-hidden bg-[var(--ink)] text-[var(--on-dark)]">
       {/* Warm residual glow — candlelight still in the room */}
       <div
@@ -132,6 +147,7 @@ export function Footer() {
                 {link.label[lang]}
               </Link>
             ))}
+            <button type="button" onClick={openContact} className="footer-link min-h-11 text-left font-sans text-sm text-[var(--on-dark)]">{lang === "fi" ? "Ota yhteyttä" : "Contact us"}</button>
             <PrivacyLink className="footer-link font-sans text-sm tracking-[0.06em] text-[var(--on-dark)] text-left">
               {t.privacy}
             </PrivacyLink>
@@ -173,5 +189,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
+    </>
   );
 }

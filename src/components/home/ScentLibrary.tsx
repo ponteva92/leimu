@@ -45,8 +45,9 @@ export function ScentLibrary() {
           initial="hidden"
           whileInView="visible"
           viewport={VIEWPORT_NEAR}
-          className="mb-8 md:mb-12"
+          className="scent-library-intro mb-8 md:mb-12"
         >
+          <div>
           <motion.p variants={fadeUpItem} className="tag-mono mb-3">
             {lang === "fi" ? "Tuoksukirjasto" : "Scent library"}
           </motion.p>
@@ -61,11 +62,13 @@ export function ScentLibrary() {
               <>Five ways to <em>scent.</em></>
             )}
           </motion.h2>
+          </div>
+          <p>{lang === "fi" ? "Havumetsän rauhasta mustikan raikkauteen. Valitse tuoksu, joka tuntuu omalta." : "From the stillness of a pine forest to wild blueberry freshness. Find the scent that feels like you."}</p>
         </motion.div>
 
         <motion.div
           ref={gridRef}
-          className="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4"
+          className="scent-grid"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
@@ -75,6 +78,7 @@ export function ScentLibrary() {
             <ScentCard
               key={scent.id}
               scent={scent}
+              index={i}
               lang={lang}
               featured={scent.id === featured.id}
               onSelect={openModal}

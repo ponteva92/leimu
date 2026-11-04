@@ -28,11 +28,13 @@ function listen() {
   const observer = new ResizeObserver(schedule);
   observer.observe(document.body);
   window.addEventListener("resize", schedule);
+  window.visualViewport?.addEventListener("resize", schedule);
   window.addEventListener("load", schedule);
   document.fonts?.ready.then(schedule);
   return () => {
     observer.disconnect();
     window.removeEventListener("resize", schedule);
+    window.visualViewport?.removeEventListener("resize", schedule);
     window.removeEventListener("load", schedule);
     cancelAnimationFrame(pending);
     pending = 0;

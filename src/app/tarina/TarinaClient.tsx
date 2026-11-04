@@ -8,6 +8,7 @@ import { ProcessChapter } from "@/components/tarina/ProcessChapter";
 import { MaterialsRoom } from "@/components/tarina/MaterialsRoom";
 import { ValuesLedger } from "@/components/tarina/ValuesLedger";
 import { StoryCTA } from "@/components/tarina/StoryCTA";
+import "@/components/tarina/tarina-mobile.css";
 
 const CHAPTERS: Chapter[] = [
   { id: "alku", label: { fi: "Alku", en: "Origin" } },
@@ -21,9 +22,9 @@ const CHAPTERS: Chapter[] = [
    founder's portrait, then this opaque, higher-z sheet rises over it.
    Inside the sheet the process row pins and travels, the dark materials
    room rises over its last stretch and pins in turn, and the values
-   sheet rises over the room. Smaller screens and reduced motion keep
-   everything in normal flow. Each surface marks its tone (data-tone) for
-   the chapter rail. */
+   sheet rises over the room. Phones retain these stages with portrait
+   compositions; reduced motion keeps everything in normal flow. Each
+   surface marks its tone (data-tone) for the chapter rail. */
 export function TarinaClient() {
   const sheetRef = useRef<HTMLDivElement>(null);
 

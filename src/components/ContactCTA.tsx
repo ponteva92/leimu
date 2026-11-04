@@ -28,12 +28,14 @@ export function ContactCTA({
 
   if (variant === "hero") {
     return (
-      <button
+      <motion.button
         type="button"
+        whileTap={{ scale: 0.97 }}
+        transition={EASE_SPRING_MAGNETIC}
         onClick={openContact}
         onMouseEnter={() => setCursorType("pointer")}
         onMouseLeave={() => setCursorType("default")}
-        className="group inline-flex items-center gap-2 py-2 font-sans font-medium text-[13px] uppercase tracking-[0.08em] text-[rgba(245,245,240,0.85)] transition-colors hover:text-[#F5F5F0]"
+        className="touch-warm group inline-flex items-center gap-2 py-2 font-sans font-medium text-[13px] uppercase tracking-[0.08em] text-[rgba(245,245,240,0.85)] transition-colors hover:text-[#F5F5F0]"
       >
         <span className="relative">
           {text}
@@ -48,7 +50,7 @@ export function ContactCTA({
           aria-hidden="true"
           className="transition-transform duration-300 group-hover:translate-x-0.5"
         />
-      </button>
+      </motion.button>
     );
   }
 

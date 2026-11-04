@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { StoreState, JarColor, Scent } from "@/types";
-import { calcPrice } from "@/lib/scents";
+import { calcPrice, SCENTS } from "@/lib/scents";
 
 export const useStore = create<StoreState>((set, get) => ({
   config: { jar: "white", quantities: {}, message: "" },
@@ -13,12 +13,15 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => ({ config: { ...state.config, jar } })),
 
   setQuantity: (scentId: string, qty: number) =>
-    set((state) => ({
+    set((state) => {
+      if (!SCENTS.some((scent) => scent.id === scentId) || !Number.isSafeInteger(qty)) return state;
+      const others = Object.entries(state.config.quantities).reduce((sum, [id, value]) => sum + (id === scentId ? 0 : value), 0);
+      return {
       config: {
         ...state.config,
-        quantities: { ...state.config.quantities, [scentId]: Math.max(0, qty) },
+        quantities: { ...state.config.quantities, [scentId]: Math.max(0, Math.min(qty, 6 - others)) },
       },
-    })),
+    }; }),
 
   setMessage: (message: string) =>
     set((state) => ({ config: { ...state.config, message } })),
@@ -41,7 +44,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   addToCart: (jarColor: JarColor, quantities: Record<string, number>) => {
     set((state) => ({
-      cart: [...state.cart, { id: Date.now().toString(), jarColor, quantities }],
+      cart: [...state.cart, { id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, jarColor, quantities }],
       config: { ...state.config, quantities: {} },
     }));
   },

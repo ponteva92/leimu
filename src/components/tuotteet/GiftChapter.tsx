@@ -234,7 +234,7 @@ export function GiftChapter() {
           />
         </div>
 
-        <div className="grid items-center gap-16 pb-24 md:grid-cols-2">
+        <div className="product-gift-layout grid items-center gap-16 pb-24 md:grid-cols-2">
           <motion.div
             variants={staggerCinematic}
             initial="hidden"
@@ -276,6 +276,7 @@ export function GiftChapter() {
             alt={COPY.set[lang]}
             reveal="settle"
             scrubbed={scrubbed}
+            className="product-gift-visual"
             frameClassName="aspect-[1/1.1]"
           >
             <div className="absolute inset-x-5 bottom-5">

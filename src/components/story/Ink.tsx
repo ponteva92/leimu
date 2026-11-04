@@ -1,7 +1,7 @@
 "use client";
 
-/* Ink: words that ink in as they are read. Unread words wait as a ghost
-   of the ink, never gone. Each word inks over a window a few words wide,
+/* Ink: words that darken as they are read. Unread words remain readable.
+   Each word inks over a window a few words wide,
    so the front reads as a soft edge rather than a word-by-word blink.
    Screen readers get the sentence whole, not as separate words. */
 
@@ -9,7 +9,8 @@ import { Fragment, useRef, type RefObject } from "react";
 import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import type { Span } from "@/lib/timeline";
 
-const GHOST = 0.16;
+// A readable base remains under the animated ink (also at intermediate scroll positions).
+const GHOST = 0.86;
 const FRONT_WORDS = 4;
 
 function InkWord({ p, at, children }: {
@@ -75,7 +76,7 @@ export function InkQuote({ text, className }: { text: string; className: string 
   const read = useReadProgress(ref);
 
   return (
-    <blockquote ref={ref} className={className}>
+    <blockquote ref={ref} className={`relative ${className}`}>
       <InkWords text={text} p={read} />
     </blockquote>
   );

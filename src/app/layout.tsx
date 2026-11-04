@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Instrument_Sans, Space_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+import "./redesign.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StoreProvider } from "@/context/StoreProvider";
 import { CustomCursor } from "@/components/CustomCursor";
@@ -10,31 +11,52 @@ import { ContactModalHost } from "@/components/ContactModalHost";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { MotionProvider } from "@/components/MotionProvider";
 import { SkipLink } from "@/components/SkipLink";
+import { OrderShortcut } from "@/components/OrderShortcut";
 
 /* Display — Cormorant Garamond (high-contrast garamond with true italics;
    one serif family carries roman, italic, and accent words alike).
-   Body — Instrument Sans. Both self-hosted by next/font: zero FOUT/CLS. */
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+   Body — Instrument Sans. Exact family faces are checked in as Latin
+   WOFF2, so builds and visitors never depend on Google Fonts requests. */
+const cormorant = localFont({
+  src: [
+    { path: "./fonts/cormorant-garamond-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/cormorant-garamond-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/cormorant-garamond-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/cormorant-garamond-latin-700-normal.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/cormorant-garamond-latin-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/cormorant-garamond-latin-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "./fonts/cormorant-garamond-latin-600-italic.woff2", weight: "600", style: "italic" },
+    { path: "./fonts/cormorant-garamond-latin-700-italic.woff2", weight: "700", style: "italic" },
+  ],
   variable: "--font-serif",
   display: "swap",
+  preload: true,
+  adjustFontFallback: "Times New Roman",
+  fallback: ["Georgia", "serif"],
 });
 
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+const instrumentSans = localFont({
+  src: [
+    { path: "./fonts/instrument-sans-latin-normal.woff2", weight: "400 700", style: "normal" },
+    { path: "./fonts/instrument-sans-latin-italic.woff2", weight: "400 700", style: "italic" },
+  ],
   variable: "--font-sans",
   display: "swap",
+  preload: true,
+  adjustFontFallback: "Arial",
+  fallback: ["Arial", "sans-serif"],
 });
 
-const spaceMono = Space_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
+const spaceMono = localFont({
+  src: [
+    { path: "./fonts/space-mono-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/space-mono-latin-700.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
+  preload: true,
+  adjustFontFallback: "Arial",
+  fallback: ["monospace"],
 });
 
 export const metadata: Metadata = {
@@ -161,6 +183,7 @@ export default function RootLayout({
             <SiteHeader />
             <main id="main">{children}</main>
             <Footer />
+            <OrderShortcut />
             {/* After <main>: its route-change layout effect runs after Next's own scroll. */}
             <SmoothScroll />
             <ContactModalHost />

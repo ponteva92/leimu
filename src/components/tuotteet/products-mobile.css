@@ -1,0 +1,153 @@
+/* The same product chapters, composed for a portrait stage. These rules
+   only change the newly enabled mobile stages, never desktop geometry. */
+.product-hero-offer { margin-bottom: 12px; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.product-scent-short { display: none; }
+.product-still-stage .product-still-copy h1 { line-height: 1.05; }
+.product-still-stage .product-still-copy h1 > span:last-child > span { font-size: clamp(3.25rem, 6.3vw, 5.5rem); }
+.product-still-stage .product-still-layout { padding-top: 112px; padding-bottom: 40px; }
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px),
+       (prefers-reduced-motion: no-preference) and (max-width: 1279px) and (max-height: 719px),
+       (prefers-reduced-motion: no-preference) and (max-height: 639px) {
+  .product-still-stage { height: 100dvh; }
+  .product-still-stage .product-still-layout {
+    gap: clamp(12px, 2.4dvh, 22px);
+    padding: max(76px, calc(env(safe-area-inset-top) + 68px)) 24px 24px;
+  }
+  .product-still-stage .product-still-visual {
+    height: clamp(110px, 29dvh, 300px);
+    min-height: 0;
+    border-radius: var(--radius-lg);
+  }
+  .product-still-stage .product-still-copy { gap: clamp(10px, 1.8dvh, 18px); }
+  .product-still-stage .product-still-copy h1 > span:first-child > span { font-size: clamp(1.1rem, 3dvh, 1.5rem); }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: clamp(2.2rem, 7dvh, 3.5rem); }
+  .product-still-stage .product-still-beats p { font-size: 1rem; line-height: 1.4; }
+  .product-still-stage .product-still-beats { min-height: 8.5rem; align-items: start; overflow: clip; }
+  .product-still-stage .product-still-desktop-beats { display: none; }
+  .product-still-stage .product-still-beats { display: grid; }
+  .product-craft-stage { height: 100dvh; padding: max(76px, calc(env(safe-area-inset-top) + 68px)) 0 24px; }
+  .product-craft-stage .product-craft-layout { grid-template-columns: minmax(0, 1fr); gap: clamp(12px, 2dvh, 22px); padding-inline: 24px; }
+  .product-craft-stage .product-craft-well { justify-self: center; max-width: 54vw; }
+  .product-craft-stage .product-craft-visual { height: clamp(130px, 31dvh, 340px); }
+  .product-craft-stage .product-craft-copy { gap: clamp(10px, 1.6dvh, 16px); }
+  .product-craft-stage .product-craft-copy h2 { font-size: clamp(1.8rem, 4.7dvh, 3rem); line-height: 1.06; }
+  .product-craft-stage .product-craft-facts > div { min-width: 0; }
+  .product-craft-stage .product-craft-facts { overflow: clip; }
+  .product-craft-stage .product-film-controls { inset: 0; display: block; }
+  .product-craft-stage .product-film-controls > span { position: absolute; top: 8px; left: 8px; max-width: calc(100% - 16px); padding: 6px; font-size: 12px; line-height: 1.2; letter-spacing: 0.08em; }
+  .product-craft-stage .product-film-controls > button { position: absolute; bottom: 8px; right: 8px; }
+  .product-craft-stage .product-craft-facts > div > p { margin-top: 10px; font-size: 1rem; line-height: 1.4; }
+  .product-craft-stage .product-craft-facts > div > div { gap: 2px; }
+  .product-craft-stage .product-craft-facts > div > div > p:first-child { font-size: clamp(1.25rem, 3dvh, 1.75rem); }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 1279px) and (max-height: 699px),
+       (prefers-reduced-motion: no-preference) and (max-height: 639px) {
+  .product-craft-stage .product-craft-visual { height: 23dvh; }
+  .product-craft-stage .product-craft-copy h2 { font-size: 1.75rem; }
+  .product-craft-stage .product-craft-layout, .product-craft-stage .product-craft-copy { gap: 10px; }
+  .product-still-stage .product-still-visual { height: 24dvh; }
+}
+
+/* On a phone the portrait film and heading share the upper portion of
+   the stage. Facts then use its full width, giving the object room to
+   breathe without shrinking or clipping the narrative below it. */
+@media (prefers-reduced-motion: no-preference) and (max-width: 479px) and (min-height: 550px) and (orientation: portrait) {
+  .product-craft-stage { padding-top: 104px; padding-bottom: 16px; }
+  .product-craft-stage .product-craft-layout { grid-template-columns: minmax(0, 0.49fr) minmax(0, 0.51fr); grid-template-rows: auto auto auto 1px; align-items: center; gap: 10px 16px; }
+  .product-craft-stage .product-craft-copy { display: contents; }
+  .product-craft-stage .product-craft-well { grid-area: 1 / 1 / 3 / 2; width: 100%; height: auto; max-width: none; justify-self: stretch; }
+  .product-craft-stage .product-craft-visual { width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  .product-craft-stage .product-craft-copy > p { grid-area: 1 / 2; align-self: end; margin-top: 16px; }
+  .product-craft-stage .product-craft-copy h2 { grid-area: 2 / 2; align-self: start; font-size: clamp(1.65rem, 4.8dvh, 2.4rem); line-height: 1.06; }
+  .product-craft-stage .product-craft-facts { grid-area: 3 / 1 / 4 / 3; }
+  .product-craft-stage .product-craft-facts > div > p { margin-top: 8px; line-height: 1.35; }
+  .product-craft-stage .product-craft-copy > div:last-child { grid-area: 4 / 1 / 5 / 3; }
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 480px) and (max-width: 1279px) and (max-height: 719px),
+       (prefers-reduced-motion: no-preference) and (min-width: 480px) and (max-height: 639px) {
+  .product-craft-stage .product-craft-layout { grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: center; }
+  .product-craft-stage .product-craft-visual { height: calc(100dvh - 112px); }
+  .product-craft-stage .product-craft-copy h2 { font-size: 1.8rem; }
+  .product-still-stage .product-still-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-block: 76px 16px; }
+  .product-still-stage .product-still-copy { order: 1; gap: 10px; }
+  .product-still-stage .product-still-visual { order: 2; height: calc(100dvh - 112px); min-height: 0; }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: 2.5rem; }
+  .product-still-stage .product-still-beats { min-height: 8.5rem; }
+  .product-still-stage .product-still-beats p { font-size: 1rem; line-height: 1.4; }
+}
+
+/* A short landscape keeps the heading and object in the left column and
+   the full active text beat on the right, rather than clipping a tall
+   title + body stack. CSS placement leaves the DOM reading order intact. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 480px) and (max-height: 449px) {
+  .product-craft-stage { padding-top: 72px; padding-bottom: 16px; }
+  .product-craft-stage .product-craft-layout { height: 100%; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); grid-template-rows: auto auto minmax(0, 1fr) 1px; align-items: start; gap: 8px 20px; }
+  .product-craft-stage .product-craft-copy { display: contents; }
+  .product-craft-stage .product-craft-copy > p { grid-area: 1 / 1; }
+  .product-craft-stage .product-craft-copy h2 { grid-area: 2 / 1; font-size: 1.6rem; }
+  .product-craft-stage .product-craft-well { grid-area: 3 / 1; height: 100%; min-height: 0; max-width: 100%; }
+  .product-craft-stage .product-craft-visual { height: 100%; min-height: 0; }
+  .product-craft-stage .product-craft-facts { grid-area: 1 / 2 / 4 / 3; align-self: center; }
+  .product-craft-stage .product-craft-copy > div:last-child { grid-area: 4 / 1 / 5 / 3; }
+  .product-still-stage .product-still-layout { height: 100%; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); grid-template-rows: auto auto minmax(0, 1fr); align-items: start; gap: 8px 20px; padding-top: 72px; padding-bottom: 16px; }
+  .product-still-stage .product-still-copy { display: contents; }
+  .product-still-stage .product-still-copy > div:first-child { grid-area: 1 / 1; }
+  .product-still-stage .product-still-copy h1 { grid-area: 2 / 1; }
+  .product-still-stage .product-still-copy h1 > span:first-child > span { font-size: 1rem; }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: 1.8rem; }
+  .product-still-stage .product-still-visual { grid-area: 3 / 1; height: 100%; min-height: 0; }
+  .product-still-stage .product-still-beats { grid-area: 1 / 2 / 4 / 3; align-self: center; }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 479px) and (max-height: 549px) {
+  .product-craft-stage { padding-top: 68px; padding-bottom: 16px; }
+  .product-craft-stage .product-craft-layout, .product-craft-stage .product-craft-copy { gap: 8px; }
+  .product-craft-stage .product-craft-well { width: 100%; max-width: 100%; }
+  .product-craft-stage .product-craft-visual { height: 72px; aspect-ratio: 16 / 9; }
+  .product-craft-stage .product-craft-copy h2 { font-size: 1.5rem; }
+  .product-craft-stage .product-craft-facts > div > p { line-height: 1.35; margin-top: 8px; }
+}
+
+@media (max-width: 767px) {
+  .mobile-cart-dock { bottom: max(12px, env(safe-area-inset-bottom)); }
+  .order-progress .tag-mono { letter-spacing: 0.06em; }
+  .product-jar-selector .tag-mono { letter-spacing: 0; }
+}
+
+/* New buying controls occupy their own cell, including on short landscape stages. */
+@media (prefers-reduced-motion: no-preference) and (max-width: 479px) {
+  .product-still-stage .product-still-copy { gap: 12px; }
+  .product-still-stage .product-still-layout { gap: 16px; }
+  .product-still-stage .product-hero-actions .button-ink { min-height: 44px; padding: 12px 18px; }
+  .product-still-stage .product-hero-actions > div { column-gap: 16px; }
+  .product-still-stage .product-hero-offer { font-size: 12px; margin-bottom: 8px; }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: clamp(2rem, 6dvh, 3.25rem); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 479px) and (max-height: 649px) {
+  .product-still-stage .product-still-layout { gap: 10px; padding-top: 72px; padding-bottom: 12px; }
+  .product-still-stage .product-still-visual { height: 88px; }
+  .product-still-stage .product-still-copy { gap: 8px; }
+  .product-still-stage .product-still-copy h1 > span:first-child > span { font-size: 18px; }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: 32px; }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 480px) and (max-height: 449px) {
+  .product-still-stage .product-still-layout { grid-template-rows: minmax(0, 1fr); }
+  .product-still-stage .product-still-visual { grid-area: 1 / 1; height: 100%; }
+  .product-still-stage .product-still-copy { grid-area: 1 / 2; display: flex; justify-content: center; height: 100%; gap: 4px; }
+  .product-still-stage .product-still-copy > div:first-child { gap: 0; }
+  .product-still-stage .product-still-copy > div:first-child > img { display: none; }
+  .product-still-stage .product-still-copy > div:first-child .tag-mono { letter-spacing: .08em; }
+  .product-still-stage .product-still-copy h1 > span:first-child > span { font-size: 14px; }
+  .product-still-stage .product-still-copy h1 > span:last-child > span { font-size: 26px; }
+  .product-still-stage .product-still-beats { grid-area: auto; align-self: stretch; min-height: 0; }
+  .product-still-stage .product-still-beats p { font-size: 16px; line-height: 1.35; }
+  .product-still-stage .product-hero-actions { grid-area: auto; display: block; }
+  .product-still-stage .product-hero-offer { margin: 0 0 5px; font-size: 12px; line-height: 1.4; }
+  .product-still-stage .product-hero-actions .button-ink { min-height: 44px; padding: 10px; letter-spacing: .02em; }
+  .product-still-stage .product-hero-actions > div { column-gap: 12px; flex-wrap: nowrap; }
+  .product-still-stage .product-scent-full { display: none; }
+  .product-still-stage .product-scent-short { display: inline; }
+}

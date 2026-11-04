@@ -4,7 +4,7 @@
    The browser POSTs clean semantic JSON here; this server endpoint:
      • validates `formType` (the Make.com Router condition),
      • builds the EXACT Make payload (Finnish keys Make/Airtable expect),
-     • forces numeric fields to real numbers (so Airtable accepts them),
+     • validates quantities and computes prices from the shared pricing rules,
      • stamps `Saapunut` server-side (trusted clock),
      • forwards it to the Make webhook stored in MAKE_WEBHOOK_URL.
 
@@ -13,16 +13,12 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import { NextRequest, NextResponse } from "next/server";
+import { validEmail, validateOrder } from "@/lib/order";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Coerce anything to a finite number (Airtable number fields), default 0. */
-function num(v: unknown): number {
-  const n = typeof v === "number" ? v : parseFloat(String(v ?? "").replace(",", "."));
-  return Number.isFinite(n) ? n : 0;
-}
-const str = (v: unknown) => String(v ?? "").trim();
+const str = (v: unknown) => typeof v === "string" ? v.trim() : "";
 
 export async function POST(req: NextRequest) {
   // Make.com webhook — read server-side only (never shipped to the browser).
@@ -37,6 +33,9 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ ok: false, error: "Invalid submission." }, { status: 400 });
+  }
 
   const Saapunut = new Date().toISOString();
   let payload: Record<string, unknown>;
@@ -50,35 +49,40 @@ export async function POST(req: NextRequest) {
       "Viesti": str(body.message),
       "Saapunut": Saapunut,
     };
-    if (!payload["Nimi"] || !payload["Sähköposti"] || !payload["Viesti"]) {
+    if (!payload["Nimi"] || !validEmail(str(body.email)) || !payload["Viesti"]) {
       return NextResponse.json({ ok: false, error: "Pakollisia kenttiä puuttuu." }, { status: 400 });
     }
   } else if (body.formType === "leimu-order") {
+    const validation = validateOrder(body);
+    if (!validation.ok) {
+      return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
+    }
+    const order = validation.order;
     payload = {
       formType: "leimu-order",
       // Asiakkaan tiedot
-      "Tilaaja": str(body.tilaaja),
-      "Sähköposti": str(body.email),
-      "Osoite": str(body.address),
-      "Postinumero": str(body.zip),
-      "Kaupunki": str(body.city),
+      "Tilaaja": order.tilaaja,
+      "Sähköposti": order.email,
+      "Osoite": order.address,
+      "Postinumero": order.zip,
+      "Kaupunki": order.city,
       // Tilauksen perustiedot
-      "Toimitus": str(body.delivery),
-      "Kpl yhteensä": num(body.totalCandles),
-      "Hinta": num(body.price),
+      "Toimitus": order.delivery,
+      "Kpl yhteensä": order.totalCandles,
+      "Hinta": order.price,
       // Maut (numeroita)
-      "Havu": num(body.havu),
-      "Havu-Vanilja": num(body.havuVanilja),
-      "Vanilja": num(body.vanilja),
-      "Mustikka": num(body.mustikka),
-      "Mustikka-Vanilja": num(body.mustikkaVanilja),
+      "Havu": order.havu,
+      "Havu-Vanilja": order.havuVanilja,
+      "Vanilja": order.vanilja,
+      "Mustikka": order.mustikka,
+      "Mustikka-Vanilja": order.mustikkaVanilja,
       // Purkkien värit (numeroita)
-      "Valkoiset purkit": num(body.white),
-      "Vihreät purkit": num(body.green),
-      "Punaiset purkit": num(body.red),
+      "Valkoiset purkit": order.white,
+      "Vihreät purkit": order.green,
+      "Punaiset purkit": order.red,
       // Lisätiedot
-      "Tuotteet (erittely)": str(body.items),
-      "Viesti kuoreen": str(body.personalMessage),
+      "Tuotteet (erittely)": order.items,
+      "Viesti kuoreen": order.personalMessage,
       "Saapunut": Saapunut,
     };
     if (!payload["Tilaaja"] || !payload["Sähköposti"]) {
@@ -97,13 +101,14 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error("[submit] Make webhook responded", res.status, detail.slice(0, 300));
       return NextResponse.json({ ok: false, error: `Webhook ${res.status}` }, { status: 502 });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ...(body.formType === "leimu-order" ? { price: payload["Hinta"] } : {}) });
   } catch (err) {
     console.error("[submit] Failed to reach Make webhook:", err);
     return NextResponse.json({ ok: false, error: "Upstream request failed." }, { status: 502 });

@@ -7,14 +7,14 @@ import type { Variants } from "framer-motion";
 import { useStore } from "@/context/store";
 import { notesLine } from "@/lib/scents";
 import { scrollToTarget } from "@/lib/scroll";
-import { EASE_IN_EXPO, SPRING_PREMIUM } from "@/lib/motionVariants";
+import { EASE_PREMIUM } from "@/lib/motionVariants";
 import { CaptionPlaque } from "@/components/ScentFrame";
 import { Dialog } from "@/components/Dialog";
 
 const card: Variants = {
   hidden:  { opacity: 0, scale: 0.92, y: 24 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: SPRING_PREMIUM },
-  exit:    { opacity: 0, scale: 0.96, y: 10, transition: { duration: 0.18, ease: EASE_IN_EXPO } },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.24, ease: EASE_PREMIUM } },
+  exit:    { opacity: 0, scale: 0.96, y: 10, transition: { duration: 0.18, ease: EASE_PREMIUM } },
 };
 
 export function ScentModal() {
@@ -27,11 +27,12 @@ export function ScentModal() {
   const router = useRouter();
   const currentQty = modalScent ? (config.quantities[modalScent.id] ?? 0) : 0;
   const total = totalQty();
+  const atCapacity = currentQty === 0 && total >= 6;
 
   // Picks the scent, then glides to the configurator. On pages without one
   // (home) it opens /tuotteet at the configurator instead.
   const handleAddAndClose = () => {
-    if (!modalScent) return;
+    if (!modalScent || atCapacity) return;
     if (currentQty === 0 && total < 6) setQuantity(modalScent.id, 1);
     closeModal();
     setTimeout(() => {
@@ -53,7 +54,7 @@ export function ScentModal() {
           : ""
       }
       backdropClassName="bg-[rgba(20,17,13,0.72)] backdrop-blur-md"
-      panelClassName="max-w-3xl glass overflow-hidden rounded-2xl"
+      panelClassName="scent-modal-panel max-w-3xl glass overflow-hidden rounded-2xl"
       panelVariants={card}
     >
       {modalScent && (
@@ -127,9 +128,11 @@ export function ScentModal() {
                 ))}
               </div>
 
+              {atCapacity && <p role="status" className="text-sm leading-relaxed text-white">{lang === "fi" ? "Kuusi kynttilää on jo valittuna. Lisää ne koriin tai vähennä määrää ennen uuden tuoksun valintaa." : "Six candles are already selected. Add them to your cart or reduce a quantity before choosing another scent."}</p>}
               <button
                 onClick={handleAddAndClose}
-                className="mt-auto flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.08em] text-[var(--ink)] transition-[transform,background-color] duration-150 ease-out hover:bg-[var(--bg)] active:scale-[0.98]"
+                disabled={atCapacity}
+                className="mt-auto flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.08em] text-[var(--ink)] transition-[transform,background-color] duration-150 ease-out hover:bg-[var(--bg)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {lang === "fi" ? "Valitse tuoksu" : "Choose scent"}
                 <ArrowRight size={14} weight="light" aria-hidden="true" />

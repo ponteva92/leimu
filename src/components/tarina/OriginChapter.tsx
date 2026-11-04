@@ -12,22 +12,23 @@
    while the story crossfades beside it. The drop cap's frame draws and
    the quote inks in as they arrive, and an amber hairline keeps the
    place. Over the last 40svh the process sheet pulls up over the stage
-   while it recedes. Smaller screens and reduced motion get the same story
-   in normal flow.
+   while it recedes. Phones use the same sticky story with shorter text
+   beats around the portrait. Reduced motion keeps the story in flow.
 
    The photo is server-rendered in both layouts, so the frame is never
    empty. The living portrait (WebGL) mounts over it only in the layout
-   that shows, on md-and-up screens with a fine pointer, so phones never
-   load it. On the stage its loop parks once the sheet has covered it.
+   that shows, on every WebGL-capable device. On the stage its loop parks
+   once the sheet has covered it.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useRef, type ReactNode, type RefObject } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   animate, easeInOut, motion, useMotionValue, useTransform, type MotionValue,
 } from "framer-motion";
 import { useStore } from "@/context/store";
-import { FINE_QUERY, useMediaQuery, useStaged } from "@/lib/pin";
+import { useMotionLayout, useStaged } from "@/lib/pin";
 import { beatWindows, coverStart, mid, trackVars, type Span } from "@/lib/timeline";
 import { EASE_PREMIUM } from "@/lib/motionVariants";
 import { LogoMark } from "@/components/LogoMark";
@@ -38,6 +39,7 @@ import {
   useCoverRecede, useStageShown, useTrackProgress, useWillChange, useWillChangeWhileMoving,
 } from "@/components/story/hooks";
 import { PortraitPhoto } from "./PortraitPhoto";
+import { useStoryWebGL } from "./useStoryWebGL";
 
 /* The photo under it is the placeholder, so the chunk loads with none. */
 const LivingPortrait = dynamic(() => import("./LivingPortrait"), {
@@ -208,7 +210,7 @@ function Kicker({ lang }: { lang: Lang }) {
    globals.css), so the title never waits for script. */
 function Title({ lang, className }: { lang: Lang; className: string }) {
   return (
-    <h1 className={`heading-display text-[var(--ink)] ${className}`}>
+    <h1 data-order-entry className={`heading-display text-[var(--ink)] ${className}`}>
       <span className="t1">
         {lang === "fi" ? <>Kuinka <em>LEIMU</em></> : <>How <em>LEIMU</em></>}
       </span>
@@ -219,6 +221,7 @@ function Title({ lang, className }: { lang: Lang; className: string }) {
 
 function Facts({ lang, className = "" }: { lang: Lang; className?: string }) {
   return (
+    <>
     <dl className={className}>
       {FACTS.map(({ key, val }) => (
         <div
@@ -230,6 +233,8 @@ function Facts({ lang, className = "" }: { lang: Lang; className?: string }) {
         </div>
       ))}
     </dl>
+    <Link href="/tuotteet#configurator" className="text-link mt-4">{lang === "fi" ? "Valitse oma LEIMU" : "Choose your LEIMU"}<span aria-hidden="true">→</span></Link>
+    </>
   );
 }
 
@@ -270,14 +275,14 @@ function FrameSides({ draw, refs }: {
 }
 
 /* On the stage the frame draws with the scroll. */
-function ScrubbedFrame({ p }: { p: MotionValue<number> }) {
+function ScrubbedFrame({ p, at = CAP_DRAW }: { p: MotionValue<number>; at?: Span }) {
   const top = useRef<HTMLSpanElement>(null);
   const right = useRef<HTMLSpanElement>(null);
   const bottom = useRef<HTMLSpanElement>(null);
   const left = useRef<HTMLSpanElement>(null);
   const refs = [top, right, bottom, left];
-  const draw = useTransform(p, CAP_DRAW, [0, 1]);
-  useWillChange(p, [CAP_DRAW], refs);
+  const draw = useTransform(p, at, [0, 1]);
+  useWillChange(p, [at], refs);
   return <FrameSides draw={draw} refs={refs} />;
 }
 
@@ -296,10 +301,10 @@ function OnceFrame() {
 }
 
 /* The letter in its hairline frame. `p` is the stage's progress. */
-function DropCap({ letter, p }: { letter: string; p?: MotionValue<number> }) {
+function DropCap({ letter, p, drawAt }: { letter: string; p?: MotionValue<number>; drawAt?: Span }) {
   return (
     <span aria-hidden="true" className="relative float-left mb-1 mr-3 h-[88px] w-[68px]">
-      {p ? <ScrubbedFrame p={p} /> : <OnceFrame />}
+      {p ? <ScrubbedFrame p={p} at={drawAt} /> : <OnceFrame />}
       <svg viewBox="0 0 60 80" className="block h-full w-full">
         <text
           x="30" y="64"
@@ -319,15 +324,16 @@ function DropCap({ letter, p }: { letter: string; p?: MotionValue<number> }) {
 
 /* The drawn letter is hidden from screen readers, so they get the first
    word whole instead of its tail. */
-function Opening({ story, p, className }: {
+function Opening({ story, p, drawAt, className }: {
   story: Story;
   p?: MotionValue<number>;
+  drawAt?: Span;
   className: string;
 }) {
   const { cap, word, rest } = story.opening;
   return (
     <p className={className}>
-      <DropCap letter={cap} p={p} />
+      <DropCap letter={cap} p={p} drawAt={drawAt} />
       <span className="sr-only">{cap + word}</span>
       <span aria-hidden="true">{word}</span>
       {rest}
@@ -360,8 +366,8 @@ function Portrait({ className, push, pushRef, children }: {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(26,24,20,0.55)] via-transparent to-transparent"
       />
-      <div className="absolute bottom-4 left-4 right-4">
-        <CaptionPlaque tone="paper">
+      <div className="tarina-portrait-caption-wrapper absolute bottom-4 left-4 right-4">
+        <CaptionPlaque tone="paper" className="tarina-portrait-caption">
           <p className="tag-mono mb-0.5">Oulu · Studio</p>
           <p className="font-serif text-lg italic text-[var(--ink)]">LEIMU by Shane</p>
         </CaptionPlaque>
@@ -375,6 +381,42 @@ const STAGE_BODY = "text-lg leading-[1.85] text-[var(--ink-soft)]";
 /* Beats of different heights share the cell, centred on the portrait. */
 const BEAT = "[grid-area:1/1] self-center";
 
+/* On a phone the same story has seven readable beats. Keeping the two
+   longer passages in separate cells lets the portrait stay present without
+   shrinking body copy or making the reader scroll inside a pinned panel. */
+const mobileWipe = beatWindows(6, { head: 0.04, tail: 0.16, fill: 0.48 });
+
+function MobileBeats({ lang, p }: { lang: Lang; p: MotionValue<number> }) {
+  const story = STORY[lang];
+  const beats = [
+    <div key="title">
+      <Title lang={lang} className="tarina-origin-title text-5xl" />
+      <Facts lang={lang} className="tarina-origin-facts mt-4" />
+    </div>,
+    <Opening key="opening" story={story} p={p} drawAt={[mid(mobileWipe(0)), mobileWipe(1)[0]]} className="tarina-origin-body text-base leading-relaxed text-[var(--ink-soft)]" />,
+    <p key="flame" className="tarina-origin-body text-base leading-relaxed text-[var(--ink-soft)]">{story.flame}</p>,
+    <figure key="quote">
+      <span aria-hidden="true" className="mb-4 block h-px w-12 bg-[var(--accent-2)]" />
+      <blockquote className="tarina-origin-quote font-serif text-3xl font-medium italic leading-tight text-[var(--ink)]">
+        <InkWords text={COPY.quote[lang]} p={p} at={[mid(mobileWipe(2)), mobileWipe(3)[0]]} />
+      </blockquote>
+      <figcaption className="tag-mono mt-4">{COPY.cite}</figcaption>
+    </figure>,
+    <p key="shea" className="tarina-origin-body text-base leading-relaxed text-[var(--ink-soft)]">{story.shea}</p>,
+    <p key="cure" className="tarina-origin-body text-base leading-relaxed text-[var(--ink-soft)]">{story.cure}</p>,
+    <p key="slow" className="tarina-origin-body text-base leading-relaxed text-[var(--ink-soft)]">{story.slow}</p>,
+  ];
+  return (
+    <div className="tarina-origin-mobile-beats grid">
+      {beats.map((beat, i) => (
+        <Crossfade key={i} p={p} arrive={mobileWipe(i - 1)} leave={mobileWipe(i)} className={BEAT}>
+          {beat}
+        </Crossfade>
+      ))}
+    </div>
+  );
+}
+
 function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -383,6 +425,7 @@ function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
   const recede = useCoverRecede(p, COVER_START);
   const push = useTransform(p, [0, COVER_START], [1, 1.06]);
   const fill = useTransform(p, FILL_INPUT, FILL_OUTPUT, { ease: easeInOut });
+  const mobileFill = useTransform(p, [0, COVER_START], [0, 1]);
   // The push scales up, so it is promoted only while it moves (see hooks).
   useWillChangeWhileMoving(push, [pushRef]);
   useWillChange(p, [[COVER_START, 1]], [gridRef]);
@@ -394,26 +437,33 @@ function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
     <div
       ref={trackRef}
       data-pin-rest={0}
-      className="relative hidden stage:block stage:h-[var(--track)]"
+      className="story-track tarina-origin-track relative hidden stage:block stage:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
-      <div className="sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
+      <div className="story-stage tarina-origin-stage sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
         <motion.div
           ref={gridRef}
-          className="mx-auto grid w-full max-w-7xl origin-top grid-cols-[auto_minmax(0,36rem)] items-center justify-center gap-16 px-10 xl:gap-28"
+          className="tarina-origin-grid mx-auto grid w-full max-w-7xl origin-top grid-cols-[auto_minmax(0,36rem)] items-center justify-center gap-16 px-10 xl:gap-28"
           style={{ scale: recede }}
         >
           {/* The frame's height sets its width through the photo's ratio. */}
-          <div className="paper-well">
-            <Portrait className="h-[min(78svh,calc(100svh-11rem))]" push={push} pushRef={pushRef}>
-              {canvas && <LivingPortrait active={active} />}
-            </Portrait>
+          <div className="tarina-origin-visual">
+            <div className="tarina-origin-well paper-well">
+              <Portrait className="tarina-origin-portrait h-[min(78svh,calc(100svh-11rem))]" push={push} pushRef={pushRef}>
+                {canvas && <LivingPortrait active={active} progress={p} />}
+              </Portrait>
+            </div>
+            <div className="tarina-origin-mobile-byline">
+              <Kicker lang={lang} />
+              <p className="font-serif text-xl italic text-[var(--ink)]">LEIMU by Shane</p>
+              <p className="tag-mono">Oulu · Studio</p>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-8">
+          <div className="tarina-origin-copy flex flex-col gap-8">
             <Kicker lang={lang} />
 
-            <div className="grid">
+            <div className="tarina-origin-desktop-beats grid">
               <Crossfade p={p} arrive={wipe(-1)} leave={wipe(0)} className={BEAT}>
                 <Title lang={lang} className="text-6xl xl:text-7xl" />
                 <Facts lang={lang} className="mt-10 max-w-xs" />
@@ -452,11 +502,14 @@ function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
               </Crossfade>
             </div>
 
+            <MobileBeats lang={lang} p={p} />
+
             <div aria-hidden="true" className="relative h-px w-full bg-[var(--line)]">
               <motion.div
-                className="absolute inset-0 origin-left bg-[var(--accent-2)]"
+                className="tarina-origin-desktop-progress absolute inset-0 origin-left bg-[var(--accent-2)]"
                 style={{ scaleX: fill }}
               />
+              <motion.div className="tarina-origin-mobile-progress absolute inset-0 origin-left bg-[var(--accent-2)]" style={{ scaleX: mobileFill }} />
             </div>
           </div>
         </motion.div>
@@ -465,8 +518,8 @@ function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
   );
 }
 
-/* ── Flow fallback (smaller screens, reduced motion) ───────────────────
-   Phones read the title first, then the portrait, then the story. From
+/* ── Reduced-motion flow ──────────────────────────────────────────────
+   Readers get the title first, then the portrait, then the story. From
    md the portrait holds a sticky column spanning both rows.              */
 const FLOW_BODY = "text-base leading-[1.85] text-[var(--ink-soft)]";
 
@@ -511,14 +564,15 @@ function Flow({ lang, canvas }: { lang: Lang; canvas: boolean }) {
 export function OriginChapter() {
   const lang = useStore((s) => s.lang);
   const staged = useStaged();
+  const layout = useMotionLayout();
   // Known only after mount, so neither layout mounts the living portrait
   // on the first paint, and the layout that is hidden never mounts it.
-  const fine = useMediaQuery(FINE_QUERY);
+  const webgl = useStoryWebGL();
 
   return (
     <section id="alku" aria-label={COPY.label[lang]} data-tone="light">
-      <Stage lang={lang} canvas={fine && staged} />
-      <Flow lang={lang} canvas={fine && !staged} />
+      {layout !== false && <Stage lang={lang} canvas={webgl && staged} />}
+      {layout !== true && <Flow lang={lang} canvas={webgl && !staged} />}
     </section>
   );
 }

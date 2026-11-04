@@ -17,7 +17,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useIsPresent, type Variants } from "framer-motion";
 import { useModal } from "@/lib/useModal";
-import { EASE_IN_EXPO, EASE_PREMIUM } from "@/lib/motionVariants";
+import { EASE_PREMIUM } from "@/lib/motionVariants";
 
 const scrim: Variants = {
   hidden: { opacity: 0 },
@@ -28,8 +28,8 @@ const scrim: Variants = {
 /** Default panel motion: a short rise on the house curve, a crisp ease-in exit. */
 export const panelRise: Variants = {
   hidden: { opacity: 0, y: 24, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: EASE_PREMIUM } },
-  exit: { opacity: 0, y: 12, scale: 0.97, transition: { duration: 0.18, ease: EASE_IN_EXPO } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.24, ease: EASE_PREMIUM } },
+  exit: { opacity: 0, y: 12, scale: 0.97, transition: { duration: 0.18, ease: EASE_PREMIUM } },
 };
 
 type DialogProps = {

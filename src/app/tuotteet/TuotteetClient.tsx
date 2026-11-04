@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useId, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useId, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence, useInView, useIsPresent } from "framer-motion";
 import Image from "next/image";
 import { useStore } from "@/context/store";
-import { SCENTS, PRICE_TABLE, calcPrice, formatEuro, FEATURED_SCENT_ID } from "@/lib/scents";
+import { SCENTS, PRICE_TABLE, formatEuro, FEATURED_SCENT_ID } from "@/lib/scents";
 import { ScentCard } from "@/components/ScentCard";
 import { submitForm } from "@/lib/formSubmit";
+import { isDiscountCode, orderPricing } from "@/lib/order";
+import { PurchaseNotes } from "@/components/PurchaseNotes";
 import { CandleSVG } from "@/components/CandleSVG";
 import { ScentModal } from "@/components/ScentModal";
 import { PrivacyLink } from "@/components/PrivacyModal";
@@ -64,10 +67,13 @@ function InputField({ label, type = "text", required = false, autoComplete, valu
       <label htmlFor={id} className="tag-mono block mb-2">{label}</label>
       <input
         id={id} type={type} required={required} autoComplete={autoComplete} value={value} onChange={onChange}
+        inputMode={autoComplete === "postal-code" ? "numeric" : type === "email" ? "email" : undefined}
+        pattern={autoComplete === "postal-code" ? "[0-9]{5}" : required && type === "text" ? ".*\\S.*" : undefined}
+        maxLength={autoComplete === "postal-code" ? 5 : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={[
-          "w-full px-4 py-3 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-sm transition-colors duration-base focus:outline-none",
+          "w-full px-4 py-3 rounded-md border bg-[var(--bg)] text-[var(--ink)] text-base md:text-sm transition-colors duration-base focus:outline-none",
           error
             ? "border-[var(--destructive)] focus:border-[var(--destructive)]"
             : "border-[var(--field-border)] focus:border-[var(--accent-2)]",
@@ -90,7 +96,7 @@ function ProgressBar({ step }: { step: string }) {
     : ["Cart", "Contact details", "Summary"];
   const current = step === "thankyou" ? 2 : steps.indexOf(step);
   return (
-    <div className="flex items-center gap-0 mb-10">
+    <div className="order-progress flex flex-wrap items-center gap-y-3 mb-10" aria-label={lang === "fi" ? "Tilauksen vaiheet" : "Order steps"}>
       {steps.map((s, i) => (
         <div key={s} className="flex items-center">
           <div className={`flex items-center gap-2 ${i <= current ? "text-[var(--ink)]" : "text-[var(--ink-mute)]"}`}>
@@ -101,10 +107,10 @@ function ProgressBar({ step }: { step: string }) {
                 </svg>
               ) : i + 1}
             </div>
-            <span className="tag-mono hidden md:inline" style={i <= current ? { color: "var(--ink)" } : undefined}>{labels[i]}</span>
+            <span className={`tag-mono ${i === current ? "inline" : "hidden md:inline"}`} aria-current={i === current ? "step" : undefined} style={i <= current ? { color: "var(--ink)" } : undefined}>{labels[i]}</span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`mx-3 h-px w-10 transition-colors ${i < current ? "bg-[var(--accent-2)]" : "bg-[var(--line)]"}`} />
+            <div className={`mx-2 h-px w-4 md:mx-3 md:w-10 transition-colors ${i < current ? "bg-[var(--accent-2)]" : "bg-[var(--line)]"}`} />
           )}
         </div>
       ))}
@@ -129,12 +135,18 @@ function ProductGrid() {
 
   return (
     <section id="tuoksut" className="mb-16" aria-labelledby={GRID_HEADING_ID}>
-      <h2 id={GRID_HEADING_ID} className="heading-display mb-10 text-4xl text-[var(--ink)] md:text-5xl">
+      <div className="scent-library-intro mb-8 md:mb-10">
+      <div>
+      <p className="tag-mono mb-3">{lang === "fi" ? "Tuoksukokoelma / 01–05" : "Scent collection / 01–05"}</p>
+      <h2 id={GRID_HEADING_ID} className="heading-display text-4xl text-[var(--ink)] md:text-5xl">
         {lang === "fi" ? <><span>Tutustu </span><em>tuoksuihin</em></> : <><span>Explore the </span><em>scents</em></>}
       </h2>
+      </div>
+      <p>{lang === "fi" ? "Viisi tuoksua. Valitse suosikkisi tai yhdistä useampi samaan tilaukseen." : "Five scents. Choose a favourite or bring a few together in one order."}</p>
+      </div>
       <motion.div
         ref={gridRef}
-        className="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4"
+        className="scent-grid"
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
@@ -144,6 +156,7 @@ function ProductGrid() {
           <ScentCard
             key={scent.id}
             scent={scent}
+            index={i}
             lang={lang}
             featured={scent.id === featured.id}
             onSelect={openModal}
@@ -163,16 +176,17 @@ function QuantityStepper({ scent }: { scent: Scent }) {
   const total = useStore((s) => s.totalQty());
   const setQuantity = useStore((s) => s.setQuantity);
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-[var(--line)] last:border-0">
-      <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-[var(--line)]">
+    <div className="grid grid-cols-[40px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-4 border-b border-[var(--line)] last:border-0 md:flex md:gap-4">
+      <div className="relative row-span-2 w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 border border-[var(--line)] md:w-14 md:h-14">
         <Image src={scent.image} alt={lang === "fi" ? scent.name : scent.nameEn} fill className="object-cover" sizes="56px" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-serif italic text-base text-[var(--ink)] leading-tight truncate">{lang === "fi" ? scent.name : scent.nameEn}</p>
         <p className="text-[12px] text-[var(--ink-mute)] mt-0.5 truncate">{lang === "fi" ? scent.profile : scent.profileEn}</p>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="col-start-2 flex items-center gap-3 flex-shrink-0">
         <button onClick={() => setQuantity(scent.id, qty - 1)} disabled={qty === 0}
+          aria-label={lang === "fi" ? `Vähennä ${scent.name}` : `Remove one ${scent.nameEn}`}
           className="w-11 h-11 rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center hover:bg-[var(--bg-2)] active:scale-95 transition-[background-color,opacity,transform] disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="2" viewBox="0 0 12 2" fill="none"><path d="M1 1h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
@@ -184,6 +198,7 @@ function QuantityStepper({ scent }: { scent: Scent }) {
           </AnimatePresence>
         </div>
         <button onClick={() => setQuantity(scent.id, qty + 1)} disabled={total >= 6}
+          aria-label={lang === "fi" ? `Lisää ${scent.name}` : `Add one ${scent.nameEn}`}
           className="w-11 h-11 rounded-full border border-[var(--ink)] bg-[var(--ink)] flex items-center justify-center text-[var(--bg)] hover:bg-[var(--accent-2-strong)] hover:border-[var(--accent-2-strong)] active:scale-95 transition-[background-color,border-color,opacity,transform] disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
@@ -232,10 +247,25 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
   const addToCart = useStore((s) => s.addToCart);
   const removeFromCart = useStore((s) => s.removeFromCart);
   const jars: JarColor[] = ["white", "green", "red"];
+  const configuratorRef = useRef<HTMLDivElement>(null);
+  const configuring = useInView(configuratorRef, { amount: 0.08 });
+  const [cartExpanded, setCartExpanded] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [dockMounted, setDockMounted] = useState(false);
+  const present = useIsPresent();
+  const mobileCartId = useId();
+  useEffect(() => setDockMounted(true), []);
+  useEffect(() => {
+    if (!added) return;
+    const timeout = window.setTimeout(() => setAdded(false), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [added]);
 
   const handleAddToCart = () => {
-    if (currentQty === 0) return;
-    addToCart(config.jar, { ...config.quantities });
+    const current = useStore.getState();
+    if (current.totalQty() === 0) return;
+    addToCart(current.config.jar, { ...current.config.quantities });
+    setAdded(true);
   };
 
   return (
@@ -244,16 +274,17 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
 
       <div className="divider mb-16" />
 
-      <div id="configurator">
+      <div id="configurator" ref={configuratorRef} className="pb-24 md:pb-0">
         <ProgressBar step="configure" />
 
-        <div className="grid md:grid-cols-2 gap-10 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           {/* Left: Configurator */}
-          <div>
+          <div className="min-w-0">
             <p className="tag-mono mb-2">{lang === "fi" ? "Lisää koriin" : "Add to cart"}</p>
             <h2 className="heading-display text-3xl md:text-4xl mb-8 text-[var(--ink)]">
               {lang === "fi" ? <><span>Kokoa oma </span><em>tilauksesi</em></> : <><span>Build your </span><em>order</em></>}
             </h2>
+            <p className="mb-8 max-w-[40ch] text-sm leading-relaxed text-[var(--ink-soft)]">{lang === "fi" ? "Valitse purkki ja tuoksut. Lisää kynttilät koriin ja viimeistele tilauksesi omalla viestillä." : "Choose your jar and scents. Add your candles to the cart, then finish your order with your own message."}</p>
 
             {/* Jar selector */}
             <div className="mb-8">
@@ -265,13 +296,13 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
                   ? "Kaikki purkit ovat läpikuultavaa maitolasia (mattalasi)."
                   : "All jars are translucent frosted milk glass."}
               </p>
-              <div className="flex gap-3">
+              <div className="product-jar-selector grid grid-cols-3 gap-2 md:flex md:gap-3">
                 {jars.map((jar) => (
                   <button key={jar} onClick={() => setJar(jar)} aria-pressed={config.jar === jar}
-                    className={["flex flex-col items-center gap-2 p-3 rounded-xl border transition-[background-color,border-color] duration-200",
+                    className={["flex min-w-0 flex-col items-center gap-2 p-2 md:p-3 rounded-xl border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97]",
                       config.jar === jar ? "border-[var(--accent-2)] bg-[var(--accent-2-tint)]" : "border-[var(--line)] hover:border-[var(--accent-3)]"].join(" ")}>
                     <div className="w-14 aspect-[3/5]"><CandleSVG jar={jar} animate={false} /></div>
-                    <span className="tag-mono !text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
+                    <span className="tag-mono max-w-full tracking-normal md:tracking-[0.16em] !text-[var(--ink-soft)]">{JAR_LABELS[jar][lang]}</span>
                   </button>
                 ))}
               </div>
@@ -293,13 +324,14 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
             </div>
 
             <button onClick={handleAddToCart} disabled={currentQty === 0}
-              className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+              className="w-full py-3.5 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.15em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-40 disabled:cursor-not-allowed">
               {lang === "fi" ? "+ Lisää koriin" : "+ Add to cart"}
             </button>
+            <p role="status" aria-live="polite" className="mt-3 min-h-6 text-center text-sm text-[var(--ink-soft)]">{added ? (lang === "fi" ? "Kynttilät lisätty koriin. Voit jatkaa tilausta tai valita lisää." : "Candles added. Continue your order or choose more.") : ""}</p>
           </div>
 
           {/* Right: Cart */}
-          <div className="md:sticky md:top-24">
+          <div className="min-w-0 md:sticky md:top-24">
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
               <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
                 <p className="tag-mono !text-[var(--ink)]">{lang === "fi" ? "Ostoskori" : "Cart"}</p>
@@ -319,6 +351,7 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
               </div>
 
               <div className="px-6 py-4 border-t border-[var(--line)] space-y-4">
+                <p className="text-[13px] leading-relaxed text-[var(--ink-soft)]">{lang === "fi" ? "Lahjapussi ja oma viesti mukana. Postitus 8\u00a0€ tai nouto." : "Gift bag and your message included. Postage 8\u00a0€ or collection."}</p>
                 {cartQty > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -350,7 +383,7 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
                 </div>
 
                 <button onClick={onProceed} disabled={cart.length === 0}
-                  className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-40 disabled:cursor-not-allowed">
                   {lang === "fi" ? "Jatka tilaukseen →" : "Proceed to checkout →"}
                 </button>
               </div>
@@ -358,16 +391,54 @@ function ConfigureStep({ onProceed }: { onProceed: () => void }) {
           </div>
         </div>
       </div>
+      <div className="mt-12"><PurchaseNotes /></div>
+      {/* The step's exit translates its wrapper. A body portal keeps the
+          dock anchored to the viewport while it completes its own exit. */}
+      {dockMounted && createPortal(<AnimatePresence>
+        {configuring && present && (
+          <motion.aside
+            key="mobile-cart"
+            className="mobile-cart-dock fixed inset-x-3 bottom-3 z-[45] rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-3 shadow-modal md:hidden"
+            aria-label={lang === "fi" ? "Tilauksen yhteenveto" : "Order overview"}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+          >
+            <AnimatePresence initial={false}>
+              {cartExpanded && (
+                <motion.div id={mobileCartId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.16 }} className="mb-3 max-h-[45dvh] overflow-y-auto overscroll-contain border-b border-[var(--line)] px-2 pb-2" data-lenis-prevent>
+                  {cart.length ? cart.map((item) => (
+                    <CartItemCard key={item.id} item={item} onRemove={() => removeFromCart(item.id)} />
+                  )) : <p className="py-3 text-sm text-[var(--ink-soft)]">{lang === "fi" ? "Valitse tuoksut ja lisää kynttilät koriin." : "Choose your scents and add candles to your cart."}</p>}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setCartExpanded((open) => !open)} aria-expanded={cartExpanded} aria-controls={mobileCartId} className="min-h-11 flex-1 px-2 text-left active:scale-[0.98] transition-transform duration-150">
+                <span className="block font-mono text-[12px] uppercase tracking-[0.08em]">{lang === "fi" ? "Ostoskori" : "Cart"} {cartExpanded ? "−" : "+"}</span>
+                <span className="block text-sm text-[var(--ink-soft)]" aria-live="polite">{cartQty} {lang === "fi" ? "kpl" : "pcs"} · {formatEuro(cartPrice)}</span>
+              </button>
+              <button type="button" onClick={currentQty > 0 ? handleAddToCart : onProceed} disabled={currentQty === 0 && cartQty === 0} className="min-h-11 max-w-[60%] rounded-full bg-[var(--ink)] px-5 py-3 font-mono text-[12px] uppercase tracking-[0.06em] text-[var(--bg)] transition-transform duration-150 active:scale-[0.97] disabled:opacity-40">
+                {currentQty > 0 ? (lang === "fi" ? `Lisää ${currentQty} koriin` : `Add ${currentQty} to cart`) : (lang === "fi" ? "Jatka →" : "Continue →")}
+              </button>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>, document.body)}
     </div>
   );
 }
 
 /* ─── Step 2: Checkout Form ─────────────────────── */
-function CheckoutStep({ formData, setFormData, onBack, onNext }: {
+function CheckoutStep({ formData, setFormData, onBack, onNext, discountCode = "" }: {
   formData: CheckoutData; setFormData: (d: CheckoutData) => void;
   onBack: () => void; onNext: () => void;
+  discountCode?: string;
 }) {
   const lang = useStore((s) => s.lang);
+  const cartQty = useStore((s) => s.cartTotalQty());
+  const pricing = orderPricing(cartQty, formData.wantsDelivery, discountCode);
   const [emailError, setEmailError] = useState("");
   const isEmail = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
   const field = (key: keyof CheckoutData) => ({
@@ -407,39 +478,45 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
           onChange={(e) => { setFormData({ ...formData, email: e.target.value }); if (emailError) setEmailError(""); }}
           error={emailError}
         />
-        <InputField label={lang === "fi" ? "Osoite" : "Address"} required autoComplete="street-address" {...field("address")} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InputField label={lang === "fi" ? "Postinumero" : "Postcode"} required autoComplete="postal-code" {...field("zip")} />
-          <InputField label={lang === "fi" ? "Kaupunki" : "City"} required autoComplete="address-level2" {...field("city")} />
-        </div>
-        <div className="flex items-start gap-3 pt-3 pb-1">
-          <input type="checkbox" id="delivery" checked={formData.wantsDelivery}
-            onChange={(e) => setFormData({ ...formData, wantsDelivery: e.target.checked })}
-            className="mt-0.5 w-4 h-4 accent-[var(--accent-2-strong)] cursor-pointer flex-shrink-0" />
-          <label htmlFor="delivery" className="cursor-pointer">
-            <p className="text-sm text-[var(--ink)]">{lang === "fi" ? "Tarvitsen kuljetuksen" : "I need delivery"}</p>
-            <p className="text-[12px] text-[var(--ink-mute)] mt-0.5">{lang === "fi" ? "Postitus" : "Postage"} +{formatEuro(8)}</p>
+        <fieldset className="space-y-3 pt-3">
+          <legend className="tag-mono mb-3">{lang === "fi" ? "Toimitustapa" : "Delivery method"}</legend>
+          <label className="checkout-choice">
+            <input type="radio" name="delivery" value="collection" checked={!formData.wantsDelivery} onChange={() => setFormData({ ...formData, wantsDelivery: false })} />
+            <span><strong>{lang === "fi" ? "Nouto · Oulu" : "Collection · Oulu"}</strong><small>{lang === "fi" ? "Ei postikuluja" : "No postage fee"}</small></span>
           </label>
+          <label className="checkout-choice">
+            <input id="delivery" type="radio" name="delivery" value="post" checked={formData.wantsDelivery} onChange={() => setFormData({ ...formData, wantsDelivery: true })} />
+            <span><strong>{lang === "fi" ? "Postitus · +8\u00a0€" : "Postage · +8\u00a0€"}</strong><small>{lang === "fi" ? "Toimitus 5–7 arkipäivässä" : "Delivery in 5–7 working days"}</small></span>
+          </label>
+        </fieldset>
+        {formData.wantsDelivery && <div className="space-y-5">
+          <InputField label={lang === "fi" ? "Osoite" : "Address"} required autoComplete="street-address" {...field("address")} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputField label={lang === "fi" ? "Postinumero" : "Postcode"} required autoComplete="postal-code" {...field("zip")} />
+            <InputField label={lang === "fi" ? "Kaupunki" : "City"} required autoComplete="address-level2" {...field("city")} />
+          </div>
+        </div>}
+        <div className="checkout-total" aria-live="polite">
+          <span className="text-sm">{lang === "fi" ? "Yhteensä" : "Total"}</span><span className="font-serif text-3xl">{formatEuro(pricing.total)}</span>
         </div>
-        <div className="flex items-start gap-3 pb-1">
+        <div className="checkout-choice">
           <input type="checkbox" id="personalMsg" checked={formData.wantsPersonalMessage}
             onChange={(e) => setFormData({ ...formData, wantsPersonalMessage: e.target.checked })}
             className="mt-0.5 w-4 h-4 accent-[var(--accent-2-strong)] cursor-pointer flex-shrink-0" />
           <label htmlFor="personalMsg" className="cursor-pointer">
             <p className="text-sm text-[var(--ink)]">
-              {lang === "fi" ? "Haluan itsekirjoitetun viestin sinetöityyn kuoreen" : "Add my own message in a sealed envelope"}
+              {lang === "fi" ? "Lisää oma viestisi kultaisen sinetin alle" : "Add your message beneath the golden seal"}
             </p>
             <p className="text-[12px] text-[var(--ink-mute)] mt-0.5">
-              {lang === "fi" ? "Käsinkirjoitettu viesti lisätään tilaukseen" : "We write your message by hand and add it to your order"}
+              {lang === "fi" ? "Käsinkirjoitettu viesti kuuluu tilaukseesi ilman lisämaksua." : "Your handwritten message is included at no extra charge."}
             </p>
           </label>
         </div>
         {formData.wantsPersonalMessage && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
             <label htmlFor="personal-message" className="tag-mono block mb-1.5">
@@ -450,7 +527,7 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
               value={formData.personalMessage}
               onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
               rows={5}
-              className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors duration-base resize-none leading-relaxed"
+              className="w-full px-4 py-3 rounded-md border border-[var(--field-border)] bg-[var(--bg)] text-[var(--ink)] text-base md:text-sm focus:outline-none focus:border-[var(--accent-2)] transition-colors duration-base resize-none leading-relaxed"
             />
             <p id="personal-message-hint" className="text-[12px] text-[var(--ink-mute)] mt-1.5 leading-snug">
               {lang === "fi"
@@ -460,8 +537,9 @@ function CheckoutStep({ formData, setFormData, onBack, onNext }: {
           </motion.div>
         )}
         <div className="pt-4 border-t border-[var(--line)]">
+          <p className="mb-5 text-[13px] leading-relaxed text-[var(--ink-soft)]">{lang === "fi" ? "Maksuohjeet saat tilauksen jälkeen. Voit maksaa MobilePaylla tai Siirrolla, henkilökohtaisen toimituksen yhteydessä myös käteisellä." : "Payment instructions follow your order. Pay by MobilePay or Siirto, or with cash for delivery in person."}</p>
           <button type="submit"
-            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200">
+            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] active:scale-[0.98] transition-[background-color,transform] duration-150">
             {lang === "fi" ? "Seuraava →" : "Next →"}
           </button>
         </div>
@@ -502,13 +580,13 @@ function SummaryStep({
   }
 
   const totalCandles = cart.reduce((s, item) => s + Object.values(item.quantities).reduce((a, q) => a + q, 0), 0);
-  const basePrice = calcPrice(totalCandles);
-  const discountAmount = discountApplied ? Math.floor(basePrice * 0.15) : 0;
-  const deliveryFee = formData.wantsDelivery ? 8 : 0;
-  const finalPrice = basePrice - discountAmount + deliveryFee;
+  const pricing = orderPricing(totalCandles, formData.wantsDelivery, discountApplied ? discountCode : "");
+  const basePrice = pricing.base;
+  const discountAmount = pricing.discount;
+  const finalPrice = pricing.total;
 
   const handleApply = () => {
-    if (discountCode.trim().toUpperCase() === "LEIMU29") {
+    if (isDiscountCode(discountCode)) {
       setDiscountApplied(true); setDiscountError(false);
     } else {
       setDiscountError(true); setDiscountApplied(false);
@@ -616,11 +694,13 @@ function SummaryStep({
             <p className="tag-mono mb-3">{lang === "fi" ? "Yhteystiedot" : "Contact details"}</p>
             <Row label={lang === "fi" ? "Nimi" : "Name"} value={`${formData.firstName} ${formData.lastName}`} />
             <Row label={lang === "fi" ? "Sähköposti" : "Email"} value={formData.email} />
-            <Row label={lang === "fi" ? "Osoite" : "Address"} value={formData.address} />
-            <Row label={lang === "fi" ? "Postinumero ja kaupunki" : "Postcode and city"} value={`${formData.zip} ${formData.city}`} />
+            {formData.wantsDelivery && <>
+              <Row label={lang === "fi" ? "Osoite" : "Address"} value={formData.address} />
+              <Row label={lang === "fi" ? "Postinumero ja kaupunki" : "Postcode and city"} value={`${formData.zip} ${formData.city}`} />
+            </>}
             <Row
-              label={lang === "fi" ? "Postitus" : "Delivery by post"}
-              value={formData.wantsDelivery ? (lang === "fi" ? "Kyllä" : "Yes") : (lang === "fi" ? "Ei" : "No")}
+              label={lang === "fi" ? "Toimitustapa" : "Delivery"}
+              value={formData.wantsDelivery ? (lang === "fi" ? "Postitus" : "Postage") : (lang === "fi" ? "Nouto · Oulu" : "Collection · Oulu")}
             />
             {formData.wantsPersonalMessage && formData.personalMessage && (
               <div className="py-1.5 border-b border-[var(--line)]">
@@ -631,6 +711,7 @@ function SummaryStep({
             <Row label={lang === "fi" ? "Hinta" : "Price"} value={formatEuro(finalPrice)} />
           </div>
 
+          <PurchaseNotes />
           <div className="flex items-start gap-3 py-1">
             <input type="checkbox" id="privacyConsent" checked={privacyAccepted}
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
@@ -665,7 +746,7 @@ function SummaryStep({
           )}
 
           <button onClick={() => onConfirm(finalPrice)} disabled={!privacyAccepted || isSubmitting}
-            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            className="w-full py-4 bg-[var(--ink)] text-[var(--bg)] font-mono text-[12px] tracking-[0.2em] uppercase rounded-full hover:bg-[var(--accent-2-strong)] active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {isSubmitting
               ? (<><Spinner size={14} /> {lang === "fi" ? "Käsitellään…" : "Processing…"}</>)
               : lang === "fi" ? "Vahvista tilaus →" : "Confirm order →"}
@@ -827,7 +908,7 @@ export function TuotteetClient() {
     // scroll under Lenis.
     syncLenis();
     scrollToTarget(panel);
-    landOn(panel, { hash: false });
+    landOn(panel.querySelector<HTMLElement>("h1, h2") ?? panel, { hash: false });
   }, []);
   const [formData, setFormData] = useState<CheckoutData>({
     firstName: "", lastName: "", email: "",
@@ -841,9 +922,11 @@ export function TuotteetClient() {
   const [orderSnapshot, setOrderSnapshot] = useState(cart);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
+  const submitting = useRef(false);
 
   const handleConfirm = async (price: number) => {
-    if (isSubmitting) return;
+    if (submitting.current || cart.length === 0) return;
+    submitting.current = true;
     setIsSubmitting(true);
     setSubmitError(false);
 
@@ -873,16 +956,17 @@ export function TuotteetClient() {
       .join(" | ");
 
     try {
-      await submitForm({
+      const result = await submitForm({
         formType: "leimu-order",
         tilaaja: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
-        address: formData.address,
-        zip: formData.zip,
-        city: formData.city,
+        address: formData.wantsDelivery ? formData.address : "",
+        zip: formData.wantsDelivery ? formData.zip : "",
+        city: formData.wantsDelivery ? formData.city : "",
         delivery: formData.wantsDelivery ? "Posti (+8 €)" : "Nouto",
         totalCandles,
         price,
+        discountCode: discountApplied ? discountCode : undefined,
         havu: scentQty["havu"] ?? 0,
         havuVanilja: scentQty["havu-vanilja"] ?? 0,
         vanilja: scentQty["vanilja"] ?? 0,
@@ -896,7 +980,7 @@ export function TuotteetClient() {
       });
 
       // success, run the existing reset/advance logic
-      setConfirmedPrice(price);
+      setConfirmedPrice(result.price ?? price);
       setOrderSnapshot([...cart]);
       clearCart();
       go("thankyou");
@@ -904,6 +988,7 @@ export function TuotteetClient() {
       console.error("Tilauksen lähetys epäonnistui:", error);
       setSubmitError(true);
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
@@ -922,17 +1007,17 @@ export function TuotteetClient() {
 
       <StillLifeChapter />
 
-      <ChapterRail chapters={CHAPTERS} startRef={sheetRef} />
+      {step === "configure" && <ChapterRail chapters={CHAPTERS} startRef={sheetRef} />}
       {/* The pull-up is StillLifeChapter's COVER_SVH. */}
       <div
         ref={sheetRef}
         data-tone="light"
-        className="relative z-10 bg-[var(--bg)] md:motion-safe:-mt-[var(--cover)] md:motion-safe:shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]"
+        className="relative z-10 bg-[var(--bg)] motion-safe:-mt-[var(--cover)] motion-safe:shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)]"
         style={coverVars(STILL_COVER_SVH)}
       >
         {/* Seam and shadow only where the sheet rises over the pinned
             still life; in flow the two simply follow each other. */}
-        <div aria-hidden="true" className="sheet-seam hidden md:motion-safe:block" />
+        <div aria-hidden="true" className="sheet-seam hidden motion-safe:block" />
 
       <div className="px-6 md:px-10 max-w-7xl mx-auto pt-16 pb-24">
         <AnimatePresence mode="wait">
@@ -944,6 +1029,7 @@ export function TuotteetClient() {
           {step === "checkout" && (
             <motion.div key="checkout" id="configurator" ref={land}>
               <CheckoutStep formData={formData} setFormData={setFormData}
+                discountCode={discountApplied ? discountCode : ""}
                 onBack={() => go("configure")} onNext={() => go("summary")} />
             </motion.div>
           )}

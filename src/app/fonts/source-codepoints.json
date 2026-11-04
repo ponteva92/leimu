@@ -1,0 +1,106 @@
+[
+  {
+    "character": " ",
+    "codepoint": 160
+  },
+  {
+    "character": "©",
+    "codepoint": 169
+  },
+  {
+    "character": "°",
+    "codepoint": 176
+  },
+  {
+    "character": "·",
+    "codepoint": 183
+  },
+  {
+    "character": "Ä",
+    "codepoint": 196
+  },
+  {
+    "character": "Ö",
+    "codepoint": 214
+  },
+  {
+    "character": "×",
+    "codepoint": 215
+  },
+  {
+    "character": "ä",
+    "codepoint": 228
+  },
+  {
+    "character": "ö",
+    "codepoint": 246
+  },
+  {
+    "character": "–",
+    "codepoint": 8211
+  },
+  {
+    "character": "’",
+    "codepoint": 8217
+  },
+  {
+    "character": "“",
+    "codepoint": 8220
+  },
+  {
+    "character": "”",
+    "codepoint": 8221
+  },
+  {
+    "character": "…",
+    "codepoint": 8230
+  },
+  {
+    "character": "€",
+    "codepoint": 8364
+  },
+  {
+    "character": "→",
+    "codepoint": 8594
+  },
+  {
+    "character": "−",
+    "codepoint": 8722
+  },
+  {
+    "character": "⌄",
+    "codepoint": 8964
+  },
+  {
+    "character": "─",
+    "codepoint": 9472
+  },
+  {
+    "character": "🌲",
+    "codepoint": 127794
+  },
+  {
+    "character": "👌",
+    "codepoint": 128076
+  },
+  {
+    "character": "👍",
+    "codepoint": 128077
+  },
+  {
+    "character": "📞",
+    "codepoint": 128222
+  },
+  {
+    "character": "📧",
+    "codepoint": 128231
+  },
+  {
+    "character": "🤩",
+    "codepoint": 129321
+  },
+  {
+    "character": "🫐",
+    "codepoint": 129744
+  }
+]

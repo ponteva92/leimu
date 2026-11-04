@@ -99,21 +99,30 @@ export function HeatMirage({
       scentU.uTime.value += dt;
     }
 
-    logoU.uOpacity.value = damp(logoU.uOpacity.value, 0.95, 2.0, dt);
-    auraU.uOpacity.value = damp(auraU.uOpacity.value, reducedMotion ? 0.1 : 0.16, 2.0, dt);
-    scentU.uOpacity.value = damp(scentU.uOpacity.value, reducedMotion ? 0.04 : 0.11, 2.0, dt);
+    logoU.uAmp.value = reducedMotion ? 0 : 0.02;
+    logoU.uOpacity.value = reducedMotion ? 0.95 : damp(logoU.uOpacity.value, 0.95, 2.0, dt);
+    auraU.uOpacity.value = reducedMotion ? 0.1 : damp(auraU.uOpacity.value, 0.16, 2.0, dt);
+    scentU.uOpacity.value = reducedMotion ? 0.04 : damp(scentU.uOpacity.value, 0.11, 2.0, dt);
 
-    raycaster.setFromCamera(state.pointer, state.camera);
-    if (raycaster.ray.intersectPlane(plane, hit)) {
-      logoU.uMouse.value.set(hit.x, hit.y);
-      auraU.uMouse.value.set(hit.x, hit.y);
+    if (isMobile) {
+      // A slow, local disturbance gives the heat field the same depth as
+      // pointer movement without taking control of a touch scroll.
+      const t = logoU.uTime.value;
+      logoU.uMouse.value.set(centerX + Math.sin(t * 0.32) * 0.3, logoY + Math.cos(t * 0.25) * 0.2);
+      auraU.uMouse.value.copy(logoU.uMouse.value);
+    } else {
+      raycaster.setFromCamera(state.pointer, state.camera);
+      if (raycaster.ray.intersectPlane(plane, hit)) {
+        logoU.uMouse.value.set(hit.x, hit.y);
+        auraU.uMouse.value.set(hit.x, hit.y);
+      }
     }
 
     const moved =
       Math.abs(state.pointer.x - lastPointer.current.x) +
       Math.abs(state.pointer.y - lastPointer.current.y);
     lastPointer.current.set(state.pointer.x, state.pointer.y);
-    const target = moved > 0.0008 && !isMobile && !reducedMotion ? 1 : 0;
+    const target = reducedMotion ? 0 : isMobile ? 0.16 + Math.sin(logoU.uTime.value * 0.4) * 0.06 : moved > 0.0008 ? 1 : 0;
     strength.current = damp(strength.current, target, target > 0.5 ? 8 : 4, dt); // ramp / smooth recover
     logoU.uMouseStrength.value = strength.current;
     auraU.uMouseStrength.value = strength.current;

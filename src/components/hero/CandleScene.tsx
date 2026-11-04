@@ -19,6 +19,7 @@ import * as THREE from "three";
 import { useBitmapTexture } from "@/lib/useBitmapTexture";
 import { baseVert, flameFrag, candleFrag } from "./shaders";
 import { HeatMirage } from "./HeatMirage";
+import { CANDLE_FRAMING } from "./candleFraming";
 
 // hero-candle-black.png as WebP. The PNG has a fully transparent background;
 // "kynttilä musta.png" (candle-black.png) had a checkerboard baked into opaque
@@ -28,12 +29,12 @@ import { HeatMirage } from "./HeatMirage";
 const candleUrl = "/images/hero-candle-black.webp";
 
 /* candle 864×1184 → 0.7297 aspect */
-const CANDLE_H = 2.9; // smaller → whole lid clears the bottom, headroom above for logo + smoke
-const CANDLE_W = CANDLE_H * 0.7297;
+const CANDLE_H = CANDLE_FRAMING.height;
+const CANDLE_W = CANDLE_H * CANDLE_FRAMING.aspect;
 
 const CONFIG = {
   groupX: 0, // centred in the canvas → candle, smoke column & DOM logo share one axis
-  groupY: -0.5, // sits low-centre; the upper frame is the logo + smoke "veil" zone
+  groupY: CANDLE_FRAMING.centreY, // the upper frame holds the logo + heat-haze
   // wick measured from hero-candle-black.png (centroid frac x0.481, y0.154)
   wickX: (0.481 - 0.5) * CANDLE_W + 0.036, // nudged right onto the wick
   wickY: (0.5 - 0.185) * CANDLE_H - 0.196, // nudged down so flame + smoke sit on the wick tip
@@ -92,10 +93,10 @@ export function CandleScene({
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
+    const t = reducedMotion ? 0 : state.clock.elapsedTime;
 
     // auto-ignite — smooth fade-in on load
-    ignite.current = damp(ignite.current, 1, 1.4, dt);
+    ignite.current = reducedMotion ? 1 : damp(ignite.current, 1, 1.4, dt);
 
     const flicker = reducedMotion
       ? 0

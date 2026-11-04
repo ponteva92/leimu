@@ -162,7 +162,7 @@ Tonal layering first (paper / paper-2 / ink plaques). Shadows are ink-tinted and
 ### Buttons
 - **Shape:** full pill (9999px), 12px 28px, 13px tracked sans
 - **Primary:** ink fill, paper type. On dark heroes: paper fill, ink type
-- **Order** is the only nav CTA. Contact lives in the hero, the menu, and the footer
+- **Order** is the only nav CTA and links directly to `/tuotteet#configurator`. Contact lives in the menu and the footer.
 - **Hover / Focus:** scale ~1.03, visible 2px amber focus ring
 
 ### Caption plaque
@@ -185,6 +185,16 @@ Tonal layering first (paper / paper-2 / ink plaques). Shadows are ink-tinted and
 
 ### Footer
 - Ceremonial colophon on ink: oversized LEIMU, wax seal, specimen still, sign-off line. Not a three-column link farm.
+
+## 7. Cinematic redesign refinement · 2026-11-02
+
+- A stable 16px root keeps rem-based layout consistent. Body copy is 16px on phones and 18px on desktop; labels have a 12px floor.
+- Preserve every existing scene track and its pacing. Opening copy and primary actions render visibly before animation enhancement.
+- The home hero pairs a direct order action with the scent-library shortcut. A compact order dock follows the home and story journeys, hidden during menus and dialogs.
+- Scent artwork sits within a bounded square inside its mount. Captions remain opaque and outside the animated image, so names, prices, and actions stay readable.
+- Every purchase panel explains the included message and gift bag, postage, delivery estimate, and manual payment. Pickup does not request a postal address.
+- The final paper chapter offers a direct order action before the ink colophon.
+- Text starts readable under scroll-linked ink emphasis. Motion never depends on fading meaningful words to ghost contrast.
 
 ## 6. Do's and Don'ts
 

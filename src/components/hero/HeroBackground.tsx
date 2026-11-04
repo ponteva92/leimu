@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useStore } from "@/context/store";
-import { isCoarseViewport, webglAvailable } from "@/lib/webgl";
+import { webglAvailable } from "@/lib/webgl";
 import { SafeWebGL } from "@/components/SafeWebGL";
 
 const HeroBackgroundGL = dynamic(() => import("./HeroBackgroundGL"), {
@@ -36,7 +36,7 @@ export function HeroBackground() {
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const webglOK = webglAvailable() && !isCoarseViewport();
+    const webglOK = webglAvailable();
     const sync = () => setAnimate(webglOK && !mq.matches);
     sync();
     mq.addEventListener("change", sync);

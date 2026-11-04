@@ -57,7 +57,7 @@ const PULL = { stiffness: 180, damping: 22, mass: 0.8 };
 const STRENGTH = 0.3;
 
 const PILL =
-  "group relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.08em] transition-colors duration-300 focus-visible:rounded-full";
+  "group relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 font-sans text-[13px] font-medium uppercase tracking-[0.08em] transition-colors duration-300 focus-visible:rounded-full active:bg-[var(--accent-2-tint)]";
 const PRIMARY = "bg-[var(--ink)] text-[var(--bg)] hover:bg-[var(--accent-2-strong)]";
 const OUTLINE =
   "border border-[var(--field-border)] text-[var(--ink)] hover:border-[var(--accent-2)]";
@@ -104,7 +104,7 @@ function MagneticCTA({ children, href, onClick, primary = false }: {
     <>
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-px rounded-full opacity-0 shadow-glow transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute -inset-px rounded-full opacity-0 shadow-glow transition-opacity duration-150 [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 group-active:opacity-100 group-focus-visible:opacity-100"
       />
       {children}
     </>
@@ -160,7 +160,7 @@ export function StoryCTA() {
           {COPY.body[lang]}
         </motion.p>
         <motion.div variants={fadeUpItem} className="flex flex-wrap justify-center gap-4">
-          <MagneticCTA href="/tuotteet" primary>
+          <MagneticCTA href="/tuotteet#configurator" primary>
             {COPY.scents[lang]}
             <ArrowRight size={13} weight="light" aria-hidden="true" />
           </MagneticCTA>

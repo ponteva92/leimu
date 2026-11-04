@@ -109,6 +109,7 @@ export function lockScroll() {
   if (locks > 1) return;
   lenis?.stop();
   document.body.style.overflow = "hidden";
+  document.body.dataset.overlayOpen = "true";
 }
 
 export function unlockScroll() {
@@ -116,6 +117,7 @@ export function unlockScroll() {
   locks -= 1;
   if (locks > 0) return;
   document.body.style.overflow = "";
+  delete document.body.dataset.overlayOpen;
   lenis?.start();
 }
 

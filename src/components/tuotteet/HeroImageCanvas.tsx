@@ -7,7 +7,7 @@
    tuotteetHeroShaders), scaled to cover the frame. On mount the photo melts
    out of dark wax; `dusk` dims it while the wax seals keep their glow. The
    photo decodes off the main thread, and the render loop runs only while the
-   chapter can be seen. Loaded on demand, never on the server or a phone.
+   chapter can be seen. Loaded on demand on every WebGL-capable device.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { Suspense, useMemo, useState } from "react";
@@ -50,7 +50,7 @@ function HeroPlane({ dusk, still }: Omit<HeroImageCanvasProps, "active">) {
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
-    uniforms.uTime.value += dt;
+    if (!still) uniforms.uTime.value += dt;
     uniforms.uReveal.value = still
       ? REVEAL_END
       : damp(uniforms.uReveal.value, REVEAL_END, 0.9, dt);

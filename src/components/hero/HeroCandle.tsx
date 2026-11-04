@@ -8,27 +8,31 @@
            logo rendered as a texture above the wick, shimmering in rising
            heat-haze and wrapped in a warm "scent aura". No smoke.
 
-   Pinned (md+, motion allowed): a 290svh track holds a 100svh sticky stage.
+   Pinned (motion allowed): a 290svh track holds a viewport-sized sticky stage.
    Over the first 90svh of scroll the copy lifts away, dusk falls, and the
    candle glides to centre stage and grows until it stands inside the brand
    line "Kynttilät jotka [candle] tuoksuvat Suomelta." Over the last 100svh
    the home page's paper sheet, pulled up by one stage height, rises over
-   the stage while it recedes. Phones and reduced motion get the plain hero
-   in normal flow: no pin, no scroll choreography.
+   the stage while it recedes. Phones use the same beats in a stacked
+   composition; only reduced motion uses the plain hero in normal flow.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { easeInOut, motion, useScroll, useTransform } from "framer-motion";
+import { easeInOut, motion, useTransform } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
+import { ContactCTA } from "@/components/ContactCTA";
 import { SPRING_PREMIUM } from "@/lib/motionVariants";
 import { usePinned } from "@/lib/pin";
+import { COMPACT_STAGE_QUERY } from "@/lib/screens";
 import { coverStart, trackVars } from "@/lib/timeline";
-import { ContactCTA } from "@/components/ContactCTA";
-import { useCoverRecede, useWillChange } from "@/components/story/hooks";
+import { useCoverRecede, useTrackProgress, useWillChange } from "@/components/story/hooks";
+import { onRelayout } from "@/lib/layout";
+import { webglAvailable } from "@/lib/webgl";
 import { HeroBackground } from "./HeroBackground";
+import { CandleFallback } from "./CandleFallback";
+import styles from "./HeroCandle.module.css";
 import {
   HERO,
   heroStagger,
@@ -38,8 +42,8 @@ import {
   amberBreatheTransition,
 } from "./heroMotion";
 
-/* Three.js never ships in the initial bundle, never on the server, and never
-   on a phone — the chunk loads only after a fine-pointer desktop is confirmed. */
+/* Three.js loads after hydration on every supported device. The picture
+   remains the immediate first paint and the fallback for unavailable WebGL. */
 
 /* The track's height and the home sheet's pull-up in HomeClient read
    these through CSS variables, so the classes can't drift from the
@@ -88,6 +92,10 @@ export function HeroCandle() {
   const t = COPY[lang] ?? COPY.fi;
 
   const [isMobile, setIsMobile] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [mobileShiftX, setMobileShiftX] = useState(0);
+  const [mobileLift, setMobileLift] = useState(0);
+  const [mobileScale, setMobileScale] = useState(1.5);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [CandleCanvas, setCandleCanvas] = useState<ComponentType<CandleCanvasProps> | null>(null);
@@ -96,34 +104,36 @@ export function HeroCandle() {
   /* ── Environment ── */
   useEffect(() => {
     const mqMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    const mqCompact = window.matchMedia(COMPACT_STAGE_QUERY);
     const mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => {
       setIsMobile(mqMobile.matches);
+      setCompact(mqCompact.matches);
       setReducedMotion(mqMotion.matches);
     };
     sync();
-    const queries = [mqMobile, mqMotion];
+    const queries = [mqMobile, mqCompact, mqMotion];
     queries.forEach((mq) => mq.addEventListener("change", sync));
     return () => queries.forEach((mq) => mq.removeEventListener("change", sync));
   }, []);
 
   useEffect(() => {
-    if (!mounted || isMobile) return;
+    if (!mounted || !webglAvailable()) return;
     let cancelled = false;
     import("./CandleCanvas").then((mod) => {
       if (!cancelled) setCandleCanvas(() => mod.default);
-    });
+    }).catch(() => { /* The server-rendered image remains available. */ });
     return () => {
       cancelled = true;
     };
-  }, [mounted, isMobile]);
+  }, [mounted]);
 
   /* ── Ignition. Every transform reads `p`, held at rest when not pinned
         (and on the server, so the first paint is always the resting hero). */
   const pinned = usePinned();
   const trackRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: trackRef, offset: ["start start", "end end"] });
-  const p = useTransform(scrollYProgress, (v) => (pinned ? v : 0));
+  const { p: trackProgress } = useTrackProgress(trackRef, TRACK_SVH);
+  const p = useTransform(trackProgress, (v) => (pinned ? v : 0));
 
   // The copy lifts away bottom-first: CTAs leave early, the headline last.
   // Hidden CTAs also leave the tab order.
@@ -143,8 +153,9 @@ export function HeroCandle() {
   const duskOpacity = useTransform(p, [at(0.15), at(0.75)], [0, 0.9]);
   const groundOpacity = useTransform(p, [0, at(0.3)], [1, 0]);
   const glide = useTransform(p, [0, at(0.8)], [0, 1], { ease: easeInOut });
-  const candleX = useTransform(glide, (g) => `calc(${-50 * g}% - ${1.5 * g}rem)`);
-  const candleScale = useTransform(p, [0, IGNITE_END], [1, 1.18]);
+  const candleX = useTransform(glide, (g) => compact ? `${mobileShiftX * g}px` : `calc(${-50 * g}% - ${1.5 * g}rem)`);
+  const candleY = useTransform(glide, (g) => compact ? -mobileLift * g : 0);
+  const candleScale = useTransform(p, [0, IGNITE_END], [1, compact ? mobileScale : 1.18]);
   const glowScale = useTransform(p, [at(0.2), IGNITE_END], [1, 1.4]);
   const haloOpacity = useTransform(p, [at(0.3), IGNITE_END], [0, 1]);
 
@@ -158,8 +169,7 @@ export function HeroCandle() {
 
   /* Each moving layer is promoted while its window runs (see useWillChange).
      A layer that fades as well as moves names both, or Chrome repaints it.
-     `p` rests at 0 when not pinned, so phones and reduced motion promote
-     nothing. */
+     `p` rests at 0 under reduced motion, so still layouts promote nothing. */
   const eyebrowRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -173,6 +183,22 @@ export function HeroCandle() {
   const lineTailRef = useRef<HTMLSpanElement>(null);
   const recedeRef = useRef<HTMLDivElement>(null);
   const groundRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const compositionRef = useRef<HTMLDivElement>(null);
+
+  // Measure the resting grid, never the transformed candle. Its mobile
+  // destination is the actual stage centre, independent of copy wrapping.
+  useEffect(() => onRelayout(() => {
+    const stage = stageRef.current;
+    const composition = compositionRef.current;
+    const column = columnRef.current;
+    if (!stage || !composition || !column || !compact) return;
+    const stageHeight = stage.clientHeight;
+    const columnCentre = composition.offsetTop + column.offsetTop + column.offsetHeight / 2;
+    setMobileShiftX(stage.clientWidth / 2 - column.offsetLeft - column.offsetWidth / 2);
+    setMobileLift(Math.max(0, columnCentre - stageHeight * 0.51));
+    setMobileScale(Math.min(2.15, Math.max(1.2, stageHeight * 0.64 / Math.max(1, column.offsetHeight))));
+  }), [compact]);
   useWillChange(p, [[0, IGNITE_END]], [eyebrowRef, titleRef, bodyRef, ctaRef], "transform, opacity");
   useWillChange(p, [[0, IGNITE_END]], [columnRef]);
   useWillChange(p, [[at(0.2), IGNITE_END]], [glowRef]);
@@ -187,12 +213,13 @@ export function HeroCandle() {
     <div
       ref={trackRef}
       id="liekki"
-      className="relative md:motion-safe:h-[var(--track)]"
+      className="story-track relative motion-safe:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
       <section
+        ref={stageRef}
         data-tone="dark"
-        className="relative z-0 flex min-h-[100svh] items-center overflow-hidden md:motion-safe:sticky md:motion-safe:top-0 md:motion-safe:h-[100svh] md:motion-safe:min-h-0"
+        className={`story-stage relative z-0 flex min-h-[100svh] items-center overflow-hidden motion-safe:sticky motion-safe:top-0 motion-safe:h-[100svh] motion-safe:min-h-0 ${styles.stage}`}
         style={{ backgroundColor: HERO.bg }}
       >
         {/* Animated WebGL backdrop — warm fluid mesh + soft orbs (CSS-gradient fallback) */}
@@ -220,13 +247,13 @@ export function HeroCandle() {
           style={{ opacity: duskOpacity }}
         />
 
-        <motion.div ref={recedeRef} className="relative z-10 w-full" style={{ scale: recede }}>
-          <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-6 pt-28 pb-16 md:grid-cols-2 md:gap-12 md:px-10 md:py-20">
+        <motion.div ref={recedeRef} className={`relative z-10 w-full ${styles.recede}`} style={{ scale: recede }}>
+          <div ref={compositionRef} className={`mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-6 pt-28 pb-16 md:grid-cols-2 md:gap-12 md:px-10 md:py-20 ${styles.composition}`}>
             {/* ─────────────────── LEFT — typography ─────────────────── */}
             <motion.div
-              className="flex min-w-0 flex-col gap-7"
+              className={`flex min-w-0 flex-col gap-7 ${styles.copy}`}
               variants={heroStagger}
-              initial="hidden"
+              initial={false}
               animate="visible"
             >
               <motion.div ref={eyebrowRef} style={{ y: eyebrowY, opacity: eyebrowOpacity }}>
@@ -240,15 +267,20 @@ export function HeroCandle() {
               </motion.div>
 
               <motion.div ref={titleRef} style={{ y: titleY, opacity: titleOpacity }}>
-                <h1 className="max-w-full font-serif font-medium text-[clamp(2.15rem,8vw,4.5rem)] leading-[1.08] tracking-[-0.015em]">
+                <h1 className={`max-w-full font-serif font-medium text-[clamp(2.15rem,8vw,4.5rem)] leading-[1.08] tracking-[-0.015em] ${styles.headline}`}>
                   <motion.span variants={heroLine} className="block" style={{ color: HERO.cream }}>
                     {t.line1Lead}
                     <motion.span
-                      className="italic"
+                      className="relative inline-block italic"
                       style={{ color: HERO.amber }}
-                      animate={reducedMotion ? undefined : amberBreatheAnimate}
-                      transition={reducedMotion ? undefined : amberBreatheTransition}
                     >
+                      {!reducedMotion && <motion.span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0"
+                        style={{ textShadow: "0 0 28px rgba(198,142,88,0.55), 0 0 64px rgba(198,142,88,0.30)" }}
+                        animate={amberBreatheAnimate}
+                        transition={amberBreatheTransition}
+                      >{t.line1Accent}</motion.span>}
                       {t.line1Accent}
                     </motion.span>
                   </motion.span>
@@ -261,7 +293,7 @@ export function HeroCandle() {
               <motion.div ref={bodyRef} style={{ y: bodyY, opacity: bodyOpacity }}>
                 <motion.p
                   variants={heroFade}
-                  className="max-w-md text-base leading-relaxed md:text-[1.05rem]"
+                  className={`max-w-md text-base leading-relaxed md:text-[1.05rem] ${styles.body}`}
                   style={{ color: HERO.cream }}
                 >
                   {t.body}
@@ -269,11 +301,11 @@ export function HeroCandle() {
               </motion.div>
 
               {/* ── Two primary CTAs ── */}
-              <motion.div ref={ctaRef} className="mt-1" style={{ y: ctaY, opacity: ctaOpacity, visibility: ctaVisibility }}>
-                <motion.div variants={heroFade} className="flex flex-wrap items-center gap-4">
+              <motion.div ref={ctaRef} data-order-entry className="mt-1" style={{ y: ctaY, opacity: ctaOpacity, visibility: ctaVisibility }}>
+                <motion.div variants={heroFade} className={`flex flex-wrap items-center gap-4 ${styles.ctas}`}>
                   <Link href="/tuotteet" passHref legacyBehavior>
                     <motion.a
-                      className="relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 font-sans font-medium text-[13px] uppercase tracking-[0.08em]"
+                      className="touch-warm relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 font-sans font-medium text-[13px] uppercase tracking-[0.08em]"
                       style={{ backgroundColor: HERO.cream, color: "#1A1814" }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
@@ -294,8 +326,8 @@ export function HeroCandle() {
             {/* ───────── RIGHT — auto-lit candle + heat-mirage logo (all WebGL) ───────── */}
             <motion.div
               ref={columnRef}
-              className="relative h-[64vh] min-h-[480px] w-full md:h-[88vh]"
-              style={{ x: candleX, scale: candleScale }}
+              className={`relative h-[64svh] min-h-[480px] w-full md:h-[88vh] ${styles.candle}`}
+              style={{ x: candleX, y: candleY, scale: candleScale }}
             >
               <div className="absolute inset-0 translate-y-4 md:translate-y-8">
                 {/* warm glow behind the candle, with a blur(45px) baked into
@@ -331,19 +363,10 @@ export function HeroCandle() {
                 />
                 {/* WebGL candle + flame + heat-mirage logo + scent aura */}
                 <div className="absolute inset-0">
-                  {CandleCanvas && !isMobile ? (
-                    <CandleCanvas isMobile={false} reducedMotion={reducedMotion} />
+                  {CandleCanvas ? (
+                    <CandleCanvas isMobile={isMobile} reducedMotion={reducedMotion} />
                   ) : (
-                    <div className="absolute inset-0 flex items-end justify-center pb-[6%]">
-                      <Image
-                        src="/images/hero-candle-black.png"
-                        alt=""
-                        width={720}
-                        height={960}
-                        priority
-                        className="h-[88%] w-auto object-contain"
-                      />
-                    </div>
+                    <CandleFallback />
                   )}
                 </div>
               </div>
@@ -351,10 +374,10 @@ export function HeroCandle() {
           </div>
 
           {/* The brand line, parted around the settled candle. Pinned layouts only. */}
-          <div className="pointer-events-none absolute inset-0 hidden items-center md:motion-safe:flex">
+          <div className={`pointer-events-none absolute inset-0 hidden items-center motion-safe:flex ${styles.brandFrame}`}>
             <motion.p
               ref={lineRef}
-              className="heading-display mx-auto grid w-full max-w-7xl grid-cols-[1fr_32%_1fr] items-center gap-x-6 px-10 text-[clamp(1.75rem,3vw,3rem)]"
+              className={`heading-display mx-auto grid w-full max-w-7xl grid-cols-[1fr_32%_1fr] items-center gap-x-6 px-10 text-[clamp(1.75rem,3vw,3rem)] ${styles.brand}`}
               style={{ opacity: lineOpacity, color: HERO.cream }}
             >
               <motion.span ref={lineLeadRef} className="text-right" style={{ x: lineLeadX }}>
@@ -373,7 +396,7 @@ export function HeroCandle() {
         <motion.div
           ref={groundRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-28"
           style={{
             opacity: groundOpacity,
             background:

@@ -13,29 +13,29 @@
    40svh the values sheet pulls up over the room while the ledger
    recedes. The bar is dark glass while the room sits under it.
 
-   Smaller screens and reduced motion get the same ledger in normal flow,
-   its figures counting as they scroll into view.
+   Phones hold the same room and present each material in a readable beat.
+   Reduced motion gets the ledger in normal flow.
 
-   Behind both, melted wax catches dim light (LiquidDark, WebGL) on
-   md-and-up screens with a fine pointer; elsewhere the room is plain ink.
-   The canvas mounts only in the layout that shows, so phones never load
-   it, and on the stage its loop parks once the values sheet has covered
-   the room.
+   Behind both, melted wax catches dim light (LiquidDark, WebGL). Touch
+   uses ambient/scroll drift; a mouse steers it. The canvas mounts only in
+   the visible layout and parks once the values sheet covers the room.
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { motion, useMotionValueEvent, useTransform, type MotionValue } from "framer-motion";
 import { useStore } from "@/context/store";
-import { FINE_QUERY, useMediaQuery, useStaged } from "@/lib/pin";
+import { useMotionLayout, useStaged } from "@/lib/pin";
 import { beatWindows, coverStart, coverVars, mid, trackVars } from "@/lib/timeline";
 import { DrawnRule, RULE_ON_DARK } from "@/components/DrawnRule";
 import { Arrive } from "@/components/story/Arrive";
 import { CountUp } from "@/components/story/CountUp";
+import { Crossfade } from "@/components/story/Crossfade";
 import {
   useCoverRecede, useDarkStageSync, useStageShown, useTrackProgress, useWillChange,
 } from "@/components/story/hooks";
 import { COVER_SVH as PROCESS_COVER_SVH } from "./ProcessChapter";
+import { useStoryWebGL } from "./useStoryWebGL";
 
 /* The room is plain ink until the chunk loads, so it loads with none. */
 const LiquidDark = dynamic(() => import("./LiquidDark"), {
@@ -187,6 +187,28 @@ function useLatch(p: MotionValue<number>, at: number) {
 
 /* ── Pinned stage ──────────────────────────────────────────────────── */
 const STAGE_RULE = `absolute inset-x-0 h-px origin-left ${RULE_ON_DARK}`;
+const mobileWipe = beatWindows(3, { head: 0.08, tail: 0.2, fill: 0.55 });
+
+function MobileMaterial({ m, index, lang, p }: {
+  m: Material;
+  index: number;
+  lang: Lang;
+  p: MotionValue<number>;
+}) {
+  const arrived = useLatch(p, index === 0 ? 0 : mobileWipe(index - 1)[1]);
+  const draw = useTransform(p, mobileWipe(index - 1), [0, 1]);
+  return (
+    <li className="[grid-area:1/1] self-center">
+      <Crossfade p={p} arrive={mobileWipe(index - 1)} leave={mobileWipe(index)}>
+        <div className="relative">
+          <motion.span aria-hidden="true" className={`${STAGE_RULE} top-0`} style={{ scaleX: draw }} />
+          <Row m={m} lang={lang} run={index === 0 ? undefined : arrived} title="text-4xl" className="tarina-material-mobile-row py-8" />
+          <motion.span aria-hidden="true" className={`${STAGE_RULE} bottom-0`} style={{ scaleX: draw }} />
+        </div>
+      </Crossfade>
+    </li>
+  );
+}
 
 function StageRow({ m, index, lang, p }: {
   m: Material;
@@ -246,23 +268,26 @@ function Stage({ lang, canvas }: { lang: Lang; canvas: boolean }) {
     <div
       ref={trackRef}
       data-pin-rest={REST}
-      className="relative hidden stage:block stage:h-[var(--track)]"
+      className="story-track tarina-materials-track relative hidden stage:block stage:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
-      <div className="sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
-        {canvas && <LiquidDark active={active} />}
+      <div className="story-stage tarina-materials-stage sticky top-0 flex h-[100svh] items-center pb-6 pt-20">
+        {canvas && <LiquidDark active={active} progress={p} />}
         <motion.div
           ref={gridRef}
-          className="relative mx-auto grid w-full max-w-7xl origin-top grid-cols-[minmax(0,20rem)_minmax(0,1fr)] items-center gap-12 px-10 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:gap-20"
+          className="tarina-materials-grid relative mx-auto grid w-full max-w-7xl origin-top grid-cols-[minmax(0,20rem)_minmax(0,1fr)] items-center gap-12 px-10 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:gap-20"
           style={{ scale: recede }}
         >
           <h2 className="heading-display text-5xl text-[var(--on-dark)]">
             <Heading lang={lang} />
           </h2>
-          <ul>
+          <ul className="tarina-materials-desktop-list">
             {MATERIALS.map((m, i) => (
               <StageRow key={m.id} m={m} index={i} lang={lang} p={p} />
             ))}
+          </ul>
+          <ul className="tarina-materials-mobile-list grid">
+            {MATERIALS.map((m, i) => <MobileMaterial key={m.id} m={m} index={i} lang={lang} p={p} />)}
           </ul>
         </motion.div>
       </div>
@@ -297,10 +322,11 @@ function Flow({ lang, canvas }: { lang: Lang; canvas: boolean }) {
 export function MaterialsRoom() {
   const lang = useStore((s) => s.lang);
   const staged = useStaged();
+  const layout = useMotionLayout();
   const roomRef = useRef<HTMLElement>(null);
   // Known only after mount, so neither layout mounts the canvas on the
   // first paint, and the layout that is hidden never mounts it.
-  const fine = useMediaQuery(FINE_QUERY);
+  const webgl = useStoryWebGL();
   // One sync for both layouts, so they never contend for the bar: the
   // section is the track on the stage and the ledger in the flow. Only the
   // stage has the values sheet pulling up over it.
@@ -317,8 +343,8 @@ export function MaterialsRoom() {
       className="relative z-10 bg-[var(--ink)] stage:-mt-[var(--cover)] stage:shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.2)]"
       style={coverVars(PROCESS_COVER_SVH)}
     >
-      <Stage lang={lang} canvas={fine && staged} />
-      <Flow lang={lang} canvas={fine && !staged} />
+      {layout !== false && <Stage lang={lang} canvas={webgl && staged} />}
+      {layout !== true && <Flow lang={lang} canvas={webgl && !staged} />}
     </section>
   );
 }

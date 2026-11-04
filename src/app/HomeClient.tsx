@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { ArrowRight } from "@phosphor-icons/react";
+import { InstagramFeed } from "@/components/home/InstagramFeed";
 import { useStore } from "@/context/store";
 import { ScentModal } from "@/components/ScentModal";
 import {
@@ -52,95 +52,6 @@ function CraftLedger() {
           </motion.div>
         ))}
       </motion.div>
-    </section>
-  );
-}
-
-/* ─── Instagram Feed (Behold widget, deferred) ────────────────────
-   The third-party script loads once the page has loaded and scrolling
-   has paused for a second, at the next idle moment, so the feed starts
-   loading while the reader is still rather than mid-scroll. The
-   container reserves height so the feed never shifts layout. Real
-   photos beat any placeholder grid. */
-function InstagramFeed() {
-  const lang = useStore((s) => s.lang);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const mount = () => {
-      if (!document.querySelector("script[data-behold]")) {
-        const s = document.createElement("script");
-        s.type = "module";
-        s.src = "https://w.behold.so/widget.js";
-        s.setAttribute("data-behold", "1");
-        document.head.appendChild(s);
-      }
-      if (!el.querySelector("behold-widget")) {
-        const w = document.createElement("behold-widget");
-        w.setAttribute("feed-id", "Z0vXK9Le7HnNNay5tri8");
-        el.appendChild(w);
-      }
-    };
-
-    let idle = 0;
-    let quiet = 0;
-    // Mount after a second without scrolling, at the next idle moment.
-    const wait = () => {
-      window.clearTimeout(quiet);
-      if (idle) window.cancelIdleCallback(idle);
-      idle = 0;
-      quiet = window.setTimeout(() => {
-        if (typeof window.requestIdleCallback === "function") {
-          idle = window.requestIdleCallback(run, { timeout: 1000 });
-        } else {
-          run();
-        }
-      }, 1000);
-    };
-    const run = () => {
-      window.removeEventListener("scroll", wait);
-      mount();
-    };
-    const start = () => {
-      window.addEventListener("scroll", wait, { passive: true });
-      wait();
-    };
-    if (document.readyState === "complete") start();
-    else window.addEventListener("load", start, { once: true });
-    return () => {
-      window.removeEventListener("load", start);
-      window.removeEventListener("scroll", wait);
-      window.clearTimeout(quiet);
-      if (idle) window.cancelIdleCallback(idle);
-    };
-  }, []);
-
-  return (
-    <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
-      <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
-        <motion.h2
-          className="heading-display text-5xl md:text-6xl text-[var(--ink)]"
-          variants={headingReveal}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT_NEAR}
-        >
-          {lang === "fi" ? <>@leimucandles <em>Instagramissa.</em></> : <>@leimucandles on <em>Instagram.</em></>}
-        </motion.h2>
-        <a
-          href="https://www.instagram.com/leimucandles/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 tag-mono hover:text-[var(--ink)] transition-colors"
-        >
-          {lang === "fi" ? "Avaa Instagram" : "Open Instagram"}
-          <ArrowRight size={13} weight="light" aria-hidden="true" />
-        </a>
-      </div>
-      <div ref={containerRef} className="w-full min-h-[320px]" />
     </section>
   );
 }
@@ -242,7 +153,7 @@ function MaterialsIndex() {
    Watches the paper sheet's top edge. While the hero is still under the
    header bar the bar stays dark glass; once the sheet covers the hero
    completely, both WebGL loops park. Works for the pinned desktop hero
-   and the in-flow phone hero alike. The sheet is measured only when
+   and the compact phone hero alike. The sheet is measured only when
    layout may have changed (lib/layout), and the store hears only the
    flips, so scrolling never re-renders the page. */
 function useHeroSheet(sheetRef: RefObject<HTMLDivElement>) {
@@ -291,8 +202,8 @@ const CHAPTERS: Chapter[] = [
    sheet rises over it. The craft film pins the same way, and the scent
    library rises over its last stretch as a second sheet. On large
    screens (the `stage` screen) the gift ceremony pins too, and the
-   quote wall rises over it as a third. Phones and reduced motion keep
-   everything in normal flow. Each sheet marks its tone (data-tone) for
+   quote wall rises over it as a third. Phones keep the same stages in a
+   compact composition; reduced motion uses normal flow. Each sheet marks its tone (data-tone) for
    the chapter rail, which inks every tick to match the surface beneath
    it. */
 export function HomeClient() {
@@ -308,7 +219,7 @@ export function HomeClient() {
       <div
         ref={sheetRef}
         data-tone="light"
-        className="relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)] md:motion-safe:-mt-[var(--cover)]"
+        className="relative z-10 bg-[var(--bg)] shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.28)] motion-safe:-mt-[var(--cover)]"
         style={coverVars(HERO_COVER_SVH)}
       >
         <div aria-hidden="true" className="sheet-seam" />
@@ -317,10 +228,10 @@ export function HomeClient() {
         {/* The pull-up is CraftFilm's COVER_SVH. */}
         <div
           data-tone="light"
-          className="relative z-10 bg-[var(--bg)] md:motion-safe:-mt-[var(--cover)] md:motion-safe:shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.2)]"
+          className="relative z-10 bg-[var(--bg)] motion-safe:-mt-[var(--cover)] motion-safe:shadow-[0_-24px_70px_-18px_rgba(26,24,20,0.2)]"
           style={coverVars(CRAFT_COVER_SVH)}
         >
-          <div aria-hidden="true" className="sheet-seam hidden md:motion-safe:block" />
+          <div aria-hidden="true" className="sheet-seam hidden motion-safe:block" />
           <ScentLibrary />
         </div>
         <GiftCeremony chapter />

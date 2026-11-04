@@ -15,7 +15,7 @@
    scroll distance alone can't tell.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { EASE_PREMIUM } from "@/lib/motionVariants";
@@ -27,15 +27,21 @@ export function SiteHeader() {
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
   const heroUnderBar = useStore((s) => s.heroUnderBar);
   const darkStageUnderBar = useStore((s) => s.darkStageUnderBar);
   const dark = (pathname === "/" && heroUnderBar) || darkStageUnderBar;
 
+  useEffect(() => {
+    document.body.dataset.menuOpen = String(menuOpen);
+    return () => { delete document.body.dataset.menuOpen; };
+  }, [menuOpen]);
+
   useMotionValueEvent(scrollY, "change", (y) => {
     setScrolled(y > 32);
     const dy = y - lastY.current;
-    if (y < 50) setHidden(false); // always show near the top
+    if (menuOpen || y < 50) setHidden(false);
     else if (dy > 4) setHidden(true); // scrolling down → hide
     else if (dy < -4) setHidden(false); // scrolling up → reveal
     lastY.current = y;
@@ -43,13 +49,14 @@ export function SiteHeader() {
 
   return (
     <motion.header
+      data-header-hidden={hidden && !menuOpen ? "true" : "false"}
       className="fixed inset-x-0 top-0 z-[var(--z-header)]"
-      animate={{ y: hidden ? "-100%" : "0%" }}
-      transition={{ duration: 0.5, ease: EASE_PREMIUM }}
+      animate={{ y: hidden && !menuOpen ? "-100%" : "0%" }}
+      transition={{ duration: 0.24, ease: EASE_PREMIUM }}
       // Keyboard focus landing on a tucked-away link brings the bar back.
       onFocus={() => setHidden(false)}
     >
-      <Navbar scrolled={scrolled} tone={dark ? "dark" : "paper"} />
+      <Navbar scrolled={scrolled} tone={dark ? "dark" : "paper"} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
     </motion.header>
   );
 }

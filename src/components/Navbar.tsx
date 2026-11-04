@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -11,13 +11,18 @@ import { useStore } from "@/context/store";
 export function Navbar({
   scrolled,
   tone = "paper",
+  menuOpen,
+  setMenuOpen,
 }: {
   scrolled: boolean;
   tone?: "paper" | "dark";
+  menuOpen: boolean;
+  setMenuOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const pathname = usePathname();
   const lang = useStore((s) => s.lang);
   const toggleLang = useStore((s) => s.toggleLang);
+  const openContact = useStore((s) => s.openContact);
   const dark = tone === "dark";
 
   const links = [
@@ -26,7 +31,6 @@ export function Navbar({
     { href: "/tarina", label: { fi: "Tarina", en: "Story" } },
   ];
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const mobileLinks = [
     { href: "/", label: { fi: "Etusivu", en: "Home" } },
     { href: "/tuotteet", label: { fi: "Tuotteet", en: "Products" } },
@@ -34,10 +38,18 @@ export function Navbar({
   ];
   useEffect(() => {
     setMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, setMenuOpen]);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const close = () => { if (query.matches) setMenuOpen(false); };
+    query.addEventListener("change", close);
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", escape);
+    return () => { query.removeEventListener("change", close); window.removeEventListener("keydown", escape); };
+  }, [setMenuOpen]);
 
   const ink = dark ? "var(--on-dark)" : "var(--ink)";
-  const mute = dark ? "rgba(247,242,234,0.78)" : "var(--ink-mute)";
+  const mute = dark ? "var(--on-dark)" : "var(--ink-mute)";
 
   // The bar re-blurs whatever scrolls under it on every frame, and the cost
   // grows with the blur radius, so the glass stays at 16px with no saturate.
@@ -50,7 +62,7 @@ export function Navbar({
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         backgroundColor: dark
-          ? "rgba(20, 17, 13, 0.6)"
+          ? "rgba(20, 17, 13, 0.78)"
           : scrolled
             ? "rgba(247, 242, 234, 0.7)"
             : "rgba(247, 242, 234, 0.3)",
@@ -75,7 +87,7 @@ export function Navbar({
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[rgba(255,255,255,0.08)] transition-opacity duration-500 ease-[var(--ease-out)]"
         style={{ opacity: dark ? 1 : 0 }}
       />
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-10">
+      <div className="site-nav mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:h-20 md:px-10">
         <Link href="/" className="group flex items-center" aria-label={lang === "fi" ? "LEIMU etusivu" : "LEIMU home"}>
           <motion.div
             className="relative overflow-hidden rounded-md"
@@ -86,11 +98,12 @@ export function Navbar({
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             <Image
-              src={dark ? "/images/leimu-logo-white.png" : "/images/logo.png"}
+              src="/images/leimu-logo-white.png"
               alt="LEIMU"
-              width={90}
-              height={36}
-              className="h-[54px] w-auto object-contain transition-opacity duration-300 group-hover:opacity-85"
+              width={46}
+              height={49}
+              className="h-[46px] w-[44px] object-contain transition-opacity duration-200 group-hover:opacity-85"
+              style={{ filter: dark ? "none" : "brightness(0)" }}
               priority
             />
           </motion.div>
@@ -120,20 +133,21 @@ export function Navbar({
         <div className="flex items-center gap-3 md:gap-5">
           <motion.button
             onClick={toggleLang}
-            className="cursor-pointer font-sans text-[13px] font-medium tracking-[0.06em] transition-colors"
+            className="min-h-11 cursor-pointer font-sans text-[13px] font-medium tracking-[0.06em] transition-colors"
             style={{ color: mute }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            aria-label={lang === "fi" ? "Vaihda kieli: EN" : "Change language: FI"}
+            aria-label={lang === "fi" ? "FI/EN — Vaihda kieli: EN" : "FI/EN — Change language: FI"}
           >
             <span style={{ color: lang === "fi" ? ink : undefined }}>FI</span>
             <span className="mx-1.5 opacity-40">/</span>
             <span style={{ color: lang === "en" ? ink : undefined }}>EN</span>
           </motion.button>
 
-          <Link href="/tuotteet" passHref legacyBehavior>
+          <Link href="/tuotteet#configurator" passHref legacyBehavior>
             <motion.a
+              onClick={() => setMenuOpen(false)}
               className="inline-flex min-h-11 items-center gap-2 overflow-hidden rounded-full px-4 py-2 font-sans text-[13px] font-medium uppercase tracking-[0.08em] md:px-5"
               style={{
                 backgroundColor: dark ? "var(--on-dark)" : "var(--ink)",
@@ -154,7 +168,7 @@ export function Navbar({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-colors md:hidden"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-[color,transform] active:scale-95 md:hidden"
             style={{
               borderColor: dark ? "rgba(247,242,234,0.28)" : "var(--line)",
               backgroundColor: dark ? "rgba(20,17,13,0.45)" : "rgba(247,242,234,0.7)",
@@ -172,9 +186,9 @@ export function Navbar({
             aria-expanded={menuOpen}
           >
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <motion.path animate={menuOpen ? { d: "M5 5 L17 17" } : { d: "M3 6 L19 6" }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
+              <motion.path d="M3 6 L19 6" style={{ transformOrigin: "11px 6px" }} animate={{ rotate: menuOpen ? 45 : 0, y: menuOpen ? 5 : 0 }} transition={{ duration: 0.2 }} />
               <motion.path d="M3 11 L19 11" animate={{ opacity: menuOpen ? 0 : 1 }} transition={{ duration: 0.2 }} />
-              <motion.path animate={menuOpen ? { d: "M5 17 L17 5" } : { d: "M3 16 L19 16" }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
+              <motion.path d="M3 16 L19 16" style={{ transformOrigin: "11px 16px" }} animate={{ rotate: menuOpen ? -45 : 0, y: menuOpen ? -5 : 0 }} transition={{ duration: 0.2 }} />
             </svg>
           </button>
         </div>
@@ -209,6 +223,9 @@ export function Navbar({
                   </Link>
                 );
               })}
+              <button type="button" onClick={() => { setMenuOpen(false); openContact(); }} className="min-h-14 py-4 text-left text-sm font-medium uppercase tracking-[0.08em] text-[var(--ink)]">
+                {lang === "fi" ? "Ota yhteyttä" : "Contact us"}
+              </button>
             </div>
           </motion.nav>
         )}

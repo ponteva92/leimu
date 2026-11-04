@@ -108,7 +108,7 @@ function ValueRow({ value, lang, last }: { value: Value; lang: Lang; last: boole
       {last && <DrawnRule className="absolute inset-x-0 bottom-0" />}
       <span
         aria-hidden="true"
-        className="relative self-start font-serif text-4xl italic leading-none text-[var(--line)] md:text-6xl"
+        className="relative self-start font-serif text-4xl italic leading-none text-[var(--ink-mute)] md:text-6xl"
       >
         {value.num}
         <span
@@ -119,7 +119,7 @@ function ValueRow({ value, lang, last }: { value: Value; lang: Lang; last: boole
       </span>
       <div>
         <p className="tag-mono text-[var(--accent-2-text)]">{value.tag[lang]}</p>
-        <h3 ref={titleRef} className="heading-display mt-3 text-3xl text-[var(--ink)] md:text-4xl">
+        <h3 ref={titleRef} className="heading-display relative mt-3 text-3xl text-[var(--ink)] md:text-4xl">
           <InkWords text={value.title[lang]} p={read} emLast />
         </h3>
         <p className="mt-4 max-w-[52ch] leading-[1.7] text-[var(--ink-soft)] md:text-lg">
@@ -143,8 +143,8 @@ export function ValuesLedger() {
       className="relative z-10 bg-[var(--bg)] stage:-mt-[var(--cover)]"
       style={coverVars(MATERIALS_COVER_SVH)}
     >
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 py-24 md:px-10 md:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
-        <h2 className="heading-display text-4xl text-[var(--ink)] md:text-5xl lg:sticky lg:top-28 lg:self-start lg:text-6xl">
+      <div className="tarina-values-layout mx-auto grid max-w-7xl gap-12 px-6 py-24 md:px-10 md:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
+        <h2 className="tarina-values-heading heading-display text-4xl text-[var(--ink)] md:text-5xl lg:sticky lg:top-28 lg:self-start lg:text-6xl">
           <Heading lang={lang} />
         </h2>
         <ol>

@@ -15,12 +15,12 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useInView } from "framer-motion";
+import { useInView, type MotionValue } from "framer-motion";
 import * as THREE from "three";
 import { portraitVert, portraitFrag, dustVert, dustFrag } from "./portraitShaders";
 import { SafeWebGL } from "@/components/SafeWebGL";
 import { ShaderWarmup } from "@/components/ShaderWarmup";
-import { REDUCE_QUERY } from "@/lib/pin";
+import { REDUCE_QUERY, useMediaQuery } from "@/lib/pin";
 import { useBitmapTexture } from "@/lib/useBitmapTexture";
 import { PORTRAIT_OVERSCAN as OVERSCAN, PORTRAIT_SRC as IMG_SRC } from "./PortraitPhoto";
 
@@ -32,7 +32,11 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia(REDUCE_QUERY).matches;
 }
 
-function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
+function Portrait({ reducedMotion, ambient, progress }: {
+  reducedMotion: boolean;
+  ambient: boolean;
+  progress?: MotionValue<number>;
+}) {
   // The shader grades in gamma space, so the photo is sampled as stored.
   const tex = useBitmapTexture(IMG_SRC, { anisotropy: 8, colorSpace: THREE.NoColorSpace });
   // Numbers, so only a real resize re-renders the scene.
@@ -93,8 +97,12 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
       return;
     }
     const dt = Math.min(delta, 0.05);
-    const px = state.pointer.x;
-    const py = state.pointer.y;
+    // Touch keeps native panning. Scroll and a slow drift provide the same
+    // living depth without requiring a pointer to hover over the photo.
+    const time = dustU.uTime.value;
+    const reading = (progress?.get() ?? 0.5) - 0.5;
+    const px = ambient ? Math.sin(time * 0.32) * 0.32 + reading * 0.35 : state.pointer.x;
+    const py = ambient ? Math.cos(time * 0.24) * 0.22 - reading * 0.3 : state.pointer.y;
 
     uniforms.uMouse.value.x = damp(uniforms.uMouse.value.x, px, 5, dt);
     uniforms.uMouse.value.y = damp(uniforms.uMouse.value.y, py, 5, dt);
@@ -142,6 +150,7 @@ function Portrait({ reducedMotion }: { reducedMotion: boolean }) {
 type LivingPortraitProps = {
   /** False while the chapter has the portrait covered; the loop parks. */
   active?: boolean;
+  progress?: MotionValue<number>;
 };
 
 /* dpr stops at 1.5 and MSAA stays off: the plane is a textured quad and the
@@ -149,7 +158,7 @@ type LivingPortraitProps = {
    offsetX/Y, so the canvas needs no bounds tracked on scroll; it measures
    only on resize, and by offset size, so a scaled stage never reads as a
    resize (which would re-render the scene and re-seed the dust). */
-export default function LivingPortrait({ active = true }: LivingPortraitProps) {
+export default function LivingPortrait({ active = true, progress }: LivingPortraitProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { margin: "200px" });
   // Client only (ssr:false), so the first render already knows the
@@ -157,6 +166,7 @@ export default function LivingPortrait({ active = true }: LivingPortraitProps) {
   const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
   // The loop waits until the shaders are built (ShaderWarmup).
   const [compiled, setCompiled] = useState(false);
+  const ambient = useMediaQuery("(hover: none), (pointer: coarse)");
 
   useEffect(() => {
     const mq = window.matchMedia(REDUCE_QUERY);
@@ -169,7 +179,7 @@ export default function LivingPortrait({ active = true }: LivingPortraitProps) {
   if (compiled && inView && active) frameloop = reducedMotion ? "demand" : "always";
 
   return (
-    <div ref={wrapRef} className="absolute inset-0">
+    <div ref={wrapRef} className="tarina-webgl absolute inset-0" aria-hidden="true">
       <SafeWebGL fallback={null}>
         <Canvas
           frameloop={frameloop}
@@ -180,7 +190,7 @@ export default function LivingPortrait({ active = true }: LivingPortraitProps) {
           style={{ position: "absolute", inset: 0 }}
         >
           <Suspense fallback={null}>
-            <Portrait reducedMotion={reducedMotion} />
+            <Portrait reducedMotion={reducedMotion} ambient={ambient} progress={progress} />
             <ShaderWarmup onReady={setCompiled} />
           </Suspense>
         </Canvas>

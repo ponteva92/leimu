@@ -3,15 +3,15 @@
 /* ════════════════════════════════════════════════════════════════════════
    LEIMU — Craft film (home chapter "Käsityö")
    ------------------------------------------------------------------------
-   Pinned (md+, motion allowed): a 400svh track holds a 100svh sticky stage.
+   Pinned (motion allowed): a 400svh track holds a viewport-sized stage.
    The studio still and headline open the chapter, then four beats of the
    process (materials, pour, cure, finishing) wipe up through the same
    frame while their captions crossfade beside it. A rolling step counter
    and an amber hairline keep the place. The last stretch of the track is
    the cover: the stage recedes as the scent library sheet rises over it.
 
-   Phones and reduced motion get the same content in normal flow: the
-   opening, then the beats in a swipe rail (phones) or a grid (desktop).
+   Phones keep this film in a compact composition. Reduced motion gets
+   the opening and all beats in a swipe rail (phones) or a grid (desktop).
    ════════════════════════════════════════════════════════════════════════ */
 
 import { useRef } from "react";
@@ -23,7 +23,7 @@ import {
 } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useStore } from "@/context/store";
-import { useMediaQuery } from "@/lib/pin";
+import { useMediaQuery, useMotionLayout } from "@/lib/pin";
 import { CRAFT_BEATS, PROCESS_STEPS } from "@/lib/process";
 import { beatWindows, coverStart, mid, trackVars } from "@/lib/timeline";
 import {
@@ -197,17 +197,17 @@ function Film({ lang }: { lang: Lang }) {
     <div
       ref={trackRef}
       data-pin-rest={0}
-      className="relative hidden md:motion-safe:block md:motion-safe:h-[var(--track)]"
+      className="home-film-track story-track relative hidden motion-safe:block motion-safe:h-[var(--track)]"
       style={trackVars(TRACK_SVH)}
     >
-      <div className="sticky top-0 flex h-[100svh] items-center">
+      <div className="home-film-stage story-stage sticky top-0 flex h-[100svh] items-center">
         <motion.div
           ref={gridRef}
-          className="mx-auto grid w-full max-w-7xl origin-top grid-cols-2 items-center gap-10 px-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16"
+          className="home-film-grid mx-auto grid w-full max-w-7xl origin-top grid-cols-2 items-center gap-10 px-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16"
           style={{ scale: recede }}
         >
           <div className="paper-well">
-            <div className="relative isolate aspect-[4/5] max-h-[72svh] w-full overflow-hidden rounded-[calc(var(--radius-lg)-6px)] lg:aspect-[5/4]">
+            <div className="home-film-image relative isolate aspect-[4/5] max-h-[72svh] w-full overflow-hidden rounded-[calc(var(--radius-lg)-6px)] lg:aspect-[5/4]">
               <motion.div ref={settleRef} className="absolute inset-0" style={{ scale: settle }}>
                 <FilmStill p={p} index={0} src={OPENING_SRC} alt={COPY.alt[lang]} />
                 {CRAFT_BEATS.map((step, k) => (
@@ -226,7 +226,7 @@ function Film({ lang }: { lang: Lang }) {
           </div>
 
           <motion.div
-            className="flex flex-col gap-8"
+            className="home-film-copy flex flex-col gap-8"
             variants={staggerCinematic}
             initial="hidden"
             whileInView="visible"
@@ -288,7 +288,7 @@ function Stacked({ lang }: { lang: Lang }) {
   const isRail = useMediaQuery("(max-width: 767px)");
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 md:motion-safe:hidden">
+    <div className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 motion-safe:hidden">
       <div className="grid items-center gap-10 md:grid-cols-[1.15fr_0.85fr] md:gap-16">
         <div className="paper-well">
           <div className="relative isolate aspect-[4/5] overflow-hidden rounded-[calc(var(--radius-lg)-6px)] md:aspect-[5/4]">
@@ -370,11 +370,12 @@ function Stacked({ lang }: { lang: Lang }) {
 
 export function CraftFilm() {
   const lang = useStore((s) => s.lang);
+  const staged = useMotionLayout();
 
   return (
     <section id="kasityo" aria-label={COPY.tag[lang]}>
-      <Film lang={lang} />
-      <Stacked lang={lang} />
+      {staged !== false && <Film lang={lang} />}
+      {staged !== true && <Stacked lang={lang} />}
     </section>
   );
 }

@@ -38,6 +38,7 @@ import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useStore } from "@/context/store";
 import { measureBox, onRelayout, viewTop, type Box } from "@/lib/layout";
 import { landOn, scrollToTarget } from "@/lib/scroll";
+import { trackScrollRange } from "@/lib/timeline";
 
 export type Chapter = { id: string; label: { fi: string; en: string } };
 
@@ -71,7 +72,7 @@ function glideTo(id: string) {
   const track = chapter.querySelector<HTMLElement>("[data-pin-rest]");
   // A track hidden by its fallback (short screens, reduced motion) has no box.
   if (track && track.getClientRects().length > 0) {
-    const range = Math.max(0, track.offsetHeight - window.innerHeight);
+    const range = trackScrollRange(track);
     scrollToTarget(track, { offset: Number(track.dataset.pinRest) * range });
   } else {
     scrollToTarget(chapter);
@@ -132,12 +133,10 @@ export function ChapterRail({ chapters, startRef }: {
 
   const measure = useCallback(() => {
     const nav = navRef.current;
-    // Below xl the rail is display: none and has nothing to track.
-    railHidden.current = !nav || nav.getClientRects().length === 0;
-    if (railHidden.current) {
-      layout.current = null;
-      return;
-    }
+    // The compact chapter picker still needs chapter positions while the
+    // desktop rail is hidden. Only its individual tone rows are skipped.
+    const desktopVisible = !!nav && nav.getClientRects().length > 0;
+    railHidden.current = false;
 
     const found: Chapter[] = [];
     const boxes: Box[] = [];
@@ -161,12 +160,12 @@ export function ChapterRail({ chapters, startRef }: {
       if (box) surfaces.push({ el, box });
     });
     // The rail is fixed, so its rows sit still while the page scrolls.
-    const rows = present.map((_, i) => {
+    const rows = desktopVisible ? present.map((_, i) => {
       const row = rowRefs.current[i];
       if (!row) return { x: NaN, y: NaN };
       const r = row.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
+    }) : [];
     const start = startRef?.current ? measureBox(startRef.current) : null;
 
     layout.current = { vh: window.innerHeight, chapters: boxes, start, surfaces, rows };
@@ -202,6 +201,26 @@ export function ChapterRail({ chapters, startRef }: {
 
   return (
     <>
+      <details hidden={!shown} className="chapter-mobile fixed right-4 top-[calc(4rem+0.5rem)] z-[var(--z-rail)] rounded-2xl border border-[var(--line)] bg-[rgba(247,242,234,0.97)] text-[var(--ink)] shadow-e2 xl:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-2 text-[12px] font-mono uppercase tracking-[0.1em]">
+          <span className="text-[var(--accent-2-text)]">{String(active + 1).padStart(2, "0")}</span>
+          <span>{present[active]?.label[lang]}</span>
+          <span aria-hidden="true">⌄</span>
+        </summary>
+        <nav aria-label={lang === "fi" ? "Siirry lukuun" : "Go to chapter"} className="max-h-[60dvh] overflow-y-auto border-t border-[var(--line)] p-2" data-lenis-prevent>
+          {present.map(({ id, label }, i) => (
+            <a key={id} href={`#${id}`} data-native-scroll aria-current={i === active ? "location" : undefined}
+              className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm active:bg-[var(--bg-2)]"
+              onClick={(event) => {
+                onClick(event, id);
+                event.currentTarget.closest("details")?.removeAttribute("open");
+              }}>
+              <span className="font-mono text-[12px] text-[var(--accent-2-text)]">{String(i + 1).padStart(2, "0")}</span>
+              {label[lang]}
+            </a>
+          ))}
+        </nav>
+      </details>
       <motion.div
         aria-hidden="true"
         className="pointer-events-none fixed inset-x-0 top-0 z-[var(--z-header)] h-[2px] origin-left bg-[var(--accent-2)] xl:hidden"

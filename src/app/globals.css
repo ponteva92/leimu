@@ -108,17 +108,12 @@
 }
 
 html {
+  position: relative; /* Framer's scroll container and its measured targets share a positioned root. */
   font-size: 16px;
   scroll-padding-top: 88px; /* anchor jumps clear the fixed header; = HEADER_OFFSET in lib/scroll.ts */
   scrollbar-gutter: stable; /* the modal scroll lock never shifts the layout sideways */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-@media (min-width: 768px) {
-  html { font-size: 17px; }
-}
-@media (min-width: 1024px) {
-  html { font-size: 18px; }
 }
 
 body {
@@ -132,6 +127,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
 }
+@media (min-width: 768px) { body { font-size: 18px; } }
 
 /* ─── Typography Utilities ──────────────────────── */
 .font-serif { font-family: var(--font-serif); }
@@ -381,6 +377,7 @@ footer .footer-link::after {
   transition: transform 0.38s var(--ease-out);
 }
 footer .footer-link:hover::after,
+footer .footer-link:active::after,
 footer .footer-link:focus-visible::after { transform: scaleX(1); }
 
 /* Header nav link underline — drawn with transform, never width. */
@@ -400,6 +397,7 @@ header nav a::after {
   transition: transform 0.32s var(--ease-out);
 }
 header nav a:hover::after,
+header nav a:active::after,
 header nav a:focus-visible::after { transform: scaleX(1); }
 
 /* ═══════════════════════════════════════════════════════
@@ -444,4 +442,105 @@ header nav a:focus-visible::after { transform: scaleX(1); }
     animation-delay: 0.2s;
     transform: none;
   }
+}
+
+/* Scroll stages share measured progress on every viewport. The track uses
+   stable svh; only the visible stage follows browser chrome with dvh. */
+@media (prefers-reduced-motion: no-preference) {
+  .story-track { height: var(--track); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px), (prefers-reduced-motion: no-preference) and (max-width: 1279px) and (max-height: 719px), (prefers-reduced-motion: no-preference) and (max-height: 639px) {
+  .story-stage {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    min-height: 0;
+    overflow: clip;
+  }
+  .home-film-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(12px, 2.4svh, 24px);
+    padding: 72px 24px 20px;
+  }
+  .home-film-image { aspect-ratio: auto; height: clamp(150px, 33svh, 340px); }
+  .home-film-copy { gap: clamp(12px, 2svh, 20px); }
+  .home-film-copy > .grid { overflow: clip; }
+  .home-film-copy h2, .home-film-copy h3 { font-size: clamp(1.65rem, 5.8vw, 2.6rem); }
+  .home-film-copy p:not(.tag-mono) { font-size: clamp(0.875rem, 1.95svh, 1rem); line-height: 1.5; margin-top: 12px; }
+  .home-film-copy .tag-mono { margin-top: 0; }
+  .seal-stage { padding: 64px 0 16px; }
+  .seal-desktop-body, .seal-details { display: none; }
+  .seal-mobile-body { display: grid; overflow: clip; }
+  .seal-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; padding-inline: 24px; }
+  .seal-visual { position: absolute; top: 20px; right: 24px; width: clamp(90px, 25vw, 160px); }
+  .seal-details { margin-top: 8px; }
+  .seal-details ul { gap: 4px 12px; padding-top: 8px; }
+  .seal-details li { font-size: 12px; letter-spacing: 0.08em; }
+  .seal-copy h2 { padding-right: clamp(100px, 28vw, 180px); font-size: clamp(1.75rem, 6vw, 2.5rem); margin-bottom: 12px; }
+  .seal-copy > div:last-child { margin-top: 12px; }
+  .seal-mobile-body { font-size: clamp(0.875rem, 1.85svh, 1rem); line-height: 1.5; }
+}
+@media (max-width: 1279px) and (max-height: 650px) and (prefers-reduced-motion: no-preference), (max-height: 639px) and (prefers-reduced-motion: no-preference) {
+  .home-film-image { height: 26svh; }
+  .home-film-grid { gap: 12px; padding-top: 64px; padding-bottom: 12px; }
+  .home-film-copy { gap: 10px; }
+  .home-film-copy h2, .home-film-copy h3 { font-size: 1.65rem; }
+  .home-film-copy p:not(.tag-mono) { margin-top: 8px; }
+  .seal-visual { width: 90px; }
+  .seal-grid { gap: 10px; }
+  .seal-copy h2 { font-size: 1.65rem; margin-bottom: 8px; }
+}
+@media (orientation: landscape) and (max-height: 540px) and (prefers-reduced-motion: no-preference) {
+  .home-film-grid { grid-template-columns: 0.85fr 1.15fr; gap: 24px; }
+  .home-film-image { height: calc(100svh - 100px); }
+  .home-film-copy { gap: 8px; }
+  .home-film-copy h2, .home-film-copy h3 { font-size: 1.5rem; }
+  .home-film-copy p:not(.tag-mono) { font-size: 0.875rem; line-height: 1.4; }
+  .home-film-copy .tag-mono { font-size: 12px; }
+  .seal-grid { padding-left: 30%; gap: 24px; }
+  .seal-visual { left: 24px; right: auto; width: 22%; }
+  .seal-details li { font-size: 12px; }
+  .seal-copy h2 { padding-right: 0; font-size: 1.5rem; }
+  .seal-mobile-body { font-size: 0.875rem; line-height: 1.4; }
+}
+
+/* Touch gets the same image depth at the reading position, and immediate
+   press feedback. No gesture handler takes ownership of native panning. */
+@media (hover: none), (pointer: coarse) {
+  header nav a { min-height: 44px; display: inline-flex; align-items: center; }
+  .touch-warm { position: relative; }
+  .touch-warm::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(212,148,86,0.28), transparent 75%);
+    opacity: 0;
+    transition: opacity 150ms var(--ease-out);
+  }
+  .touch-warm:active::after { opacity: 1; }
+  .scent-card .scent-photo { transform: scale(1); }
+  .scent-card .scent-shadow { opacity: 0; }
+  .scent-card[data-touch-active="true"] .scent-photo { transform: scale(1.04); }
+  .scent-card[data-touch-active="true"] .scent-shadow { opacity: 1; }
+  button:active, a:active { -webkit-tap-highlight-color: rgba(196,122,58,0.12); }
+}
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: 16px; }
+  .chapter-mobile summary::-webkit-details-marker { display: none; }
+  /* The scrim already frosts the scene. Keep the tinted glass and its edge
+     light, without filtering the same pixels a second time on the panel. */
+  .scent-modal-panel { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* The compact index occupies the bar's vacated space while reading. It
+   moves with transforms, leaving the stage's text and video unobscured. */
+.chapter-mobile { transition: transform var(--dur-base) var(--ease-out); }
+body:has(header[data-header-hidden="true"]) .chapter-mobile {
+  transform: translateY(calc(-4rem + 0.25rem));
+}
+@media (prefers-reduced-motion: reduce) {
+  .scent-photo { transition: none; }
+  .chapter-mobile { transition: none; }
+  .scent-card[data-touch-active="true"] .scent-photo { transform: none; }
 }

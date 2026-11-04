@@ -6,8 +6,8 @@
    Make.com payload and forwards it to the server-only webhook — so the webhook
    URL is never exposed to the browser and there are no CORS issues.
 
-   Numeric order fields are sent as real numbers (not strings) so Airtable
-   accepts them; the server coerces them again as a safety net.
+   Numeric order fields are sent as real numbers. The server validates the
+   breakdown and calculates the authoritative price before forwarding it.
    ════════════════════════════════════════════════════════════════════════ */
 
 export type ContactSubmission = {
@@ -28,6 +28,7 @@ export type OrderSubmission = {
   delivery: string;
   totalCandles: number;
   price: number;
+  discountCode?: string;
   havu: number;
   havuVanilja: number;
   vanilja: number;
@@ -40,7 +41,7 @@ export type OrderSubmission = {
   personalMessage: string;
 };
 
-export async function submitForm(payload: ContactSubmission | OrderSubmission): Promise<void> {
+export async function submitForm(payload: ContactSubmission | OrderSubmission): Promise<{ price?: number }> {
   const res = await fetch("/api/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -55,4 +56,5 @@ export async function submitForm(payload: ContactSubmission | OrderSubmission): 
     }
     throw new Error(`Submit failed (${res.status})${detail ? `: ${detail}` : ""}`);
   }
+  return res.json();
 }

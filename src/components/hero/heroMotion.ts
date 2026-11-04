@@ -37,18 +37,10 @@ export const heroFade: Variants = {
   },
 };
 
-/* ── Amber accent ("rauha.") — slow breathing glow ──────────────────────
-   Applied as an infinite `animate` on the inline amber word. A breathing
-   text-shadow signals warmth; no vertical float, since floating a single
-   inline word out of its line reads as a glitch.                           */
-/* One-shot warm glow on entrance, then it holds a gentle resting state.
-   No infinite loop — the brief bans perpetual motion on primary UI. */
+/* One-shot warm glow on a separate, pre-painted copy of the accent word.
+   Only opacity changes; the text shadow is never repainted every frame. */
 export const amberBreatheAnimate = {
-  textShadow: [
-    "0 0 0px rgba(198,142,88,0.0), 0 0 12px rgba(198,142,88,0.10)",
-    "0 0 28px rgba(198,142,88,0.55), 0 0 64px rgba(198,142,88,0.30)",
-    "0 0 14px rgba(198,142,88,0.22), 0 0 34px rgba(198,142,88,0.14)",
-  ],
+  opacity: [0.1, 1, 0.4],
 };
 
 export const amberBreatheTransition = {

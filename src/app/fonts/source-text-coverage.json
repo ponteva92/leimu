@@ -1,0 +1,201 @@
+{
+  "method": "TypeScript AST string literals and JSX text; comments excluded",
+  "fonts": [
+    {
+      "file": "cormorant-garamond-latin-400-italic.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-400-normal.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-500-italic.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-500-normal.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-600-italic.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-600-normal.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-700-italic.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "cormorant-garamond-latin-700-normal.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "instrument-sans-latin-italic.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "instrument-sans-latin-normal.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "space-mono-latin-400.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    },
+    {
+      "file": "space-mono-latin-700.woff2",
+      "missingRequired": [],
+      "sourceCharactersMissing": [
+        8964,
+        9472,
+        127794,
+        128076,
+        128077,
+        128222,
+        128231,
+        129321,
+        129744
+      ]
+    }
+  ],
+  "exceptions": [
+    {
+      "codepoint": 8964,
+      "reason": "ChapterRail chevron; absent in all three original upstream font cmaps too, so existing browser fallback is preserved."
+    },
+    {
+      "codepoint": 9472,
+      "reason": "Box-drawing separator inside a GLSL shader comment, not rendered UI text."
+    },
+    {
+      "range": "emoji",
+      "reason": "Customer quotes and contact icons use browser emoji fallback; original fonts have no emoji glyphs."
+    }
+  ],
+  "requiredCharactersPass": true,
+  "sourceTextHasNoNewMissingGlyphs": true
+}
